@@ -1,0 +1,25 @@
+{
+  "name": "dsl-proof-syntax",
+  "displayName": "dsl-proof-syntax",
+  "description": "Syntax highlighting for custom proof language",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.104.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "proof",
+      "aliases": ["Proof", "proof"],
+      "extensions": [".proof"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "proof",
+      "scopeName": "source.proof",
+      "path": "./syntaxes/proof.tmLanguage.json"
+    }]
+  }
+}
