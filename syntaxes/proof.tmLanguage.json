@@ -6,6 +6,9 @@
 			"include": "#keywords"
 		},
 		{
+			"include": "#definitions"
+		},
+		{
 			"include": "#strings"
 		}
 	],
@@ -13,8 +16,19 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.proof",
-				"match": "\\b(if|while|for|return)\\b"
+				"match": "\\b(any|assume|conclude)\\b"
 			}]
+		},
+		"definitions": {
+			"patterns": [
+				{
+					"match": "\\b(theorem|definition)\\s+(\\w+)",
+					"captures": {
+						"1": { "name": "keyword.declaration.proof"},
+						"2": { "name": "entity.name.function.proof" }
+					}
+				}
+			]
 		},
 		"strings": {
 			"name": "string.quoted.double.proof",

@@ -9,6 +9,7 @@
   "categories": [
     "Programming Languages"
   ],
+  "main": "./src/extension.js",
   "contributes": {
     "languages": [{
       "id": "proof",
@@ -20,6 +21,12 @@
       "language": "proof",
       "scopeName": "source.proof",
       "path": "./syntaxes/proof.tmLanguage.json"
-    }]
+    }],
+    "commands": [
+      {
+        "command": "dsl-proof-syntax.toggleSymbols",
+        "title": "Toggle Proof Symbols"
+      }
+    ]
   }
 }
