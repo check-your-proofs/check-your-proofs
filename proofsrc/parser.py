@@ -163,8 +163,14 @@ def parse_block(lines, i=0):
     while i < len(lines):
         line = lines[i].strip()
         if line.startswith("any "):
-            vars_part, _ = line[4:].split("{", 1)
-            vars_ = [v.strip() for v in vars_part.split(",")]
+            # "any x, y {" のパターンにマッチ
+            m = re.match(r"any\s+([^{}]+)\{?", line)
+            if not m:
+                raise ValueError(f"Invalid any-syntax: {line}")
+            vars_text = m.group(1)
+            vars_ = [v.strip() for v in vars_text.split(",")]
+
+            # 次の行以降をパース
             sub_body, i = parse_block(lines, i+1)
             body.append(Any(vars=vars_, body=sub_body))
         elif line.startswith("assume "):
