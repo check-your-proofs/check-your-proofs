@@ -1,5 +1,5 @@
 import sys
-from parser import parse_file
+from parser import parse_file, pretty
 from checker import check_proof
 
 def main():
@@ -9,9 +9,9 @@ def main():
     path = sys.argv[1]
     ast = parse_file(path)
     for node in ast:
-        print(node)
+        pretty(node)
         if hasattr(node, "proof"):
-            result = check_proof(node)
+            result = check_proof(node, [])
             print("✔ OK" if result else "❌ Failed")
 
 if __name__ == "__main__":

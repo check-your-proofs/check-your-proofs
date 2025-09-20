@@ -1,62 +1,81 @@
-from parser import Theorem, Any, Assume, By, Conclude
+from parser import Theorem, Any, Assume, By, Conclude, Expr, And, Implies
 
-def split_conjunction(expr: str):
-    if "\\wedge" in expr:
-        return [part.strip() for part in expr.split("\\wedge")]
+def split_conjunction(expr: Expr) -> list[Expr]:
+    if isinstance(expr, And):
+        return split_conjunction(expr.left) + split_conjunction(expr.right)
     else:
         return [expr]
+
+def expr_in_context(expr: Expr, context: list[Expr]) -> bool:
+    return any(expr == c for c in context)
     
 def derivable(conclusion: str, context: list[str]) -> bool:
     return conclusion in context
 
-def check_proof(node, context=None, depth=0):
+def check_proof(node, context=None, indent=0):
     if context is None:
         context = []
 
-    indent = "  " * depth
-    print(f"{indent}>> Checking {type(node).__name__} with context: {context}")
+    sp = "  " * indent
 
+    # --- Theorem ---
     if isinstance(node, Theorem):
-        print(f"{indent}Theorem {node.name}")
-        return check_proof(node.proof, context, depth+1)
+        print(f"{sp}Checking theorem {node.name} ...")
+        ok = check_proof(node.proof, context, indent + 1)
+        if ok:
+            print(f"{sp}✔ Theorem {node.name} OK")
+        else:
+            print(f"{sp}❌ Theorem {node.name} Failed")
+        return ok
 
-    elif isinstance(node, Any):
-        local_context = context.copy()
-        for stmt in node.body:
-            if not check_proof(stmt, local_context, depth+1):
-                return False
-        # 全称化
-        if local_context:
-            last = local_context[-1]
-            for var in reversed(node.vars):
-                last = f"\\forall {var}{last}"
-            context.append(last)
-            print(f"{indent}Added universal: {last}")
-        return True
-    
-    elif isinstance(node, Assume):
-        local_context = context + [node.premise]
-        print(f"{indent}Assume {node.premise} ... goal {node.conclusion}")
-        for stmt in node.body:
-            if not check_proof(stmt, local_context, depth+1):
-                return False
-        implication = f"({node.premise}\\to {node.conclusion})"
-        context.append(implication)
-        print(f"{indent}Added implication: {implication}")
-        return True
-
-    elif isinstance(node, By):
-        print(f"{indent}By-step: {node}")
-        # TODO: definition 参照や推論規則の処理を追加
-        return True  
-
+    # --- Conclude ---
     elif isinstance(node, Conclude):
+        print(f"{sp}>> Checking Conclude with context: {[str(c) for c in context]}")
         local_context = context[:]
         for stmt in node.body:
-            if not check_proof(stmt, local_context, depth+1):
+            if not check_proof(stmt, local_context, indent + 1):
                 return False
-        print(f"{indent}Conclude requires: {node.conclusion}")
-        return node.conclusion in local_context
+        ok = expr_in_context(node.conclusion, local_context)
+        if ok:
+            print(f"{sp}✔ Conclude matched: {node.conclusion}")
+        else:
+            print(f"{sp}❌ Conclude requires: {node.conclusion}")
+        return ok
+
+    # --- Assume ---
+    elif isinstance(node, Assume):
+        print(f"{sp}>> Checking Assume premise={node.premise}, goal={node.conclusion}")
+        new_context = context + split_conjunction(node.premise)
+        if not node.body:
+            ok = expr_in_context(node.conclusion, new_context)
+            if ok:
+                print(f"{sp}✔ Derived directly: {node.conclusion}")
+                context.append(Implies(node.premise, node.conclusion))
+            else:
+                print(f"{sp}❌ Cannot derive {node.conclusion} from {new_context}")
+            return ok
+        else:
+            for stmt in node.body:
+                if not check_proof(stmt, new_context, indent + 1):
+                    return False
+            implication = Implies(node.premise, node.conclusion)
+            context.append(implication)
+            print(f"{sp}✔ Added implication: {implication}")
+            return True
+
+    # --- Any ---
+    elif isinstance(node, Any):
+        print(f"{sp}>> Checking Any {node.vars}")
+        for stmt in node.body:
+            if not check_proof(stmt, context, indent + 1):
+                return False
+        return True
+
+    # --- By ---
+    elif isinstance(node, By):
+        print(f"{sp}By {node.definition} (skipped for now)")
+        return True
 
     else:
-        raise ValueError(f"Unknown node type: {type(node)}")
+        print(f"{sp}Unknown node: {node}")
+        return False

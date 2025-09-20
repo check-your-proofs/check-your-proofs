@@ -1,6 +1,29 @@
 from dataclasses import dataclass
 from typing import List, Union
+import re
 
+# 論理式のAST
+class Expr: pass
+
+@dataclass
+class Atom(Expr):
+    text: str
+
+@dataclass
+class Implies(Expr):
+    left: Expr
+    right: Expr
+
+@dataclass
+class And(Expr):
+    left: Expr
+    right: Expr
+
+@dataclass
+class Forall(Expr):
+    var: str
+    body: Expr
+    
 @dataclass
 class Definition:
     name: str
@@ -14,9 +37,9 @@ class By:
 
 @dataclass
 class Assume:
-    premise: str
-    conclusion: str
-    body: List[Union['Assume', 'Any', 'By']]
+    premise: Expr
+    conclusion: Expr
+    body: list
 
 @dataclass
 class Any:
@@ -25,13 +48,101 @@ class Any:
 
 @dataclass
 class Conclude:
-    conclusion: str
-    body: List[Union[Assume, Any, By]]
+    conclusion: Expr
+    body: list
 
 @dataclass
 class Theorem:
     name: str
     proof: Conclude
+
+def pretty(node, indent=0):
+    sp = "  " * indent  # インデント幅2スペース
+    if isinstance(node, Theorem):
+        print(f"{sp}Theorem {node.name}:")
+        pretty(node.proof, indent + 1)
+
+    elif isinstance(node, Conclude):
+        print(f"{sp}Conclude {node.conclusion}")
+        for stmt in node.body:
+            pretty(stmt, indent + 1)
+
+    elif isinstance(node, Any):
+        print(f"{sp}Any {', '.join(node.vars)}")
+        for stmt in node.body:
+            pretty(stmt, indent + 1)
+
+    elif isinstance(node, Assume):
+        print(f"{sp}Assume {node.premise}")
+        print(f"{sp}Conclude {node.conclusion}")
+        for stmt in node.body:
+            pretty(stmt, indent + 1)
+
+    elif isinstance(node, By):
+        print(f"{sp}By {node.target} by {node.definition} using {node.using}")
+
+    elif isinstance(node, Definition):
+        print(f"{sp}Definition {node.name}: {node.body}")
+
+    else:
+        print(f"{sp}{node}")
+
+def parse_expr(text: str) -> Expr:
+    text = text.strip()
+
+    # 1. 量化子
+    if text.startswith("\\forall"):
+        m = re.match(r"\\forall\s*([a-zA-Z_][a-zA-Z0-9_]*)(.*)", text)
+        if not m:
+            raise ValueError(f"Malformed forall: {text}")
+        var, rest = m.groups()
+        return Forall(var, parse_expr(rest.strip()))
+
+    # 2. 括弧に包まれている場合
+    if text.startswith("(") and text.endswith(")"):
+        # 括弧の対応が正しいか確認して外す
+        depth = 0
+        for i, ch in enumerate(text):
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+                if depth == 0 and i != len(text) - 1:
+                    break
+        else:
+            # 正しく括弧で囲まれていた
+            return parse_expr(text[1:-1])
+
+    # 3. 含意 (右結合)
+    depth = 0
+    i = len(text) - 1
+    while i >= 0:
+        if text[i] == ")":
+            depth += 1
+        elif text[i] == "(":
+            depth -= 1
+        elif text.startswith("\\to", i) and depth == 0:
+            left = text[:i].strip()
+            right = text[i+3:].strip()  # len("\\to") == 3
+            return Implies(parse_expr(left), parse_expr(right))
+        i -= 1
+
+    # 4. 連言 (左結合)
+    depth = 0
+    i = 0
+    while i < len(text):
+        if text[i] == "(":
+            depth += 1
+        elif text[i] == ")":
+            depth -= 1
+        elif text.startswith("\\wedge", i) and depth == 0:
+            left = text[:i].strip()
+            right = text[i+6:].strip()  # len("\\wedge") == 6
+            return And(parse_expr(left), parse_expr(right))
+        i += 1
+
+    # 5. それ以外は原子式
+    return Atom(text)
 
 # --- パース関数（暫定・前に作ったものを流用して拡張）
 
@@ -63,7 +174,13 @@ def parse_block(lines, i=0):
             premise = premise.strip()
             conclusion = conclusion.strip()
             sub_body, i = parse_block(lines, i+1)
-            body.append(Assume(premise=premise, conclusion=conclusion, body=sub_body))
+            body.append(
+                Assume(
+                    premise=parse_expr(premise),
+                    conclusion=parse_expr(conclusion),
+                    body=sub_body
+                )
+            )
         elif " by " in line:
             body.append(parse_by(line))
             i += 1
@@ -110,6 +227,6 @@ def parse_file(path: str):
                 conclude_lines = lines[1:-1]
                 body_nodes, _ = parse_block(conclude_lines)
 
-                proof = Conclude(conclusion=conclusion, body=body_nodes)
+                proof = Conclude(conclusion=parse_expr(conclusion), body=body_nodes)
                 ast.append(Theorem(name=name, proof=proof))
     return ast

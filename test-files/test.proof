@@ -1,7 +1,5 @@
 theorem test {
-  conclude \forall x\forall y(x\in y\to x\in y) {
-    any x, y {
-      assume x\in y conclude x\in y {}
-    }
+  conclude x\in y\to x\in y {
+    assume x\in z conclude x\in y {}
   }
 }
