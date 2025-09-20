@@ -1,7 +1,11 @@
 from dataclasses import dataclass
 from typing import List, Union
 
-# ノード定義
+@dataclass
+class Definition:
+    name: str
+    body: str
+
 @dataclass
 class By:
     target: str
@@ -12,23 +16,22 @@ class By:
 class Assume:
     premise: str
     conclusion: str
-    body: List[Union['By', 'Any', 'Assume']]
+    body: List[Union['Assume', 'Any', 'By']]
 
 @dataclass
 class Any:
     vars: List[str]
-    body: List[Union[By, Assume, 'Any']]
+    body: List[Union[Assume, 'Any', By]]
 
 @dataclass
-class Definition:
-    name: str
-    body: str
+class Conclude:
+    conclusion: str
+    body: List[Union[Assume, Any, By]]
 
 @dataclass
 class Theorem:
     name: str
-    statement: str
-    proof: Any
+    proof: Conclude
 
 # --- パース関数（暫定・前に作ったものを流用して拡張）
 
@@ -84,26 +87,29 @@ def parse_file(path: str):
             name = header.split()[1].strip()
             body = body.rsplit("}", 1)[0].strip()
             ast.append(Definition(name=name, body=body))
+
         elif block.startswith("theorem"):
             header, body = block.split("{", 1)
 
             # theorem の名前を取る
             name = header.split()[1].split("(")[0].strip()
 
-            # theorem の本文部分
+            # theorem の本文部分（最後の } を除去）
             body = body.rsplit("}", 1)[0].strip()
             lines = [l.strip() for l in body.splitlines() if l.strip()]
 
-            # 最初の行が statement
-            statement = lines[0]
+            # 最初の行は "conclude ..." のはず
+            if lines[0].startswith("conclude"):
+                # conclude の conclusion とブロック本体を取り出す
+                rest = lines[0][len("conclude"):].strip()
+                if rest.endswith("{"):
+                    rest = rest[:-1].strip()
+                conclusion = rest
 
-            # proof { ... } の部分を抽出
-            if lines[1].startswith("proof"):
-                proof_lines = lines[2:-1]  # proof { と最後の } を除外
-                proof_body, _ = parse_block(proof_lines)
-                proof = proof_body[0]
-            else:
-                proof = None  # proof がまだ書かれてない場合にも対応
+                # conclude の中身（indent の次の行から最後の } まで）
+                conclude_lines = lines[1:-1]
+                body_nodes, _ = parse_block(conclude_lines)
 
-            ast.append(Theorem(name=name, statement=statement, proof=proof))
+                proof = Conclude(conclusion=conclusion, body=body_nodes)
+                ast.append(Theorem(name=name, proof=proof))
     return ast
