@@ -23,6 +23,7 @@ class Assume:
 @dataclass
 class Any:
     vars: List[str]
+    conclusion: object
     body: list
 
 @dataclass
@@ -102,10 +103,12 @@ class Parser:
                 self.consume("COMMA")
                 continue
             break
+        self.consume("CONCLUDE")
+        conclusion, self.pos = parse_expr(self.tokens, self.pos)
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
-        return Any(vars=vars_, body=body)
+        return Any(vars=vars_, conclusion=conclusion, body=body)
 
     def parse_assume(self):
         self.consume("ASSUME")
@@ -148,6 +151,7 @@ def pretty(node, indent=0):
 
     elif isinstance(node, Any):
         print(f"{sp}Any {', '.join(node.vars)}")
+        print(f"{sp}Conclude {node.conclusion}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
 

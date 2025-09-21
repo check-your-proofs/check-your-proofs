@@ -127,12 +127,16 @@ def check_proof(node, context=None, indent=0):
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        if local_ctx:
-            formula = local_ctx[-1]
-            for v in reversed(node.vars):
-                formula = Forall(v, formula)
-            context.append(formula)
-            print(f"{sp}✔ Generalized to {formula}")
+        if derivable(node.conclusion, local_ctx):
+            print(f"{sp}✔ [Any] Derived conclusion {node.conclusion}")
+        else:
+            print(f"{sp}❌ [Any] Cannot derive {node.conclusion}")
+            return False
+        goal = node.conclusion
+        for v in reversed(node.vars):
+            goal = Forall(v, goal)
+        context.append(goal)
+        print(f"{sp}✔ [Any] Generalized to {goal}")
         return True
 
     print(f"{sp}⚠ Unsupported node {node}")
