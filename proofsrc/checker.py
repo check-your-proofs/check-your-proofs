@@ -63,23 +63,18 @@ def split_conjunction(expr):
     else:
         return [expr]
 
-def derivable(goal, context):
-    # α同値チェック
-    if expr_in_context(goal, context):
-        return True
-
+def derivable_flat(goal, flat_ctx):
     # goal が And のとき
     if isinstance(goal, And):
-        return derivable(goal.left, context) and derivable(goal.right, context)
+        return derivable(goal.left, flat_ctx) and derivable(goal.right, flat_ctx)
+    # α同値チェック
+    return expr_in_context(goal, flat_ctx)
 
-    # context にある And を分解して使えるようにする
+def derivable(goal, context):
+    flat_ctx = []
     for c in context:
-        if isinstance(c, And):
-            if derivable(goal, [c.left] + context):
-                return True
-            if derivable(goal, [c.right] + context):
-                return True
-    return False
+        flat_ctx.extend(split_conjunction(c))
+    return derivable_flat(goal, flat_ctx)
 
 # === 証明チェッカー ===
 def check_proof(node, context=None, indent=0):
@@ -121,7 +116,7 @@ def check_proof(node, context=None, indent=0):
     # --- Assume ---
     if isinstance(node, Assume):
         print(f"{sp}>> Checking Assume premise={node.premise}, goal={node.conclusion}")
-        local_ctx = list(context + split_conjunction(node.premise))
+        local_ctx = list(context + [node.premise])
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
