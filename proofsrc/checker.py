@@ -69,9 +69,9 @@ def split_conjunction(expr):
 def derivable_flat(goal, flat_ctx):
     # goal が And のとき
     if isinstance(goal, And):
-        return derivable(goal.left, flat_ctx) and derivable(goal.right, flat_ctx)
+        return derivable_flat(goal.left, flat_ctx) and derivable_flat(goal.right, flat_ctx)
     if isinstance(goal, Or):
-        return derivable(goal.left, flat_ctx) or derivable(goal.right, flat_ctx)
+        return derivable_flat(goal.left, flat_ctx) or derivable_flat(goal.right, flat_ctx)
     # α同値チェック
     return expr_in_context(goal, flat_ctx)
 
