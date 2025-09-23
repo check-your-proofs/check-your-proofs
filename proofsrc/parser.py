@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Union
 from lexer import Token, lex
-from expr_parser import parse_expr, Symbol, Forall, Exists, And, Or, Implies, Iff
+from expr_parser import parse_expr, pretty_expr
 
 # === DSL ノード定義 ===
 @dataclass
@@ -23,6 +23,18 @@ class Assume:
 @dataclass
 class Any:
     vars: List[str]
+    conclusion: object
+    body: list
+
+@dataclass
+class Divide:
+    fact: object
+    conclusion: object
+    cases: list
+
+@dataclass
+class Case:
+    premise: object
     conclusion: object
     body: list
 
@@ -87,6 +99,8 @@ class Parser:
                 body.append(self.parse_any())
             elif tok.type == "ASSUME":
                 body.append(self.parse_assume())
+            elif tok.type == "DIVIDE":
+                body.append(self.parse_divide())
             elif tok.type == "CONCLUDE":
                 body.append(self.parse_conclude())
             else:
@@ -119,6 +133,24 @@ class Parser:
         body = self.parse_block()
         self.consume("RBRACE")
         return Assume(premise=premise, conclusion=conclusion, body=body)
+    
+    def parse_divide(self):
+        self.consume("DIVIDE")
+        fact, self.pos = parse_expr(self.tokens, self.pos)
+        self.consume("CONCLUDE")
+        conclusion, self.pos = parse_expr(self.tokens, self.pos)
+        cases = []
+        while self.peek().type == "CASE":
+            cases.append(self.parse_case(conclusion))
+        return Divide(fact=fact, conclusion=conclusion, cases=cases)
+    
+    def parse_case(self, conclusion):
+        self.consume("CASE")
+        premise, self.pos = parse_expr(self.tokens, self.pos)
+        self.consume("LBRACE")
+        body = self.parse_block()
+        self.consume("RBRACE")
+        return Case(premise=premise, conclusion=conclusion, body=body)
 
     def parse_definition(self):
         self.consume("DEFINITION")
@@ -142,22 +174,33 @@ def pretty(node, indent=0):
     sp = "  " * indent  # インデント幅2スペース
     if isinstance(node, Theorem):
         print(f"{sp}Theorem {node.name}:")
-        pretty(node.proof, indent + 1)
+        for stmt in node.proof:
+            pretty(stmt, indent + 1)
 
     elif isinstance(node, Conclude):
-        print(f"{sp}Conclude {node.conclusion}")
-        for stmt in node.body:
-            pretty(stmt, indent + 1)
+        print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
 
     elif isinstance(node, Any):
         print(f"{sp}Any {', '.join(node.vars)}")
-        print(f"{sp}Conclude {node.conclusion}")
+        print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
 
     elif isinstance(node, Assume):
-        print(f"{sp}Assume {node.premise}")
-        print(f"{sp}Conclude {node.conclusion}")
+        print(f"{sp}Assume {pretty_expr(node.premise)}")
+        print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        for stmt in node.body:
+            pretty(stmt, indent + 1)
+    
+    elif isinstance(node, Divide):
+        print(f"{sp}Divide {pretty_expr(node.fact)}")
+        print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        for stmt in node.cases:
+            pretty(stmt, indent + 1)
+
+    elif isinstance(node, Case):
+        print(f"{sp}Case {pretty_expr(node.premise)}")
+        print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
 
@@ -168,7 +211,7 @@ def pretty(node, indent=0):
         print(f"{sp}Definition {node.name}: {node.body}")
 
     else:
-        print(f"{sp}{node}")
+        raise TypeError(f"Unsupported node type: {type(node)}")
 
 if __name__ == "__main__":
     import sys

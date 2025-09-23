@@ -1,5 +1,7 @@
 # checker.py
-from parser import Theorem, Any, Assume, Conclude, Symbol, And, Or, Implies, Forall
+from parser import Theorem, Any, Assume, Conclude, Divide, Case
+from expr_parser import Symbol, And, Or, Implies, Forall
+from expr_parser import pretty_expr
 
 # === α同値判定 ===
 from itertools import permutations
@@ -90,64 +92,90 @@ def check_proof(node, context=None, indent=0):
 
     # --- Theorem ---
     if isinstance(node, Theorem):
-        print(f"{sp}Theorem {node.name}:")
+        print(f"{sp}>> [Theorem] {node.name}:")
         local_ctx = []
         for stmt in node.proof:
             if not check_proof(stmt, local_ctx, indent+1):
-                print(f"{sp}❌ Failed")
+                print(f"{sp}❌ [Theorem] Failed")
                 return False
         if derivable(node.conclusion, local_ctx):
-            print(f"{sp}✔ Theorem {node.name} proved: {node.conclusion}")
+            print(f"{sp}✔ [Theorem] {node.name} proved: {pretty_expr(node.conclusion)}")
             return True
         else:
-            print(f"{sp}❌ Theorem {node.name} failed")
+            print(f"{sp}❌ [Theorem] {node.name} failed")
             return False
 
     # --- Conclude ---
     if isinstance(node, Conclude):
-        print(f"{sp}>> Checking Conclude {node.conclusion}")
+        print(f"{sp}>> [Conclude] Checking {node.conclusion}")
         if derivable(node.conclusion, context):
-            print(f"{sp}✔ Conclude goal {node.conclusion} derived")
+            print(f"{sp}✔ [Conclude] goal {node.conclusion} derived")
             return True
         else:
-            print(f"{sp}❌ Conclude goal {node.conclusion} not derivable")
+            print(f"{sp}❌ [Conclude] goal {node.conclusion} not derivable")
             return False
 
     # --- Assume ---
     if isinstance(node, Assume):
-        print(f"{sp}>> Checking Assume premise={node.premise}, goal={node.conclusion}")
+        print(f"{sp}>> [Assume] premise={pretty_expr(node.premise)}, goal={pretty_expr(node.conclusion)}")
         local_ctx = list(context + [node.premise])
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
         if derivable(node.conclusion, local_ctx):
-            print(f"{sp}✔ Derived conclusion {node.conclusion}")
+            print(f"{sp}✔ [Assume] Derived conclusion {pretty_expr(node.conclusion)}")
         else:
-            print(f"{sp}❌ Cannot derive {node.conclusion}")
+            print(f"{sp}❌ [Assume] Cannot derive {pretty_expr(node.conclusion)}")
             return False
         implication = Implies(node.premise, node.conclusion)
         context.append(implication)
-        print(f"{sp}✔ Discharged {node.premise}, added {implication}")
+        print(f"{sp}✔ Derived implication {pretty_expr(implication)}")
         return True
 
     # --- Any ---
     if isinstance(node, Any):
-        print(f"{sp}>> Entering Any {node.vars}")
+        print(f"{sp}>> [Any] Taking {node.vars}")
         local_ctx = list(context)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
         if derivable(node.conclusion, local_ctx):
-            print(f"{sp}✔ [Any] Derived conclusion {node.conclusion}")
+            print(f"{sp}✔ [Any] Derived conclusion {pretty_expr(node.conclusion)}")
         else:
-            print(f"{sp}❌ [Any] Cannot derive {node.conclusion}")
+            print(f"{sp}❌ [Any] Cannot derive {pretty_expr(node.conclusion)}")
             return False
         goal = node.conclusion
         for v in reversed(node.vars):
             goal = Forall(v, goal)
         context.append(goal)
-        print(f"{sp}✔ [Any] Generalized to {goal}")
+        print(f"{sp}✔ [Any] Generalized to {pretty_expr(goal)}")
         return True
+    
+    if isinstance(node, Divide):
+        if not derivable(node.fact, context):
+            print(f"{sp}❌ [Divide] Not fact: {node.fact}")
+            return False
+        print(f"{sp}>> [Divide] fact={pretty_expr(node.fact)}, goal={pretty_expr(node.conclusion)}")
+        local_ctx = list(context)
+        for stmt in node.cases:
+            if not check_proof(stmt, local_ctx, indent+1):
+                return False
+        context.append(node.conclusion)
+        print(f"{sp}✔ [Divide] derived in all cases: {pretty_expr(node.conclusion)}")
+        return True
+
+    if isinstance(node, Case):
+        print(f"{sp}>> [Case] premise={pretty_expr(node.premise)}")
+        local_ctx = list(context + [node.premise])
+        for stmt in node.body:
+            if not check_proof(stmt, local_ctx, indent+1):
+                return False
+        if derivable(node.conclusion, local_ctx):
+            print(f"{sp}✔ [Case] derived conclusion {pretty_expr(node.conclusion)}")
+            return True
+        else:
+            print(f"{sp}❌ [Case] Cannot derive {pretty_expr(node.conclusion)}")
+            return False
 
     print(f"{sp}⚠ Unsupported node {node}")
     return False

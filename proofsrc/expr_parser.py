@@ -100,3 +100,18 @@ if __name__ == "__main__":
         print(t)
     expr, _ = parse_expr(tokens, 0)
     print(expr)
+
+def pretty_expr(expr):
+    if isinstance(expr, Symbol):
+        if expr.name == "in":
+            return f"{expr.args[0]} \\in {expr.args[1]}"
+        return expr.name
+    if isinstance(expr, Implies):
+        return f"{pretty_expr(expr.left)} \\to {pretty_expr(expr.right)}"
+    if isinstance(expr, And):
+        return f"{pretty_expr(expr.left)} \\wedge {pretty_expr(expr.right)}"
+    if isinstance(expr, Or):
+        return f"{pretty_expr(expr.left)} \\vee {pretty_expr(expr.right)}"
+    if isinstance(expr, Forall):
+        return f"\\forall {expr.var}({pretty_expr(expr.body)})"
+    raise TypeError(f"Unsupported node type: {type(expr)}")

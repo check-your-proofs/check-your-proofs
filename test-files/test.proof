@@ -79,3 +79,13 @@ theorem test \forall u\forall v(u\in v\vee v\in u\to v\in u\vee u\in v) {
     assume x\in y\vee y\in x conclude y\in x\vee x\in y {}
   }
 }
+
+theorem test \forall x\forall y(x\in y\vee y\in x\to(x\in y\wedge x\in y)\vee(y\in x\wedge y\in x)) {
+  any x, y conclude x\in y\vee y\in x\to(x\in y\wedge x\in y)\vee(y\in x\wedge y\in x) {
+    assume x\in y\vee y\in x conclude (x\in y\wedge x\in y)\vee(y\in x\wedge y\in x) {
+      divide x\in y\vee y\in x conclude (x\in y\wedge x\in y)\vee(y\in x\wedge y\in x)
+        case x\in y {}
+        case y\in x {}
+    }
+  }
+}
