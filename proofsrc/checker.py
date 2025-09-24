@@ -1,6 +1,6 @@
 # checker.py
-from parser import Theorem, Any, Assume, Conclude, Divide, Case
-from expr_parser import Symbol, And, Or, Implies, Forall
+from parser import Theorem, Any, Assume, Conclude, Divide, Case, Some
+from expr_parser import Symbol, And, Or, Implies, Forall, Exists
 from expr_parser import pretty_expr
 
 # === α同値判定 ===
@@ -63,6 +63,21 @@ def alpha_equiv(e1, e2, env=None):
             if alpha_equiv(body1, body2, newenv):
                 return True
         return False
+    
+    if isinstance(e1, Exists) and isinstance(e2, Exists):
+        vars1, body1 = collect_exists_vars(e1)
+        vars2, body2 = collect_exists_vars(e2)
+
+        if len(vars1) != len(vars2):
+            return False
+        
+        for perm in permutations(vars2):
+            newenv = env.copy()
+            for v1, v2 in zip(vars1, perm):
+                newenv[v1] = v2
+            if alpha_equiv(body1, body2, newenv):
+                return True
+        return False
 
     if isinstance(e1, Implies) and isinstance(e2, Implies):
         return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
@@ -90,6 +105,14 @@ def collect_forall_vars(e):
     vars_ = []
     body = e
     while isinstance(body, Forall):
+        vars_.append(body.var)
+        body = body.body
+    return vars_, body
+
+def collect_exists_vars(e):
+    vars_ = []
+    body = e
+    while isinstance(body, Exists):
         vars_.append(body.var)
         body = body.body
     return vars_, body
@@ -139,7 +162,7 @@ def check_proof(node, context=None, indent=0):
             print(f"{sp}✔ [Theorem] {node.name} proved: {pretty_expr(node.conclusion)}")
             return True
         else:
-            print(f"{sp}❌ [Theorem] {node.name} failed")
+            print(f"{sp}❌ [Theorem] {node.name} not proved: {pretty_expr(node.conclusion)}")
             return False
 
     # --- Conclude ---
@@ -166,7 +189,7 @@ def check_proof(node, context=None, indent=0):
             return False
         implication = Implies(node.premise, node.conclusion)
         context.append(implication)
-        print(f"{sp}✔ Derived implication {pretty_expr(implication)}")
+        print(f"{sp}✔ [Assume] Derived implication {pretty_expr(implication)}")
         return True
 
     # --- Any ---
@@ -223,6 +246,27 @@ def check_proof(node, context=None, indent=0):
         else:
             print(f"{sp}❌ [Case] Cannot derive {pretty_expr(node.conclusion)}")
             return False
+
+    if isinstance(node, Some):
+        print(f"{sp}>> [Some] Taking {node.vars}, premise={pretty_expr(node.premise)}")
+        local_ctx = list(context + [node.premise])
+        for stmt in node.body:
+            if not check_proof(stmt, local_ctx, indent+1):
+                return False
+        if node.conclusion is None:
+            return True
+        else:
+            if derivable(node.conclusion, local_ctx):
+                print(f"{sp}✔ [Some] derived conclusion {pretty_expr(node.conclusion)}")
+            else:
+                print(f"{sp}❌ [Some] Cannot derive {pretty_expr(node.conclusion)}")
+                return False
+            goal = node.conclusion
+            for v in reversed(node.vars):
+                goal = Exists(v, goal)
+            context.append(goal)
+            print(f"{sp}✔ [Some] Checked existence {pretty_expr(goal)}")
+            return True
 
     print(f"{sp}⚠ Unsupported node {node}")
     return False

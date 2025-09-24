@@ -51,18 +51,36 @@ def parse_primary(tokens, pos):
         return expr, pos+1
 
     elif tok.type == "FORALL":
-        var_tok = tokens[pos+1]
-        if var_tok.type != "IDENT":
-            raise SyntaxError("expected variable after ∀")
-        body, pos2 = parse_expr(tokens, pos+2)
-        return Forall(var_tok.value, body), pos2
+        vars = []
+        while pos < len(tokens) and tokens[pos].type == "FORALL":
+            if pos + 1 > len(tokens) or tokens[pos + 1].type != "IDENT":
+                raise SyntaxError("expected variable after ∀")
+            vars.append(tokens[pos + 1])
+            pos += 2
+        if pos >= len(tokens) or tokens[pos].type != "LPAREN":
+            raise SyntaxError("( is necessary after ∀-variable")
+        body, pos = parse_expr(tokens, pos + 1)
+        if pos >= len(tokens) or tokens[pos].type != "RPAREN":
+            raise SyntaxError("missing )")
+        for var_tok in reversed(vars):
+            body = Forall(var_tok.value, body)
+        return body, pos + 1
 
     elif tok.type == "EXISTS":
-        var_tok = tokens[pos+1]
-        if var_tok.type != "IDENT":
-            raise SyntaxError("expected variable after ∃")
-        body, pos2 = parse_expr(tokens, pos+2)
-        return Exists(var_tok.value, body), pos2
+        vars = []
+        while pos < len(tokens) and tokens[pos].type == "EXISTS":
+            if pos + 1 >= len(tokens) or tokens[pos + 1].type != "IDENT":
+                raise SyntaxError("expected variable after ∃")
+            vars.append(tokens[pos + 1])
+            pos += 2
+        if pos >= len(tokens) or tokens[pos].type != "LPAREN":
+            raise SyntaxError("( is necessary after ∃-variable")
+        body, pos = parse_expr(tokens, pos + 1)
+        if pos >= len(tokens) or tokens[pos].type != "RPAREN":
+            raise SyntaxError("missing )")
+        for var_tok in reversed(vars):
+            body = Exists(var_tok.value, body)
+        return body, pos + 1
 
     else:
         raise SyntaxError(f"Unexpected token: {tok}")
@@ -92,15 +110,6 @@ def parse_and(tokens, pos):
             left = Or(left, right)
     return left, pos
 
-if __name__ == "__main__":
-    from lexer import lex
-    src = r"\forall x\forall y(x\in y\to x\in y)"
-    tokens = lex(src)
-    for t in tokens:
-        print(t)
-    expr, _ = parse_expr(tokens, 0)
-    print(expr)
-
 def pretty_expr(expr):
     if isinstance(expr, Symbol):
         if expr.name == "in":
@@ -114,4 +123,15 @@ def pretty_expr(expr):
         return f"{pretty_expr(expr.left)} \\vee {pretty_expr(expr.right)}"
     if isinstance(expr, Forall):
         return f"\\forall {expr.var}({pretty_expr(expr.body)})"
+    if isinstance(expr, Exists):
+        return f"\\exists {expr.var}({pretty_expr(expr.body)})"
     raise TypeError(f"Unsupported node type: {type(expr)}")
+
+if __name__ == "__main__":
+    from lexer import lex
+    src = r"\exists x\exists y(x\in y)\to\exists x\exists y(x\in y)"
+    tokens = lex(src)
+    for t in tokens:
+        print(t)
+    expr, _ = parse_expr(tokens, 0)
+    print(pretty_expr(expr))

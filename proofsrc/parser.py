@@ -39,6 +39,13 @@ class Case:
     body: list
 
 @dataclass
+class Some:
+    vars: List[str]
+    premise: object
+    conclusion: object
+    body: list
+
+@dataclass
 class Definition:
     name: str
     body: str  # TODO: 式パーサーに統合可能
@@ -103,6 +110,8 @@ class Parser:
                 body.append(self.parse_divide())
             elif tok.type == "CONCLUDE":
                 body.append(self.parse_conclude())
+            elif tok.type == "SOME":
+                body.append(self.parse_some())
             else:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
@@ -153,6 +162,28 @@ class Parser:
         body = self.parse_block()
         self.consume("RBRACE")
         return Case(premise=premise, conclusion=conclusion, body=body)
+    
+    def parse_some(self):
+        self.consume("SOME")
+        vars_ = []
+        while True:
+            tok = self.consume("IDENT")
+            vars_.append(tok.value)
+            if self.peek().type == "COMMA":
+                self.consume("COMMA")
+                continue
+            break
+        self.consume("SUCH")
+        premise, self.pos = parse_expr(self.tokens, self.pos)
+        if self.peek().type == "CONCLUDE":
+            self.consume("CONCLUDE")
+            conclusion, self.pos = parse_expr(self.tokens, self.pos)
+        else:
+            conclusion = None
+        self.consume("LBRACE")
+        body = self.parse_block()
+        self.consume("RBRACE")
+        return Some(vars=vars_, premise=premise, conclusion=conclusion, body=body)
 
     def parse_definition(self):
         self.consume("DEFINITION")
@@ -176,6 +207,7 @@ def pretty(node, indent=0):
     sp = "  " * indent  # インデント幅2スペース
     if isinstance(node, Theorem):
         print(f"{sp}Theorem {node.name}:")
+        print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
         for stmt in node.proof:
             pretty(stmt, indent + 1)
 
@@ -203,6 +235,14 @@ def pretty(node, indent=0):
     elif isinstance(node, Case):
         print(f"{sp}Case {pretty_expr(node.premise)}")
         print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        for stmt in node.body:
+            pretty(stmt, indent + 1)
+    
+    elif isinstance(node, Some):
+        print(f"{sp}Some {','.join(node.vars)}")
+        print(f"{sp}Premise {pretty_expr(node.premise)}")
+        if node.conclusion is not None:
+            print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
 
