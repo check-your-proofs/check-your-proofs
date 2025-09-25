@@ -248,6 +248,12 @@ def check_proof(node, context=None, indent=0):
             return False
 
     if isinstance(node, Some):
+        fact = node.premise
+        for v in reversed(node.vars):
+            fact = Exists(v, fact)
+        if not derivable(fact, context):
+            print(f"{sp}❌ [Some] not derivable: {pretty_expr(fact)}")
+            return False
         print(f"{sp}>> [Some] Taking {node.vars}, premise={pretty_expr(node.premise)}")
         local_ctx = list(context + [node.premise])
         for stmt in node.body:
