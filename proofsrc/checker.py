@@ -1,5 +1,5 @@
 # checker.py
-from parser import Theorem, Any, Assume, Conclude, Divide, Case, Some
+from parser import Theorem, Any, Assume, Conclude, Divide, Case, Some, parse_file_from_source, pretty
 from expr_parser import Symbol, And, Or, Implies, Forall, Exists
 from expr_parser import pretty_expr
 
@@ -8,6 +8,9 @@ from itertools import permutations
 
 # 依存する AST ノード: Symbol, Forall, Implies, And, Or, Exists? を想定
 from typing import List
+
+import logging
+logger = logging.getLogger(__name__)
 
 def flatten_or(expr) -> List:
     """Or を平坦化して葉のリストを返す"""
@@ -152,68 +155,68 @@ def check_proof(node, context=None, indent=0):
 
     # --- Theorem ---
     if isinstance(node, Theorem):
-        print(f"{sp}>> [Theorem] {node.name}:")
+        logger.debug(f"{sp}>> [Theorem] {node.name}:")
         local_ctx = []
         for stmt in node.proof:
             if not check_proof(stmt, local_ctx, indent+1):
-                print(f"{sp}❌ [Theorem] Failed")
+                logger.error(f"{sp}❌ [Theorem] Failed")
                 return False
         if derivable(node.conclusion, local_ctx):
-            print(f"{sp}✔ [Theorem] {node.name} proved: {pretty_expr(node.conclusion)}")
+            logger.debug(f"{sp}✔ [Theorem] {node.name} proved: {pretty_expr(node.conclusion)}")
             return True
         else:
-            print(f"{sp}❌ [Theorem] {node.name} not proved: {pretty_expr(node.conclusion)}")
+            logger.error(f"{sp}❌ [Theorem] {node.name} not proved: {pretty_expr(node.conclusion)}")
             return False
 
     # --- Conclude ---
     if isinstance(node, Conclude):
-        print(f"{sp}>> [Conclude] Checking {node.conclusion}")
+        logger.debug(f"{sp}>> [Conclude] Checking {node.conclusion}")
         if derivable(node.conclusion, context):
-            print(f"{sp}✔ [Conclude] goal {node.conclusion} derived")
+            logger.debug(f"{sp}✔ [Conclude] goal {node.conclusion} derived")
             return True
         else:
-            print(f"{sp}❌ [Conclude] goal {node.conclusion} not derivable")
+            logger.error(f"{sp}❌ [Conclude] goal {node.conclusion} not derivable")
             return False
 
     # --- Assume ---
     if isinstance(node, Assume):
-        print(f"{sp}>> [Assume] premise={pretty_expr(node.premise)}, goal={pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}>> [Assume] premise={pretty_expr(node.premise)}, goal={pretty_expr(node.conclusion)}")
         local_ctx = list(context + [node.premise])
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
         if derivable(node.conclusion, local_ctx):
-            print(f"{sp}✔ [Assume] Derived conclusion {pretty_expr(node.conclusion)}")
+            logger.debug(f"{sp}✔ [Assume] Derived conclusion {pretty_expr(node.conclusion)}")
         else:
-            print(f"{sp}❌ [Assume] Cannot derive {pretty_expr(node.conclusion)}")
+            logger.error(f"{sp}❌ [Assume] Cannot derive {pretty_expr(node.conclusion)}")
             return False
         implication = Implies(node.premise, node.conclusion)
         context.append(implication)
-        print(f"{sp}✔ [Assume] Derived implication {pretty_expr(implication)}")
+        logger.debug(f"{sp}✔ [Assume] Derived implication {pretty_expr(implication)}")
         return True
 
     # --- Any ---
     if isinstance(node, Any):
-        print(f"{sp}>> [Any] Taking {node.vars}")
+        logger.debug(f"{sp}>> [Any] Taking {node.vars}")
         local_ctx = list(context)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
         if derivable(node.conclusion, local_ctx):
-            print(f"{sp}✔ [Any] Derived conclusion {pretty_expr(node.conclusion)}")
+            logger.debug(f"{sp}✔ [Any] Derived conclusion {pretty_expr(node.conclusion)}")
         else:
-            print(f"{sp}❌ [Any] Cannot derive {pretty_expr(node.conclusion)}")
+            logger.error(f"{sp}❌ [Any] Cannot derive {pretty_expr(node.conclusion)}")
             return False
         goal = node.conclusion
         for v in reversed(node.vars):
             goal = Forall(v, goal)
         context.append(goal)
-        print(f"{sp}✔ [Any] Generalized to {pretty_expr(goal)}")
+        logger.debug(f"{sp}✔ [Any] Generalized to {pretty_expr(goal)}")
         return True
 
     if isinstance(node, Divide):
         if not derivable(node.fact, context):
-            print(f"{sp}❌ [Divide] Not fact: {pretty_expr(node.fact)}")
+            logger.error(f"{sp}❌ [Divide] Not fact: {pretty_expr(node.fact)}")
             return False
         connected_premise = Or(node.cases[0].premise, node.cases[1].premise)
         i = 2
@@ -221,30 +224,30 @@ def check_proof(node, context=None, indent=0):
             connected_premise = Or(connected_premise, node.cases[i].premise)
             i += 1
         if alpha_equiv(connected_premise, node.fact):
-            print(f"{sp}✔ [Divide] mathched: fact={pretty_expr(node.fact)}, connected_premise={pretty_expr(connected_premise)}")
+            logger.debug(f"{sp}✔ [Divide] mathched: fact={pretty_expr(node.fact)}, connected_premise={pretty_expr(connected_premise)}")
         else:
-            print(f"{sp}❌ [Divide] not matched: fact={pretty_expr(node.fact)}, conected_premise={pretty_expr(connected_premise)}")
+            logger.error(f"{sp}❌ [Divide] not matched: fact={pretty_expr(node.fact)}, conected_premise={pretty_expr(connected_premise)}")
             return False
-        print(f"{sp}>> [Divide] fact={pretty_expr(node.fact)}, goal={pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}>> [Divide] fact={pretty_expr(node.fact)}, goal={pretty_expr(node.conclusion)}")
         local_ctx = list(context)
         for stmt in node.cases:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
         context.append(node.conclusion)
-        print(f"{sp}✔ [Divide] derived in all cases: {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}✔ [Divide] derived in all cases: {pretty_expr(node.conclusion)}")
         return True
 
     if isinstance(node, Case):
-        print(f"{sp}>> [Case] premise={pretty_expr(node.premise)}")
+        logger.debug(f"{sp}>> [Case] premise={pretty_expr(node.premise)}")
         local_ctx = list(context + [node.premise])
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
         if derivable(node.conclusion, local_ctx):
-            print(f"{sp}✔ [Case] derived conclusion {pretty_expr(node.conclusion)}")
+            logger.debug(f"{sp}✔ [Case] derived conclusion {pretty_expr(node.conclusion)}")
             return True
         else:
-            print(f"{sp}❌ [Case] Cannot derive {pretty_expr(node.conclusion)}")
+            logger.error(f"{sp}❌ [Case] Cannot derive {pretty_expr(node.conclusion)}")
             return False
 
     if isinstance(node, Some):
@@ -252,9 +255,9 @@ def check_proof(node, context=None, indent=0):
         for v in reversed(node.vars):
             fact = Exists(v, fact)
         if not derivable(fact, context):
-            print(f"{sp}❌ [Some] not derivable: {pretty_expr(fact)}")
+            logger.error(f"{sp}❌ [Some] not derivable: {pretty_expr(fact)}")
             return False
-        print(f"{sp}>> [Some] Taking {node.vars}, premise={pretty_expr(node.premise)}")
+        logger.debug(f"{sp}>> [Some] Taking {node.vars}, premise={pretty_expr(node.premise)}")
         local_ctx = list(context + [node.premise])
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
@@ -263,16 +266,30 @@ def check_proof(node, context=None, indent=0):
             return True
         else:
             if derivable(node.conclusion, local_ctx):
-                print(f"{sp}✔ [Some] derived conclusion {pretty_expr(node.conclusion)}")
+                logger.debug(f"{sp}✔ [Some] derived conclusion {pretty_expr(node.conclusion)}")
             else:
-                print(f"{sp}❌ [Some] Cannot derive {pretty_expr(node.conclusion)}")
+                logger.error(f"{sp}❌ [Some] Cannot derive {pretty_expr(node.conclusion)}")
                 return False
             goal = node.conclusion
             for v in reversed(node.vars):
                 goal = Exists(v, goal)
             context.append(goal)
-            print(f"{sp}✔ [Some] Checked existence {pretty_expr(goal)}")
+            logger.debug(f"{sp}✔ [Some] Checked existence {pretty_expr(goal)}")
             return True
 
-    print(f"{sp}⚠ Unsupported node {node}")
+    logger.error(f"{sp}⚠ Unsupported node {node}")
     return False
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    import sys
+    path = sys.argv[1]
+    f = open(path)
+    src = f.read()
+    f.close()
+    ast = parse_file_from_source(src)
+    for node in ast:
+        pretty(node)
+        if hasattr(node, "proof"):
+            result = check_proof(node, [])
+            print(f"✔ theorem {node.name}: OK" if result else "❌ theorem {node.name}: Failed")

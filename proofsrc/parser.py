@@ -3,6 +3,9 @@ from typing import List, Union
 from lexer import Token, lex
 from expr_parser import parse_expr, pretty_expr
 
+import logging
+logger = logging.getLogger(__name__)
+
 # === DSL ノード定義 ===
 @dataclass
 class Theorem:
@@ -206,56 +209,57 @@ def parse_file_from_source(src: str):
 def pretty(node, indent=0):
     sp = "  " * indent  # インデント幅2スペース
     if isinstance(node, Theorem):
-        print(f"{sp}Theorem {node.name}:")
-        print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}Theorem {node.name}:")
+        logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
         for stmt in node.proof:
             pretty(stmt, indent + 1)
 
     elif isinstance(node, Conclude):
-        print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
 
     elif isinstance(node, Any):
-        print(f"{sp}Any {', '.join(node.vars)}")
-        print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}Any {', '.join(node.vars)}")
+        logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
 
     elif isinstance(node, Assume):
-        print(f"{sp}Assume {pretty_expr(node.premise)}")
-        print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}Assume {pretty_expr(node.premise)}")
+        logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
     
     elif isinstance(node, Divide):
-        print(f"{sp}Divide {pretty_expr(node.fact)}")
-        print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}Divide {pretty_expr(node.fact)}")
+        logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
         for stmt in node.cases:
             pretty(stmt, indent + 1)
 
     elif isinstance(node, Case):
-        print(f"{sp}Case {pretty_expr(node.premise)}")
-        print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}Case {pretty_expr(node.premise)}")
+        logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
     
     elif isinstance(node, Some):
-        print(f"{sp}Some {','.join(node.vars)}")
-        print(f"{sp}Premise {pretty_expr(node.premise)}")
+        logger.debug(f"{sp}Some {','.join(node.vars)}")
+        logger.debug(f"{sp}Premise {pretty_expr(node.premise)}")
         if node.conclusion is not None:
-            print(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+            logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
 
     # elif isinstance(node, By):
-    #     print(f"{sp}By {node.target} by {node.definition} using {node.using}")
+    #     logger.debug(f"{sp}By {node.target} by {node.definition} using {node.using}")
 
     elif isinstance(node, Definition):
-        print(f"{sp}Definition {node.name}: {node.body}")
+        logger.debug(f"{sp}Definition {node.name}: {node.body}")
 
     else:
         raise TypeError(f"Unsupported node type: {type(node)}")
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     import sys
     path = sys.argv[1]
     f = open(path)
