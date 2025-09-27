@@ -185,3 +185,15 @@ theorem test22 \neg(\exists x\exists y(\neg(x\in y)))\to\forall x\forall y(x\in 
     }
   }
 }
+
+theorem test23 \forall x(x\in x\to\neg(x\in x))\to(\forall x(x\in x)\to\forall x(\neg(x\in x))) {
+  assume \forall x(x\in x\to\neg(x\in x)) conclude \forall x(x\in x)\to\forall x(\neg(x\in x)) {
+    assume \forall x(x\in x) conclude \forall x(\neg(x\in x)) {
+      any x conclude \neg(x\in x) {
+        apply \forall x(x\in x\to\neg(x\in x)) for x: x conclude x\in x\to\neg(x\in x)
+        apply \forall x(x\in x) for x: x conclude x\in x
+        apply x\in x\to\neg(x\in x) with x\in x conclude \neg(x\in x)
+      }
+    }
+  }
+}

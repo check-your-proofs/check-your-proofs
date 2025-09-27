@@ -400,7 +400,7 @@ def check_proof(node, context=None, indent=0):
         
     if isinstance(node, Apply):
         if not derivable(node.fact, context):
-            logger.error(f"{sp}❌ [Apply] Cannot derive {pretty_expr(node.fact)}")
+            logger.error(f"{sp}❌ [Apply] Cannot derive fact: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Apply] Drivable fact: {pretty_expr(node.fact)}")
         if node.env is not None:
@@ -427,6 +427,10 @@ def check_proof(node, context=None, indent=0):
             logger.error(f"{sp}❌ [Apply] Not Implies object: {pretty_expr(implication)}")
             return False
         logger.debug(f"{sp}[Apply] Implies object: {pretty_expr(implication)}")
+        if not derivable(node.premise, context):
+            logger.error(f"{sp}❌ [Apply] Cannot derive premise: {pretty_expr(node.premise)}")
+            return False
+        logger.debug(f"{sp}[Apply] Derivable premise: {pretty_expr(node.premise)}")
         if not alpha_equiv(implication.left, node.premise):
             logger.error(f"{sp}❌ [Apply] Not matched: implication.left={pretty_expr(implication.left)}, node.premise={pretty_expr(node.premise)}")
             return False
