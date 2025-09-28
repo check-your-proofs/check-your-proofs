@@ -1,0 +1,345 @@
+[Theorem] test01: \forall x(\forall y(x \in y \to x \in y))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in y, conclusion=x \in y
+    [Assume] Derived conclusion x \in y
+    [Assume] Added implication x \in y \to x \in y
+  [Any] Derived conclusion x \in y \to x \in y
+  [Any] Generalized to \forall x(\forall y(x \in y \to x \in y))
+[Theorem] test01 proved: \forall x(\forall y(x \in y \to x \in y))
+[Theorem] test02: \forall x(\forall y(x \in y \to x \in y \wedge x \in y))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in y, conclusion=x \in y \wedge x \in y
+    [Assume] Derived conclusion x \in y \wedge x \in y
+    [Assume] Added implication x \in y \to x \in y \wedge x \in y
+  [Any] Derived conclusion x \in y \to x \in y \wedge x \in y
+  [Any] Generalized to \forall x(\forall y(x \in y \to x \in y \wedge x \in y))
+[Theorem] test02 proved: \forall x(\forall y(x \in y \to x \in y \wedge x \in y))
+[Theorem] test03: \forall x(\forall y(x \in y \to x \in y \wedge x \in y \to x \in y))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in y, conclusion=x \in y
+    [Assume] Derived conclusion x \in y
+    [Assume] Added implication x \in y \to x \in y
+  [Any] Derived conclusion x \in y \to x \in y \wedge x \in y \to x \in y
+  [Any] Generalized to \forall x(\forall y(x \in y \to x \in y \wedge x \in y \to x \in y))
+[Theorem] test03 proved: \forall x(\forall y(x \in y \to x \in y \wedge x \in y \to x \in y))
+[Theorem] test04: \forall x(\forall y(x \in y \to x \in y)) \wedge \forall z(\forall w(z \in w \to z \in w))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in y, conclusion=x \in y
+    [Assume] Derived conclusion x \in y
+    [Assume] Added implication x \in y \to x \in y
+  [Any] Derived conclusion x \in y \to x \in y
+  [Any] Generalized to \forall x(\forall y(x \in y \to x \in y))
+[Theorem] test04 proved: \forall x(\forall y(x \in y \to x \in y)) \wedge \forall z(\forall w(z \in w \to z \in w))
+[Theorem] test05: \forall x(\forall y(x \in y \to x \in y \wedge x \in y \to x \in y \wedge x \in y))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in y, conclusion=x \in y
+    [Assume] Derived conclusion x \in y
+    [Assume] Added implication x \in y \to x \in y
+    [Assume] premise=x \in y, conclusion=x \in y \wedge x \in y
+    [Assume] Derived conclusion x \in y \wedge x \in y
+    [Assume] Added implication x \in y \to x \in y \wedge x \in y
+  [Any] Derived conclusion x \in y \to x \in y \wedge x \in y \to x \in y \wedge x \in y
+  [Any] Generalized to \forall x(\forall y(x \in y \to x \in y \wedge x \in y \to x \in y \wedge x \in y))
+[Theorem] test05 proved: \forall x(\forall y(x \in y \to x \in y \wedge x \in y \to x \in y \wedge x \in y))
+[Theorem] test06: \forall x(\forall y(x \in y \to x \in y)) \wedge \forall x(\forall y(x \in y \to x \in y \wedge x \in y))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in y, conclusion=x \in y
+    [Assume] Derived conclusion x \in y
+    [Assume] Added implication x \in y \to x \in y
+  [Any] Derived conclusion x \in y \to x \in y
+  [Any] Generalized to \forall x(\forall y(x \in y \to x \in y))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in y, conclusion=x \in y \wedge x \in y
+    [Assume] Derived conclusion x \in y \wedge x \in y
+    [Assume] Added implication x \in y \to x \in y \wedge x \in y
+  [Any] Derived conclusion x \in y \to x \in y \wedge x \in y
+  [Any] Generalized to \forall x(\forall y(x \in y \to x \in y \wedge x \in y))
+[Theorem] test06 proved: \forall x(\forall y(x \in y \to x \in y)) \wedge \forall x(\forall y(x \in y \to x \in y \wedge x \in y))
+[Theorem] test07: \forall x(\forall y(x \in y \to x \in y \wedge \forall z(z \in x \to z \in x)))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in y, conclusion=x \in y \wedge \forall z(z \in x \to z \in x)
+      [Any] Taking ['z']
+        [Assume] premise=z \in x, conclusion=z \in x
+        [Assume] Derived conclusion z \in x
+        [Assume] Added implication z \in x \to z \in x
+      [Any] Derived conclusion z \in x \to z \in x
+      [Any] Generalized to \forall z(z \in x \to z \in x)
+    [Assume] Derived conclusion x \in y \wedge \forall z(z \in x \to z \in x)
+    [Assume] Added implication x \in y \to x \in y \wedge \forall z(z \in x \to z \in x)
+  [Any] Derived conclusion x \in y \to x \in y \wedge \forall z(z \in x \to z \in x)
+  [Any] Generalized to \forall x(\forall y(x \in y \to x \in y \wedge \forall z(z \in x \to z \in x)))
+[Theorem] test07 proved: \forall x(\forall y(x \in y \to x \in y \wedge \forall z(z \in x \to z \in x)))
+[Theorem] test08: \forall v(\forall u(u \in v \to u \in v))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in y, conclusion=x \in y
+    [Assume] Derived conclusion x \in y
+    [Assume] Added implication x \in y \to x \in y
+  [Any] Derived conclusion x \in y \to x \in y
+  [Any] Generalized to \forall x(\forall y(x \in y \to x \in y))
+[Theorem] test08 proved: \forall v(\forall u(u \in v \to u \in v))
+[Theorem] test09: \forall v(\forall u(u \in v \to u \in v))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in y, conclusion=x \in y
+    [Assume] Derived conclusion x \in y
+    [Assume] Added implication x \in y \to x \in y
+    [Check] Checking x \in y \to x \in y
+    [Check] goal x \in y \to x \in y derived
+  [Any] Derived conclusion x \in y \to x \in y
+  [Any] Generalized to \forall x(\forall y(x \in y \to x \in y))
+[Theorem] test09 proved: \forall v(\forall u(u \in v \to u \in v))
+[Theorem] test10: \forall v(\forall u(u \in v \to u \in v))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in y, conclusion=x \in y
+    [Assume] Derived conclusion x \in y
+    [Assume] Added implication x \in y \to x \in y
+  [Any] Derived conclusion x \in y \to x \in y
+  [Any] Generalized to \forall x(\forall y(x \in y \to x \in y))
+  [Check] Checking \forall x(\forall y(x \in y \to x \in y))
+  [Check] goal \forall x(\forall y(x \in y \to x \in y)) derived
+[Theorem] test10 proved: \forall v(\forall u(u \in v \to u \in v))
+[Theorem] test11: \forall u(\forall v(u \in v \to u \in v \vee v \in u))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in y, conclusion=x \in y \vee y \in x
+    [Assume] Derived conclusion x \in y \vee y \in x
+    [Assume] Added implication x \in y \to x \in y \vee y \in x
+  [Any] Derived conclusion x \in y \to x \in y \vee y \in x
+  [Any] Generalized to \forall x(\forall y(x \in y \to x \in y \vee y \in x))
+[Theorem] test11 proved: \forall u(\forall v(u \in v \to u \in v \vee v \in u))
+[Theorem] test12: \forall u(\forall v(u \in v \vee v \in u \to v \in u \vee u \in v))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in y \vee y \in x, conclusion=y \in x \vee x \in y
+    [Assume] Derived conclusion y \in x \vee x \in y
+    [Assume] Added implication x \in y \vee y \in x \to y \in x \vee x \in y
+  [Any] Derived conclusion x \in y \vee y \in x \to y \in x \vee x \in y
+  [Any] Generalized to \forall x(\forall y(x \in y \vee y \in x \to y \in x \vee x \in y))
+[Theorem] test12 proved: \forall u(\forall v(u \in v \vee v \in u \to v \in u \vee u \in v))
+[Theorem] test13: \forall x(\forall y(x \in y \vee y \in x \to x \in y \wedge x \in y \vee y \in x \wedge y \in x))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in y \vee y \in x, conclusion=x \in y \wedge x \in y \vee y \in x \wedge y \in x
+      [Divide] mathched: fact=x \in y \vee y \in x, connected_premise=x \in y \vee y \in x
+      [Divide] fact=x \in y \vee y \in x, goal=x \in y \wedge x \in y \vee y \in x \wedge y \in x
+        [Case] premise=x \in y
+        [Case] derived conclusion x \in y \wedge x \in y \vee y \in x \wedge y \in x
+        [Case] premise=y \in x
+        [Case] derived conclusion x \in y \wedge x \in y \vee y \in x \wedge y \in x
+      [Divide] derived in all cases: x \in y \wedge x \in y \vee y \in x \wedge y \in x
+    [Assume] Derived conclusion x \in y \wedge x \in y \vee y \in x \wedge y \in x
+    [Assume] Added implication x \in y \vee y \in x \to x \in y \wedge x \in y \vee y \in x \wedge y \in x
+  [Any] Derived conclusion x \in y \vee y \in x \to x \in y \wedge x \in y \vee y \in x \wedge y \in x
+  [Any] Generalized to \forall x(\forall y(x \in y \vee y \in x \to x \in y \wedge x \in y \vee y \in x \wedge y \in x))
+[Theorem] test13 proved: \forall x(\forall y(x \in y \vee y \in x \to x \in y \wedge x \in y \vee y \in x \wedge y \in x))
+[Theorem] test14: \forall x(\forall y(x \in x \vee x \in y \vee y \in x \to x \in x \vee x \in y \vee y \in x))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=x \in x \vee x \in y \vee y \in x, conclusion=x \in x \vee x \in y \vee y \in x
+      [Divide] mathched: fact=x \in x \vee x \in y \vee y \in x, connected_premise=x \in x \vee y \in x \vee x \in y
+      [Divide] fact=x \in x \vee x \in y \vee y \in x, goal=x \in x \vee x \in y \vee y \in x
+        [Case] premise=x \in x
+        [Case] derived conclusion x \in x \vee x \in y \vee y \in x
+        [Case] premise=y \in x
+        [Case] derived conclusion x \in x \vee x \in y \vee y \in x
+        [Case] premise=x \in y
+        [Case] derived conclusion x \in x \vee x \in y \vee y \in x
+      [Divide] derived in all cases: x \in x \vee x \in y \vee y \in x
+    [Assume] Derived conclusion x \in x \vee x \in y \vee y \in x
+    [Assume] Added implication x \in x \vee x \in y \vee y \in x \to x \in x \vee x \in y \vee y \in x
+  [Any] Derived conclusion x \in x \vee x \in y \vee y \in x \to x \in x \vee x \in y \vee y \in x
+  [Any] Generalized to \forall x(\forall y(x \in x \vee x \in y \vee y \in x \to x \in x \vee x \in y \vee y \in x))
+[Theorem] test14 proved: \forall x(\forall y(x \in x \vee x \in y \vee y \in x \to x \in x \vee x \in y \vee y \in x))
+[Theorem] test15: \exists x(\exists y(x \in y)) \to \exists x(\exists y(x \in y \wedge x \in y))
+  [Assume] premise=\exists x(\exists y(x \in y)), conclusion=\exists x(\exists y(x \in y \wedge x \in y))
+    [Some] derivable: \exists x(\exists y(x \in y))
+    [Some] Taking ['x', 'y'], premise=x \in y
+      [Lift] fact: x \in y \wedge x \in y
+      [Lift] Can be lifted: vars={'y', 'x'}, env={'x': 'x', 'y': 'y'}
+      [Lift] lifted formula: \exists x(\exists y(x \in y \wedge x \in y))
+      [Lift] Matched: node.conclusion=\exists x(\exists y(x \in y \wedge x \in y)), lifted=\exists x(\exists y(x \in y \wedge x \in y))
+    [Some] derived conclusion \exists x(\exists y(x \in y \wedge x \in y))
+    [Some] Added \exists x(\exists y(x \in y \wedge x \in y))
+  [Assume] Derived conclusion \exists x(\exists y(x \in y \wedge x \in y))
+  [Assume] Added implication \exists x(\exists y(x \in y)) \to \exists x(\exists y(x \in y \wedge x \in y))
+[Theorem] test15 proved: \exists x(\exists y(x \in y)) \to \exists x(\exists y(x \in y \wedge x \in y))
+[Theorem] test16: \forall x(\forall y(x \in y)) \to \forall x(\forall y(x \in y))
+  [Assume] premise=\forall x(\forall y(x \in y)), conclusion=\forall x(\forall y(x \in y))
+  [Assume] Derived conclusion \forall x(\forall y(x \in y))
+  [Assume] Added implication \forall x(\forall y(x \in y)) \to \forall x(\forall y(x \in y))
+[Theorem] test16 proved: \forall x(\forall y(x \in y)) \to \forall x(\forall y(x \in y))
+[Theorem] test17: \exists x(x \in x) \to \exists x(x \in x)
+  [Assume] premise=\exists x(x \in x), conclusion=\exists x(x \in x)
+    [Some] derivable: \exists x(x \in x)
+    [Some] Taking ['x'], premise=x \in x
+      [Lift] fact: x \in x
+      [Lift] Can be lifted: vars={'x'}, env={'x': 'x'}
+      [Lift] lifted formula: \exists x(x \in x)
+      [Lift] Matched: node.conclusion=\exists x(x \in x), lifted=\exists x(x \in x)
+    [Some] derived conclusion \exists x(x \in x)
+    [Some] Added \exists x(x \in x)
+  [Assume] Derived conclusion \exists x(x \in x)
+  [Assume] Added implication \exists x(x \in x) \to \exists x(x \in x)
+[Theorem] test17 proved: \exists x(x \in x) \to \exists x(x \in x)
+[Theorem] test18: \exists x(\exists y(x \in y \vee y \in x)) \to \exists x(\exists y(\neg(\neg(x \in y) \wedge \neg(y \in x))))
+  [Assume] premise=\exists x(\exists y(x \in y \vee y \in x)), conclusion=\exists x(\exists y(\neg(\neg(x \in y) \wedge \neg(y \in x))))
+    [Some] derivable: \exists x(\exists y(x \in y \vee y \in x))
+    [Some] Taking ['x', 'y'], premise=x \in y \vee y \in x
+      [Divide] mathched: fact=x \in y \vee y \in x, connected_premise=x \in y \vee y \in x
+      [Divide] fact=x \in y \vee y \in x, goal=\neg(\neg(x \in y) \wedge \neg(y \in x))
+        [Case] premise=x \in y
+          [Deny] premise=\neg(x \in y) \wedge \neg(y \in x)
+            [Contradict] Derived contradiction: x \in y, \neg(x \in y)
+          [Deny] contradiction is derived; added \neg(\neg(x \in y) \wedge \neg(y \in x))
+        [Case] derived conclusion \neg(\neg(x \in y) \wedge \neg(y \in x))
+        [Case] premise=y \in x
+          [Deny] premise=\neg(x \in y) \wedge \neg(y \in x)
+            [Contradict] Derived contradiction: y \in x, \neg(y \in x)
+          [Deny] contradiction is derived; added \neg(\neg(x \in y) \wedge \neg(y \in x))
+        [Case] derived conclusion \neg(\neg(x \in y) \wedge \neg(y \in x))
+      [Divide] derived in all cases: \neg(\neg(x \in y) \wedge \neg(y \in x))
+      [Lift] fact: \neg(\neg(x \in y) \wedge \neg(y \in x))
+      [Lift] Can be lifted: vars={'y', 'x'}, env={'x': 'x', 'y': 'y'}
+      [Lift] lifted formula: \exists x(\exists y(\neg(\neg(x \in y) \wedge \neg(y \in x))))
+      [Lift] Matched: node.conclusion=\exists x(\exists y(\neg(\neg(x \in y) \wedge \neg(y \in x)))), lifted=\exists x(\exists y(\neg(\neg(x \in y) \wedge \neg(y \in x))))
+    [Some] derived conclusion \exists x(\exists y(\neg(\neg(x \in y) \wedge \neg(y \in x))))
+    [Some] Added \exists x(\exists y(\neg(\neg(x \in y) \wedge \neg(y \in x))))
+  [Assume] Derived conclusion \exists x(\exists y(\neg(\neg(x \in y) \wedge \neg(y \in x))))
+  [Assume] Added implication \exists x(\exists y(x \in y \vee y \in x)) \to \exists x(\exists y(\neg(\neg(x \in y) \wedge \neg(y \in x))))
+[Theorem] test18 proved: \exists x(\exists y(x \in y \vee y \in x)) \to \exists x(\exists y(\neg(\neg(x \in y) \wedge \neg(y \in x))))
+[Theorem] test19: \exists x(\exists y(x \in y \vee y \in x \wedge \neg(y \in x))) \to \exists x(\exists y(x \in y))
+  [Assume] premise=\exists x(\exists y(x \in y \vee y \in x \wedge \neg(y \in x))), conclusion=\exists x(\exists y(x \in y))
+    [Some] derivable: \exists x(\exists y(x \in y \vee y \in x \wedge \neg(y \in x)))
+    [Some] Taking ['x', 'y'], premise=x \in y \vee y \in x \wedge \neg(y \in x)
+      [Divide] mathched: fact=x \in y \vee y \in x, connected_premise=x \in y \vee y \in x
+      [Divide] fact=x \in y \vee y \in x, goal=x \in y
+        [Case] premise=x \in y
+        [Case] derived conclusion x \in y
+        [Case] premise=y \in x
+          [Contradict] Derived contradiction: y \in x, \neg(y \in x)
+          [Explode] added x \in y
+        [Case] derived conclusion x \in y
+      [Divide] derived in all cases: x \in y
+      [Lift] fact: x \in y
+      [Lift] Can be lifted: vars={'y', 'x'}, env={'x': 'x', 'y': 'y'}
+      [Lift] lifted formula: \exists x(\exists y(x \in y))
+      [Lift] Matched: node.conclusion=\exists x(\exists y(x \in y)), lifted=\exists x(\exists y(x \in y))
+    [Some] derived conclusion \exists x(\exists y(x \in y))
+    [Some] Added \exists x(\exists y(x \in y))
+  [Assume] Derived conclusion \exists x(\exists y(x \in y))
+  [Assume] Added implication \exists x(\exists y(x \in y \vee y \in x \wedge \neg(y \in x))) \to \exists x(\exists y(x \in y))
+[Theorem] test19 proved: \exists x(\exists y(x \in y \vee y \in x \wedge \neg(y \in x))) \to \exists x(\exists y(x \in y))
+[Theorem] test20: \forall x(\forall y(x \in y \to \forall z(z \in x))) \wedge \exists x(\exists y(x \in y)) \to \exists x(\exists y(x \in y \wedge y \in x))
+  [Assume] premise=\forall x(\forall y(x \in y \to \forall z(z \in x))) \wedge \exists x(\exists y(x \in y)), conclusion=\exists x(\exists y(x \in y \wedge y \in x))
+    [Some] derivable: \exists x(\exists y(x \in y))
+    [Some] Taking ['x', 'y'], premise=x \in y
+      [Apply] Drivable fact: \forall x(\forall y(x \in y \to \forall z(z \in x)))
+      [Apply] Instantiable: vars=['x', 'y'], env={'x': 'x', 'y': 'y'}
+      [Apply] \forall-elimination is done: instantiation=x \in y \to \forall z(z \in x)
+      [Apply] Implies object: x \in y \to \forall z(z \in x)
+      [Apply] Derivable premise: x \in y
+      [Apply] Matched: implication.left=x \in y, node.premise=x \in y
+      [Apply] \to-elimination is done: \forall z(z \in x)
+      [Apply] Matched: node.conclusion=\forall z(z \in x), implication.right=\forall z(z \in x)
+      [Apply] Added node.conclusion=\forall z(z \in x)
+      [Apply] Drivable fact: \forall z(z \in x)
+      [Apply] Instantiable: vars=['z'], env={'z': 'y'}
+      [Apply] \forall-elimination is done: instantiation=y \in x
+      [Apply] Matched: node.conclusion=y \in x, instantiation=y \in x
+      [Apply] Added node.conclusion=y \in x
+      [Lift] fact: x \in y \wedge y \in x
+      [Lift] Can be lifted: vars={'y', 'x'}, env={'x': 'x', 'y': 'y'}
+      [Lift] lifted formula: \exists x(\exists y(x \in y \wedge y \in x))
+      [Lift] Matched: node.conclusion=\exists x(\exists y(x \in y \wedge y \in x)), lifted=\exists x(\exists y(x \in y \wedge y \in x))
+    [Some] derived conclusion \exists x(\exists y(x \in y \wedge y \in x))
+    [Some] Added \exists x(\exists y(x \in y \wedge y \in x))
+  [Assume] Derived conclusion \exists x(\exists y(x \in y \wedge y \in x))
+  [Assume] Added implication \forall x(\forall y(x \in y \to \forall z(z \in x))) \wedge \exists x(\exists y(x \in y)) \to \exists x(\exists y(x \in y \wedge y \in x))
+[Theorem] test20 proved: \forall x(\forall y(x \in y \to \forall z(z \in x))) \wedge \exists x(\exists y(x \in y)) \to \exists x(\exists y(x \in y \wedge y \in x))
+[Theorem] test21: \forall x(\forall y(x \in y)) \to \neg(\exists x(\exists y(\neg(x \in y))))
+  [Assume] premise=\forall x(\forall y(x \in y)), conclusion=\neg(\exists x(\exists y(\neg(x \in y))))
+    [Deny] premise=\exists x(\exists y(\neg(x \in y)))
+      [Some] derivable: \exists x(\exists y(\neg(x \in y)))
+      [Some] Taking ['x', 'y'], premise=\neg(x \in y)
+        [Apply] Drivable fact: \forall x(\forall y(x \in y))
+        [Apply] Instantiable: vars=['x', 'y'], env={'x': 'x', 'y': 'y'}
+        [Apply] \forall-elimination is done: instantiation=x \in y
+        [Apply] Matched: node.conclusion=x \in y, instantiation=x \in y
+        [Apply] Added node.conclusion=x \in y
+        [Contradict] Derived contradiction: x \in y, \neg(x \in y)
+      [Some] derived conclusion \bot
+      [Some] Added \bot
+    [Deny] contradiction is derived; added \neg(\exists x(\exists y(\neg(x \in y))))
+  [Assume] Derived conclusion \neg(\exists x(\exists y(\neg(x \in y))))
+  [Assume] Added implication \forall x(\forall y(x \in y)) \to \neg(\exists x(\exists y(\neg(x \in y))))
+[Theorem] test21 proved: \forall x(\forall y(x \in y)) \to \neg(\exists x(\exists y(\neg(x \in y))))
+[Theorem] test22: \neg(\exists x(\exists y(\neg(x \in y)))) \to \forall x(\forall y(x \in y))
+  [Assume] premise=\neg(\exists x(\exists y(\neg(x \in y)))), conclusion=\forall x(\forall y(x \in y))
+    [Any] Taking ['x', 'y']
+      [Deny] premise=\neg(x \in y)
+        [Lift] fact: \neg(x \in y)
+        [Lift] Can be lifted: vars={'y', 'x'}, env={'x': 'x', 'y': 'y'}
+        [Lift] lifted formula: \exists x(\exists y(\neg(x \in y)))
+        [Lift] Matched: node.conclusion=\exists x(\exists y(\neg(x \in y))), lifted=\exists x(\exists y(\neg(x \in y)))
+        [Contradict] Derived contradiction: \exists x(\exists y(\neg(x \in y))), \neg(\exists x(\exists y(\neg(x \in y))))
+      [Deny] contradiction is derived; added \neg(\neg(x \in y))
+    [Any] Derived conclusion x \in y
+    [Any] Generalized to \forall x(\forall y(x \in y))
+  [Assume] Derived conclusion \forall x(\forall y(x \in y))
+  [Assume] Added implication \neg(\exists x(\exists y(\neg(x \in y)))) \to \forall x(\forall y(x \in y))
+[Theorem] test22 proved: \neg(\exists x(\exists y(\neg(x \in y)))) \to \forall x(\forall y(x \in y))
+[Theorem] test23: \forall x(x \in x \to \neg(x \in x)) \to \forall x(x \in x) \to \forall x(\neg(x \in x))
+  [Assume] premise=\forall x(x \in x \to \neg(x \in x)), conclusion=\forall x(x \in x) \to \forall x(\neg(x \in x))
+    [Assume] premise=\forall x(x \in x), conclusion=\forall x(\neg(x \in x))
+      [Any] Taking ['x']
+        [Apply] Drivable fact: \forall x(x \in x \to \neg(x \in x))
+        [Apply] Instantiable: vars=['x'], env={'x': 'x'}
+        [Apply] \forall-elimination is done: instantiation=x \in x \to \neg(x \in x)
+        [Apply] Matched: node.conclusion=x \in x \to \neg(x \in x), instantiation=x \in x \to \neg(x \in x)
+        [Apply] Added node.conclusion=x \in x \to \neg(x \in x)
+        [Apply] Drivable fact: \forall x(x \in x)
+        [Apply] Instantiable: vars=['x'], env={'x': 'x'}
+        [Apply] \forall-elimination is done: instantiation=x \in x
+        [Apply] Matched: node.conclusion=x \in x, instantiation=x \in x
+        [Apply] Added node.conclusion=x \in x
+        [Apply] Drivable fact: x \in x \to \neg(x \in x)
+        [Apply] Implies object: x \in x \to \neg(x \in x)
+        [Apply] Derivable premise: x \in x
+        [Apply] Matched: implication.left=x \in x, node.premise=x \in x
+        [Apply] \to-elimination is done: \neg(x \in x)
+        [Apply] Matched: node.conclusion=\neg(x \in x), implication.right=\neg(x \in x)
+        [Apply] Added node.conclusion=\neg(x \in x)
+      [Any] Derived conclusion \neg(x \in x)
+      [Any] Generalized to \forall x(\neg(x \in x))
+    [Assume] Derived conclusion \forall x(\neg(x \in x))
+    [Assume] Added implication \forall x(x \in x) \to \forall x(\neg(x \in x))
+  [Assume] Derived conclusion \forall x(x \in x) \to \forall x(\neg(x \in x))
+  [Assume] Added implication \forall x(x \in x \to \neg(x \in x)) \to \forall x(x \in x) \to \forall x(\neg(x \in x))
+[Theorem] test23 proved: \forall x(x \in x \to \neg(x \in x)) \to \forall x(x \in x) \to \forall x(\neg(x \in x))
+[Theorem] test24: \forall x(\forall y(\neg(x \in y))) \to \neg(\exists x(\exists y(x \in y)))
+  [Assume] premise=\forall x(\forall y(\neg(x \in y))), conclusion=\neg(\exists x(\exists y(x \in y)))
+    [Deny] premise=\exists x(\exists y(x \in y))
+      [Some] derivable: \exists x(\exists y(x \in y))
+      [Some] Taking ['x', 'y'], premise=x \in y
+        [Apply] Drivable fact: \forall x(\forall y(\neg(x \in y)))
+        [Apply] Instantiable: vars=['x', 'y'], env={'x': 'x', 'y': 'y'}
+        [Apply] \forall-elimination is done: instantiation=\neg(x \in y)
+        [Apply] Matched: node.conclusion=\neg(x \in y), instantiation=\neg(x \in y)
+        [Apply] Added node.conclusion=\neg(x \in y)
+        [Contradict] Derived contradiction: x \in y, \neg(x \in y)
+      [Some] derived conclusion \bot
+      [Some] Added \bot
+    [Deny] contradiction is derived; added \neg(\exists x(\exists y(x \in y)))
+  [Assume] Derived conclusion \neg(\exists x(\exists y(x \in y)))
+  [Assume] Added implication \forall x(\forall y(\neg(x \in y))) \to \neg(\exists x(\exists y(x \in y)))
+[Theorem] test24 proved: \forall x(\forall y(\neg(x \in y))) \to \neg(\exists x(\exists y(x \in y)))
+[Theorem] test25: \neg(\exists x(\exists y(x \in y))) \to \forall x(\forall y(\neg(x \in y)))
+  [Assume] premise=\neg(\exists x(\exists y(x \in y))), conclusion=\forall x(\forall y(\neg(x \in y)))
+    [Any] Taking ['x', 'y']
+      [Deny] premise=x \in y
+        [Lift] fact: x \in y
+        [Lift] Can be lifted: vars={'y', 'x'}, env={'x': 'x', 'y': 'y'}
+        [Lift] lifted formula: \exists x(\exists y(x \in y))
+        [Lift] Matched: node.conclusion=\exists x(\exists y(x \in y)), lifted=\exists x(\exists y(x \in y))
+        [Contradict] Derived contradiction: \exists x(\exists y(x \in y)), \neg(\exists x(\exists y(x \in y)))
+      [Deny] contradiction is derived; added \neg(x \in y)
+    [Any] Derived conclusion \neg(x \in y)
+    [Any] Generalized to \forall x(\forall y(\neg(x \in y)))
+  [Assume] Derived conclusion \forall x(\forall y(\neg(x \in y)))
+  [Assume] Added implication \neg(\exists x(\exists y(x \in y))) \to \forall x(\forall y(\neg(x \in y)))
+[Theorem] test25 proved: \neg(\exists x(\exists y(x \in y))) \to \forall x(\forall y(\neg(x \in y)))
