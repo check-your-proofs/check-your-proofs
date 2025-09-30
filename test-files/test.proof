@@ -1,222 +1,222 @@
-atom predicate \in arity 2
+atom predicate in arity 2
 
-theorem test01 \forall x\forall y(x\in y\to x\in y) {
-  any x, y conclude x\in y\to x\in y {
-    assume x\in y conclude x\in y {}
+theorem test01 \forall x\forall y(in(x,y)\to in(x,y)) {
+  any x, y conclude in(x,y)\to in(x,y) {
+    assume in(x,y) conclude in(x,y) {}
   }
 }
 
-theorem test02 \forall x\forall y(x\in y\to x\in y\wedge x\in y) {
-  any x, y conclude x\in y\to x\in y\wedge x\in y {
-    assume x\in y conclude x\in y\wedge x\in y {}
+theorem test02 \forall x\forall y(in(x,y)\to in(x,y)\wedge in(x,y)) {
+  any x, y conclude in(x,y)\to in(x,y)\wedge in(x,y) {
+    assume in(x,y) conclude in(x,y)\wedge in(x,y) {}
   }
 }
 
-theorem test03 \forall x\forall y((x\in y\to x\in y)\wedge(x\in y\to x\in y)) {
-  any x, y conclude (x\in y\to x\in y)\wedge(x\in y\to x\in y) {
-    assume x\in y conclude x\in y {}
+theorem test03 \forall x\forall y((in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y))) {
+  any x, y conclude (in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y)) {
+    assume in(x,y) conclude in(x,y) {}
   }
 }
 
-theorem test04 (\forall x\forall y(x\in y\to x\in y))\wedge(\forall z\forall w(z\in w\to z\in w)) {
-    any x, y conclude x\in y\to x\in y {
-      assume x\in y conclude x\in y {}
+theorem test04 (\forall x\forall y(in(x,y)\to in(x,y)))\wedge(\forall z\forall w(in(z,w)\to in(z,w))) {
+    any x, y conclude in(x,y)\to in(x,y) {
+      assume in(x,y) conclude in(x,y) {}
   }
 }
 
-theorem test05 \forall x\forall y((x\in y\to x\in y)\wedge(x\in y\to x\in y\wedge x\in y)) {
-  any x, y conclude (x\in y\to x\in y)\wedge(x\in y\to x\in y\wedge x\in y) {
-    assume x\in y conclude x\in y {}
-    assume x\in y conclude x\in y\wedge x\in y {}
+theorem test05 \forall x\forall y((in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y)\wedge in(x,y))) {
+  any x, y conclude (in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y)\wedge in(x,y)) {
+    assume in(x,y) conclude in(x,y) {}
+    assume in(x,y) conclude in(x,y)\wedge in(x,y) {}
   }
 }
 
-theorem test06 (\forall x\forall y(x\in y\to x\in y))\wedge(\forall x\forall y(x\in y\to x\in y\wedge x\in y)) {
-  any x, y conclude x\in y\to x\in y {
-    assume x\in y conclude x\in y {}
+theorem test06 (\forall x\forall y(in(x,y)\to in(x,y)))\wedge(\forall x\forall y(in(x,y)\to in(x,y)\wedge in(x,y))) {
+  any x, y conclude in(x,y)\to in(x,y) {
+    assume in(x,y) conclude in(x,y) {}
   }
-  any x, y conclude x\in y\to x\in y\wedge x\in y {
-    assume x\in y conclude x\in y\wedge x\in y {}
+  any x, y conclude in(x,y)\to in(x,y)\wedge in(x,y) {
+    assume in(x,y) conclude in(x,y)\wedge in(x,y) {}
   }
 }
 
-theorem test07 \forall x\forall y(x\in y\to x\in y\wedge\forall z(z\in x\to z\in x)) {
-  any x, y conclude x\in y\to x\in y\wedge\forall z(z\in x\to z\in x) {
-    assume x\in y conclude x\in y\wedge\forall z(z\in x\to z\in x) {
-      any z conclude z\in x\to z\in x {
-        assume z\in x conclude z\in x {} 
+theorem test07 \forall x\forall y(in(x,y)\to in(x,y)\wedge\forall z(in(z,x)\to in(z,x))) {
+  any x, y conclude in(x,y)\to in(x,y)\wedge\forall z(in(z,x)\to in(z,x)) {
+    assume in(x,y) conclude in(x,y)\wedge\forall z(in(z,x)\to in(z,x)) {
+      any z conclude in(z,x)\to in(z,x) {
+        assume in(z,x) conclude in(z,x) {} 
       }
     } 
   }
 }
 
-theorem test08 \forall v\forall u(u\in v\to u\in v) {
-  any x, y conclude x\in y\to x\in y {
-    assume x\in y conclude x\in y {}
+theorem test08 \forall v\forall u(in(u,v)\to in(u,v)) {
+  any x, y conclude in(x,y)\to in(x,y) {
+    assume in(x,y) conclude in(x,y) {}
   }
 }
 
-theorem test09 \forall v\forall u(u\in v\to u\in v) {
-  any x, y conclude x\in y\to x\in y {
-    assume x\in y conclude x\in y {}
-    check x\in y\to x\in y
+theorem test09 \forall v\forall u(in(u,v)\to in(u,v)) {
+  any x, y conclude in(x,y)\to in(x,y) {
+    assume in(x,y) conclude in(x,y) {}
+    check in(x,y)\to in(x,y)
   }
 }
 
-theorem test10 \forall v\forall u(u\in v\to u\in v) {
-  any x, y conclude x\in y\to x\in y {
-    assume x\in y conclude x\in y {}
+theorem test10 \forall v\forall u(in(u,v)\to in(u,v)) {
+  any x, y conclude in(x,y)\to in(x,y) {
+    assume in(x,y) conclude in(x,y) {}
   }
-  check \forall x\forall y(x\in y\to x\in y)
+  check \forall x\forall y(in(x,y)\to in(x,y))
 }
 
-theorem test11 \forall u\forall v(u\in v\to u\in v\vee v\in u) {
-  any x, y conclude x\in y\to(x\in y\vee y\in x) {
-    assume x\in y conclude x\in y\vee y\in x {}
-  }
-}
-
-theorem test12 \forall u\forall v(u\in v\vee v\in u\to v\in u\vee u\in v) {
-  any x, y conclude x\in y\vee y\in x\to y\in x\vee x\in y {
-    assume x\in y\vee y\in x conclude y\in x\vee x\in y {}
+theorem test11 \forall u\forall v(in(u,v)\to in(u,v)\vee in(v,u)) {
+  any x, y conclude in(x,y)\to(in(x,y)\vee in(y,x)) {
+    assume in(x,y) conclude in(x,y)\vee in(y,x) {}
   }
 }
 
-theorem test13 \forall x\forall y(x\in y\vee y\in x\to(x\in y\wedge x\in y)\vee(y\in x\wedge y\in x)) {
-  any x, y conclude x\in y\vee y\in x\to(x\in y\wedge x\in y)\vee(y\in x\wedge y\in x) {
-    assume x\in y\vee y\in x conclude (x\in y\wedge x\in y)\vee(y\in x\wedge y\in x) {
-      divide x\in y\vee y\in x conclude (x\in y\wedge x\in y)\vee(y\in x\wedge y\in x)
-        case x\in y {}
-        case y\in x {}
+theorem test12 \forall u\forall v(in(u,v)\vee in(v,u)\to in(v,u)\vee in(u,v)) {
+  any x, y conclude in(x,y)\vee in(y,x)\to in(y,x)\vee in(x,y) {
+    assume in(x,y)\vee in(y,x) conclude in(y,x)\vee in(x,y) {}
+  }
+}
+
+theorem test13 \forall x\forall y(in(x,y)\vee in(y,x)\to(in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x))) {
+  any x, y conclude in(x,y)\vee in(y,x)\to(in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x)) {
+    assume in(x,y)\vee in(y,x) conclude (in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x)) {
+      divide in(x,y)\vee in(y,x) conclude (in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x))
+        case in(x,y) {}
+        case in(y,x) {}
     }
   }
 }
 
-theorem test14 \forall x\forall y(x\in x\vee x\in y\vee y\in x\to x\in x\vee x\in y\vee y\in x) {
-  any x, y conclude x\in x\vee x\in y\vee y\in x\to x\in x\vee x\in y\vee y\in x {
-    assume x\in x\vee x\in y\vee y\in x conclude x\in x\vee x\in y\vee y\in x {
-      divide x\in x\vee x\in y\vee y\in x conclude x\in x\vee x\in y\vee y\in x
-        case x\in x {}
-        case y\in x {}
-        case x\in y {}
+theorem test14 \forall x\forall y(in(x,x)\vee in(x,y)\vee in(y,x)\to in(x,x)\vee in(x,y)\vee in(y,x)) {
+  any x, y conclude in(x,x)\vee in(x,y)\vee in(y,x)\to in(x,x)\vee in(x,y)\vee in(y,x) {
+    assume in(x,x)\vee in(x,y)\vee in(y,x) conclude in(x,x)\vee in(x,y)\vee in(y,x) {
+      divide in(x,x)\vee in(x,y)\vee in(y,x) conclude in(x,x)\vee in(x,y)\vee in(y,x)
+        case in(x,x) {}
+        case in(y,x) {}
+        case in(x,y) {}
     }
   }
 }
 
-theorem test15 \exists x\exists y(x\in y)\to\exists x\exists y(x\in y\wedge x\in y) {
-  assume \exists x\exists y(x\in y) conclude \exists x\exists y(x\in y\wedge x\in y) {
-    some x, y such x\in y conclude \exists x\exists y(x\in y\wedge x\in y) {
-      lift x\in y\wedge x\in y for x: x, y: y conclude \exists x\exists y(x\in y\wedge x\in y)
+theorem test15 \exists x\exists y(in(x,y))\to\exists x\exists y(in(x,y)\wedge in(x,y)) {
+  assume \exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(x,y)) {
+    some x, y such in(x,y) conclude \exists x\exists y(in(x,y)\wedge in(x,y)) {
+      lift in(x,y)\wedge in(x,y) for x: x, y: y conclude \exists x\exists y(in(x,y)\wedge in(x,y))
     }
   }
 }
 
-theorem test16 \forall x\forall y(x\in y)\to\forall x\forall y(x\in y) {
-  assume \forall x\forall y(x\in y) conclude \forall x\forall y(x\in y) {}
+theorem test16 \forall x\forall y(in(x,y))\to\forall x\forall y(in(x,y)) {
+  assume \forall x\forall y(in(x,y)) conclude \forall x\forall y(in(x,y)) {}
 }
 
-theorem test17 \exists x(x\in x)\to\exists x(x\in x) {
-  assume \exists x(x\in x) conclude \exists x(x\in x) {
-    some x such x\in x conclude \exists x(x\in x) {
-      lift x\in x for x: x conclude \exists x(x\in x)
+theorem test17 \exists x(in(x,x))\to\exists x(in(x,x)) {
+  assume \exists x(in(x,x)) conclude \exists x(in(x,x)) {
+    some x such in(x,x) conclude \exists x(in(x,x)) {
+      lift in(x,x) for x: x conclude \exists x(in(x,x))
     }
   }
 }
 
-theorem test18 \exists x\exists y(x\in y\vee y\in x)\to\exists x\exists y(\neg(\neg(x\in y)\wedge\neg(y\in x))) {
-  assume \exists x\exists y(x\in y\vee y\in x) conclude \exists x\exists y(\neg(\neg(x\in y)\wedge\neg(y\in x))) {
-    some x, y such x\in y\vee y\in x conclude \exists x\exists y(\neg(\neg(x\in y)\wedge\neg(y\in x))) {
-      divide x\in y\vee y\in x conclude \neg(\neg(x\in y)\wedge\neg(y\in x))
-        case x\in y {
-          deny \neg(x\in y)\wedge\neg(y\in x) {
-            contradict x\in y
+theorem test18 \exists x\exists y(in(x,y)\vee in(y,x))\to\exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x)))) {
+  assume \exists x\exists y(in(x,y)\vee in(y,x)) conclude \exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x)))) {
+    some x, y such in(x,y)\vee in(y,x) conclude \exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x)))) {
+      divide in(x,y)\vee in(y,x) conclude \neg(\neg(in(x,y))\wedge\neg(in(y,x)))
+        case in(x,y) {
+          deny \neg(in(x,y))\wedge\neg(in(y,x)) {
+            contradict in(x,y)
           }
         }
-        case y\in x {
-          deny \neg(x\in y)\wedge\neg(y\in x) {
-            contradict y\in x
+        case in(y,x) {
+          deny \neg(in(x,y))\wedge\neg(in(y,x)) {
+            contradict in(y,x)
           }
         }
-      lift \neg(\neg(x\in y)\wedge\neg(y\in x)) for x: x, y: y conclude \exists x\exists y(\neg(\neg(x\in y)\wedge\neg(y\in x)))
+      lift \neg(\neg(in(x,y))\wedge\neg(in(y,x))) for x: x, y: y conclude \exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x))))
     }
   }
 }
 
-theorem test19 \exists x\exists y((x\in y\vee y\in x)\wedge\neg(y\in x))\to\exists x\exists y(x\in y) {
-  assume \exists x\exists y((x\in y\vee y\in x)\wedge\neg(y\in x)) conclude \exists x\exists y(x\in y) {
-    some x, y such (x\in y\vee y\in x)\wedge\neg(y\in x) conclude \exists x\exists y(x\in y) {
-      divide x\in y\vee y\in x conclude x\in y
-        case x\in y {}
-        case y\in x {
-          contradict y\in x
-          explode x\in y
+theorem test19 \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x)))\to\exists x\exists y(in(x,y)) {
+  assume \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x))) conclude \exists x\exists y(in(x,y)) {
+    some x, y such (in(x,y)\vee in(y,x))\wedge\neg(in(y,x)) conclude \exists x\exists y(in(x,y)) {
+      divide in(x,y)\vee in(y,x) conclude in(x,y)
+        case in(x,y) {}
+        case in(y,x) {
+          contradict in(y,x)
+          explode in(x,y)
         }
-      lift x\in y for x: x, y: y conclude \exists x\exists y(x\in y)
+      lift in(x,y) for x: x, y: y conclude \exists x\exists y(in(x,y))
     }
   }
 }
 
-theorem test20 \forall x\forall y(x\in y\to\forall z(z\in x))\wedge\exists x\exists y(x\in y)\to\exists x\exists y(x\in y\wedge y\in x) {
-  assume \forall x\forall y(x\in y\to\forall z(z\in x))\wedge\exists x\exists y(x\in y) conclude \exists x\exists y(x\in y\wedge y\in x) {
-    some x, y such x\in y conclude \exists x\exists y(x\in y\wedge y\in x) {
-      apply \forall x\forall y(x\in y\to\forall z(z\in x)) for x: x, y: y with x\in y conclude \forall z(z\in x)
-      apply \forall z(z\in x) for z: y conclude y\in x
-      lift x\in y\wedge y\in x for x: x, y: y conclude \exists x\exists y(x\in y\wedge y\in x)
+theorem test20 \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\exists y(in(x,y))\to\exists x\exists y(in(x,y)\wedge in(y,x)) {
+  assume \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(y,x)) {
+    some x, y such in(x,y) conclude \exists x\exists y(in(x,y)\wedge in(y,x)) {
+      apply \forall x\forall y(in(x,y)\to\forall z(in(z,x))) for x: x, y: y with in(x,y) conclude \forall z(in(z,x))
+      apply \forall z(in(z,x)) for z: y conclude in(y,x)
+      lift in(x,y)\wedge in(y,x) for x: x, y: y conclude \exists x\exists y(in(x,y)\wedge in(y,x))
     }
   }
 }
 
-theorem test21 \forall x\forall y(x\in y)\to\neg(\exists x\exists y(\neg(x\in y))) {
-  assume \forall x\forall y(x\in y) conclude \neg(\exists x\exists y(\neg(x\in y))) {
-    deny \exists x\exists y(\neg(x\in y)) {
-      some x, y such \neg(x\in y) conclude \bot {
-        apply \forall x\forall y(x\in y) for x: x, y: y conclude x\in y
-        contradict x\in y
+theorem test21 \forall x\forall y(in(x,y))\to\neg(\exists x\exists y(\neg(in(x,y)))) {
+  assume \forall x\forall y(in(x,y)) conclude \neg(\exists x\exists y(\neg(in(x,y)))) {
+    deny \exists x\exists y(\neg(in(x,y))) {
+      some x, y such \neg(in(x,y)) conclude \bot {
+        apply \forall x\forall y(in(x,y)) for x: x, y: y conclude in(x,y)
+        contradict in(x,y)
       }
     }
   }
 }
 
-theorem test22 \neg(\exists x\exists y(\neg(x\in y)))\to\forall x\forall y(x\in y) {
-  assume \neg(\exists x\exists y(\neg(x\in y))) conclude \forall x\forall y(x\in y) {
-    any x, y conclude x\in y {
-      deny \neg(x\in y) {
-        lift \neg(x\in y) for x: x, y: y conclude \exists x\exists y(\neg(x\in y))
-        contradict \exists x\exists y(\neg(x\in y))
+theorem test22 \neg(\exists x\exists y(\neg(in(x,y))))\to\forall x\forall y(in(x,y)) {
+  assume \neg(\exists x\exists y(\neg(in(x,y)))) conclude \forall x\forall y(in(x,y)) {
+    any x, y conclude in(x,y) {
+      deny \neg(in(x,y)) {
+        lift \neg(in(x,y)) for x: x, y: y conclude \exists x\exists y(\neg(in(x,y)))
+        contradict \exists x\exists y(\neg(in(x,y)))
       }
     }
   }
 }
 
-theorem test23 \forall x(x\in x\to\neg(x\in x))\to(\forall x(x\in x)\to\forall x(\neg(x\in x))) {
-  assume \forall x(x\in x\to\neg(x\in x)) conclude \forall x(x\in x)\to\forall x(\neg(x\in x)) {
-    assume \forall x(x\in x) conclude \forall x(\neg(x\in x)) {
-      any x conclude \neg(x\in x) {
-        apply \forall x(x\in x\to\neg(x\in x)) for x: x conclude x\in x\to\neg(x\in x)
-        apply \forall x(x\in x) for x: x conclude x\in x
-        apply x\in x\to\neg(x\in x) with x\in x conclude \neg(x\in x)
+theorem test23 \forall x(in(x,x)\to\neg(in(x,x)))\to(\forall x(in(x,x))\to\forall x(\neg(in(x,x)))) {
+  assume \forall x(in(x,x)\to\neg(in(x,x))) conclude \forall x(in(x,x))\to\forall x(\neg(in(x,x))) {
+    assume \forall x(in(x,x)) conclude \forall x(\neg(in(x,x))) {
+      any x conclude \neg(in(x,x)) {
+        apply \forall x(in(x,x)\to\neg(in(x,x))) for x: x conclude in(x,x)\to\neg(in(x,x))
+        apply \forall x(in(x,x)) for x: x conclude in(x,x)
+        apply in(x,x)\to\neg(in(x,x)) with in(x,x) conclude \neg(in(x,x))
       }
     }
   }
 }
 
-theorem test24 \forall x\forall y(\neg(x\in y))\to\neg(\exists x\exists y(x\in y)) {
-  assume \forall x\forall y(\neg(x\in y)) conclude \neg(\exists x\exists y(x\in y)) {
-    deny \exists x\exists y(x\in y) {
-      some x, y such x\in y conclude \bot {
-        apply \forall x\forall y(\neg(x\in y)) for x: x, y: y conclude \neg(x\in y)
-        contradict x\in y
+theorem test24 \forall x\forall y(\neg(in(x,y)))\to\neg(\exists x\exists y(in(x,y))) {
+  assume \forall x\forall y(\neg(in(x,y))) conclude \neg(\exists x\exists y(in(x,y))) {
+    deny \exists x\exists y(in(x,y)) {
+      some x, y such in(x,y) conclude \bot {
+        apply \forall x\forall y(\neg(in(x,y))) for x: x, y: y conclude \neg(in(x,y))
+        contradict in(x,y)
       }
     }
   }
 }
 
-theorem test25 \neg(\exists x\exists y(x\in y))\to\forall x\forall y(\neg(x\in y)) {
-  assume \neg(\exists x\exists y(x\in y)) conclude \forall x\forall y(\neg(x\in y)) {
-    any x, y conclude \neg(x\in y) {
-      deny x\in y {
-        lift x\in y for x: x, y: y conclude \exists x\exists y(x\in y)
-        contradict \exists x\exists y(x\in y)
+theorem test25 \neg(\exists x\exists y(in(x,y)))\to\forall x\forall y(\neg(in(x,y))) {
+  assume \neg(\exists x\exists y(in(x,y))) conclude \forall x\forall y(\neg(in(x,y))) {
+    any x, y conclude \neg(in(x,y)) {
+      deny in(x,y) {
+        lift in(x,y) for x: x, y: y conclude \exists x\exists y(in(x,y))
+        contradict \exists x\exists y(in(x,y))
       }
     }
   }
