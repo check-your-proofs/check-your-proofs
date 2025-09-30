@@ -150,7 +150,7 @@
     [Some] derivable: \exists x(\exists y(x \in y))
     [Some] Taking ['x', 'y'], premise=x \in y
       [Lift] fact: x \in y \wedge x \in y
-      [Lift] Can be lifted: vars={'y', 'x'}, env={'x': 'x', 'y': 'y'}
+      [Lift] Can be lifted: vars=['x', 'y'], env={'x': 'x', 'y': 'y'}
       [Lift] lifted formula: \exists x(\exists y(x \in y \wedge x \in y))
       [Lift] Matched: node.conclusion=\exists x(\exists y(x \in y \wedge x \in y)), lifted=\exists x(\exists y(x \in y \wedge x \in y))
     [Some] derived conclusion \exists x(\exists y(x \in y \wedge x \in y))
@@ -168,7 +168,7 @@
     [Some] derivable: \exists x(x \in x)
     [Some] Taking ['x'], premise=x \in x
       [Lift] fact: x \in x
-      [Lift] Can be lifted: vars={'x'}, env={'x': 'x'}
+      [Lift] Can be lifted: vars=['x'], env={'x': 'x'}
       [Lift] lifted formula: \exists x(x \in x)
       [Lift] Matched: node.conclusion=\exists x(x \in x), lifted=\exists x(x \in x)
     [Some] derived conclusion \exists x(x \in x)
@@ -194,7 +194,7 @@
         [Case] derived conclusion \neg(\neg(x \in y) \wedge \neg(y \in x))
       [Divide] derived in all cases: \neg(\neg(x \in y) \wedge \neg(y \in x))
       [Lift] fact: \neg(\neg(x \in y) \wedge \neg(y \in x))
-      [Lift] Can be lifted: vars={'y', 'x'}, env={'x': 'x', 'y': 'y'}
+      [Lift] Can be lifted: vars=['x', 'y'], env={'x': 'x', 'y': 'y'}
       [Lift] lifted formula: \exists x(\exists y(\neg(\neg(x \in y) \wedge \neg(y \in x))))
       [Lift] Matched: node.conclusion=\exists x(\exists y(\neg(\neg(x \in y) \wedge \neg(y \in x)))), lifted=\exists x(\exists y(\neg(\neg(x \in y) \wedge \neg(y \in x))))
     [Some] derived conclusion \exists x(\exists y(\neg(\neg(x \in y) \wedge \neg(y \in x))))
@@ -216,7 +216,7 @@
         [Case] derived conclusion x \in y
       [Divide] derived in all cases: x \in y
       [Lift] fact: x \in y
-      [Lift] Can be lifted: vars={'y', 'x'}, env={'x': 'x', 'y': 'y'}
+      [Lift] Can be lifted: vars=['x', 'y'], env={'x': 'x', 'y': 'y'}
       [Lift] lifted formula: \exists x(\exists y(x \in y))
       [Lift] Matched: node.conclusion=\exists x(\exists y(x \in y)), lifted=\exists x(\exists y(x \in y))
     [Some] derived conclusion \exists x(\exists y(x \in y))
@@ -243,7 +243,7 @@
       [Apply] Matched: node.conclusion=y \in x, instantiation=y \in x
       [Apply] Added node.conclusion=y \in x
       [Lift] fact: x \in y \wedge y \in x
-      [Lift] Can be lifted: vars={'y', 'x'}, env={'x': 'x', 'y': 'y'}
+      [Lift] Can be lifted: vars=['x', 'y'], env={'x': 'x', 'y': 'y'}
       [Lift] lifted formula: \exists x(\exists y(x \in y \wedge y \in x))
       [Lift] Matched: node.conclusion=\exists x(\exists y(x \in y \wedge y \in x)), lifted=\exists x(\exists y(x \in y \wedge y \in x))
     [Some] derived conclusion \exists x(\exists y(x \in y \wedge y \in x))
@@ -273,7 +273,7 @@
     [Any] Taking ['x', 'y']
       [Deny] premise=\neg(x \in y)
         [Lift] fact: \neg(x \in y)
-        [Lift] Can be lifted: vars={'y', 'x'}, env={'x': 'x', 'y': 'y'}
+        [Lift] Can be lifted: vars=['x', 'y'], env={'x': 'x', 'y': 'y'}
         [Lift] lifted formula: \exists x(\exists y(\neg(x \in y)))
         [Lift] Matched: node.conclusion=\exists x(\exists y(\neg(x \in y))), lifted=\exists x(\exists y(\neg(x \in y)))
         [Contradict] Derived contradiction: \exists x(\exists y(\neg(x \in y))), \neg(\exists x(\exists y(\neg(x \in y))))
@@ -333,7 +333,7 @@
     [Any] Taking ['x', 'y']
       [Deny] premise=x \in y
         [Lift] fact: x \in y
-        [Lift] Can be lifted: vars={'y', 'x'}, env={'x': 'x', 'y': 'y'}
+        [Lift] Can be lifted: vars=['x', 'y'], env={'x': 'x', 'y': 'y'}
         [Lift] lifted formula: \exists x(\exists y(x \in y))
         [Lift] Matched: node.conclusion=\exists x(\exists y(x \in y)), lifted=\exists x(\exists y(x \in y))
         [Contradict] Derived contradiction: \exists x(\exists y(x \in y)), \neg(\exists x(\exists y(x \in y)))

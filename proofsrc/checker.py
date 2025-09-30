@@ -1,7 +1,5 @@
 # checker.py
-from parser import Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, parse_file_from_source, pretty
-from expr_parser import Symbol, And, Or, Implies, Forall, Exists, Not, Bottom
-from expr_parser import pretty_expr
+from parser import Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, parse_file_from_source, pretty, pretty_expr
 
 # === α同値判定 ===
 from itertools import permutations
@@ -451,9 +449,9 @@ def check_proof(node, context=None, indent=0):
         logger.debug(f"{sp}[Lift] fact: {pretty_expr(node.fact)}")
         free_vars, _ = collect_vars(node.fact)
         if not set(node.env.values()).issubset(free_vars):
-            logger.error(f"{sp}❌ [Lift] Cannot be lifted: vars={free_vars}, env={node.env}")
+            logger.error(f"{sp}❌ [Lift] Cannot be lifted: vars={sorted(free_vars)}, env={node.env}")
             return False
-        logger.debug(f"{sp}[Lift] Can be lifted: vars={free_vars}, env={node.env}")
+        logger.debug(f"{sp}[Lift] Can be lifted: vars={sorted(free_vars)}, env={node.env}")
         lifted = substitute(node.fact, {v: k for k, v in node.env.items()})
         for k in reversed(list(node.env.keys())):
             lifted = Exists(k, lifted)

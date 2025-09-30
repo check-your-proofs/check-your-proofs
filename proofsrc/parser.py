@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import List, Union
 from lexer import Token, lex
-from expr_parser import parse_expr, pretty_expr
 
 import logging
 logger = logging.getLogger(__name__)
@@ -79,6 +78,48 @@ class Definition:
     name: str
     body: str  # TODO: 式パーサーに統合可能
 
+@dataclass
+class Symbol:
+    name: str
+    args: list[str]
+
+@dataclass
+class Forall:
+    var: str
+    body: object
+
+@dataclass
+class Exists:
+    var: str
+    body: object
+
+@dataclass
+class Implies:
+    left: object
+    right: object
+
+@dataclass
+class And:
+    left: object
+    right: object
+
+@dataclass
+class Or:
+    left: object
+    right: object
+
+@dataclass
+class Not:
+    body: object
+
+@dataclass
+class Iff:
+    left: object
+    right: object
+
+@dataclass
+class Bottom:
+    pass
 
 # === パーサー本体 ===
 class Parser:
@@ -113,7 +154,7 @@ class Parser:
     def parse_theorem(self):
         self.consume("THEOREM")
         name = self.consume("IDENT").value
-        conclusion, self.pos = parse_expr(self.tokens, self.pos)
+        conclusion, self.pos = self.parse_expr(self.tokens, self.pos)
         self.consume("LBRACE")
         proof = self.parse_block()
         self.consume("RBRACE")
@@ -122,7 +163,7 @@ class Parser:
     def parse_check(self):
         self.consume("CHECK")
         # conclusion 部分の式を読む
-        conclusion, self.pos = parse_expr(self.tokens, self.pos)
+        conclusion, self.pos = self.parse_expr(self.tokens, self.pos)
         return Check(conclusion=conclusion)
 
     def parse_block(self):
@@ -166,7 +207,7 @@ class Parser:
                 continue
             break
         self.consume("CONCLUDE")
-        conclusion, self.pos = parse_expr(self.tokens, self.pos)
+        conclusion, self.pos = self.parse_expr(self.tokens, self.pos)
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
@@ -174,9 +215,9 @@ class Parser:
 
     def parse_assume(self):
         self.consume("ASSUME")
-        premise, self.pos = parse_expr(self.tokens, self.pos)
+        premise, self.pos = self.parse_expr(self.tokens, self.pos)
         self.consume("CONCLUDE")
-        conclusion, self.pos = parse_expr(self.tokens, self.pos)
+        conclusion, self.pos = self.parse_expr(self.tokens, self.pos)
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
@@ -184,9 +225,9 @@ class Parser:
     
     def parse_divide(self):
         self.consume("DIVIDE")
-        fact, self.pos = parse_expr(self.tokens, self.pos)
+        fact, self.pos = self.parse_expr(self.tokens, self.pos)
         self.consume("CONCLUDE")
-        conclusion, self.pos = parse_expr(self.tokens, self.pos)
+        conclusion, self.pos = self.parse_expr(self.tokens, self.pos)
         cases = []
         while self.peek().type == "CASE":
             cases.append(self.parse_case(conclusion))
@@ -196,7 +237,7 @@ class Parser:
     
     def parse_case(self, conclusion):
         self.consume("CASE")
-        premise, self.pos = parse_expr(self.tokens, self.pos)
+        premise, self.pos = self.parse_expr(self.tokens, self.pos)
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
@@ -213,9 +254,9 @@ class Parser:
                 continue
             break
         self.consume("SUCH")
-        premise, self.pos = parse_expr(self.tokens, self.pos)
+        premise, self.pos = self.parse_expr(self.tokens, self.pos)
         self.consume("CONCLUDE")
-        conclusion, self.pos = parse_expr(self.tokens, self.pos)
+        conclusion, self.pos = self.parse_expr(self.tokens, self.pos)
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
@@ -223,7 +264,7 @@ class Parser:
     
     def parse_deny(self):
         self.consume("DENY")
-        premise, self.pos = parse_expr(self.tokens, self.pos)
+        premise, self.pos = self.parse_expr(self.tokens, self.pos)
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
@@ -231,17 +272,17 @@ class Parser:
     
     def parse_contradict(self):
         self.consume("CONTRADICT")
-        contradiction, self.pos = parse_expr(self.tokens, self.pos)
+        contradiction, self.pos = self.parse_expr(self.tokens, self.pos)
         return Contradict(contradiction=contradiction)
     
     def parse_explode(self):
         self.consume("EXPLODE")
-        conclusion, self.pos = parse_expr(self.tokens, self.pos)
+        conclusion, self.pos = self.parse_expr(self.tokens, self.pos)
         return Explode(conclusion=conclusion)
     
     def parse_apply(self):
         self.consume("APPLY")
-        fact, self.pos = parse_expr(self.tokens, self.pos)
+        fact, self.pos = self.parse_expr(self.tokens, self.pos)
         if self.peek().type == "FOR":
             self.consume("FOR")
             env = {}
@@ -258,18 +299,18 @@ class Parser:
             env = None
         if self.peek().type == "WITH":
             self.consume("WITH")
-            premise, self.pos = parse_expr(self.tokens, self.pos)
+            premise, self.pos = self.parse_expr(self.tokens, self.pos)
         else:
             premise = None
         if env is None and premise is None:
             raise SyntaxError("APPLY needs FOR or WITH")
         self.consume("CONCLUDE")
-        conclusion, self.pos = parse_expr(self.tokens, self.pos)
+        conclusion, self.pos = self.parse_expr(self.tokens, self.pos)
         return Apply(fact=fact, env=env, premise=premise, conclusion=conclusion)
     
     def parse_lift(self):
         self.consume("LIFT")
-        fact, self.pos = parse_expr(self.tokens, self.pos)
+        fact, self.pos = self.parse_expr(self.tokens, self.pos)
         self.consume("FOR")
         env = {}
         while True:
@@ -282,7 +323,7 @@ class Parser:
                 continue
             break
         self.consume("CONCLUDE")
-        conclusion, self.pos = parse_expr(self.tokens, self.pos)
+        conclusion, self.pos = self.parse_expr(self.tokens, self.pos)
         return Lift(fact=fact, env=env, conclusion=conclusion)
 
     def parse_definition(self):
@@ -296,6 +337,95 @@ class Parser:
         self.consume("RBRACE")
         return Definition(name=name, body=" ".join(t.value for t in body_tok))
 
+    def parse_primary(self, tokens, pos):
+        tok = tokens[pos]
+        if tok.type == "IDENT":
+            # 単純なシンボル（引数なし or 2項述語 in）
+            # 今は簡単に "x \in y" を処理する
+            if pos+2 < len(tokens) and tokens[pos+1].value == "\\in" and tokens[pos+2].type == "IDENT":
+                return Symbol("in", [tok.value, tokens[pos+2].value]), pos+3
+            return Symbol(tok.value, []), pos+1
+
+        elif tok.type == "LPAREN":
+            expr, pos = self.parse_expr(tokens, pos+1)
+            if tokens[pos].type != "RPAREN":
+                raise SyntaxError("missing )")
+            return expr, pos+1
+        
+        elif tok.type == "NOT":
+            pos += 1
+            if pos >= len(tokens) or tokens[pos].type != "LPAREN":
+                raise SyntaxError("( is necessary after ¬")
+            body, pos = self.parse_recursion(tokens, pos + 1)
+            if pos >= len(tokens) or tokens[pos].type != "RPAREN":
+                raise SyntaxError("missing )")
+            return Not(body), pos+1
+
+        elif tok.type == "FORALL":
+            vars = []
+            while pos < len(tokens) and tokens[pos].type == "FORALL":
+                if pos + 1 > len(tokens) or tokens[pos + 1].type != "IDENT":
+                    raise SyntaxError("expected variable after ∀")
+                vars.append(tokens[pos + 1])
+                pos += 2
+            if pos >= len(tokens) or tokens[pos].type != "LPAREN":
+                raise SyntaxError("( is necessary after ∀-variable")
+            body, pos = self.parse_recursion(tokens, pos + 1)
+            if pos >= len(tokens) or tokens[pos].type != "RPAREN":
+                raise SyntaxError("missing )")
+            for var_tok in reversed(vars):
+                body = Forall(var_tok.value, body)
+            return body, pos + 1
+
+        elif tok.type == "EXISTS":
+            vars = []
+            while pos < len(tokens) and tokens[pos].type == "EXISTS":
+                if pos + 1 >= len(tokens) or tokens[pos + 1].type != "IDENT":
+                    raise SyntaxError("expected variable after ∃")
+                vars.append(tokens[pos + 1])
+                pos += 2
+            if pos >= len(tokens) or tokens[pos].type != "LPAREN":
+                raise SyntaxError("( is necessary after ∃-variable")
+            body, pos = self.parse_recursion(tokens, pos + 1)
+            if pos >= len(tokens) or tokens[pos].type != "RPAREN":
+                raise SyntaxError("missing )")
+            for var_tok in reversed(vars):
+                body = Exists(var_tok.value, body)
+            return body, pos + 1
+
+        else:
+            raise SyntaxError(f"Unexpected token: {tok}")
+
+    def parse_expr(self, tokens, pos=0):
+        if tokens[pos].type == "BOT":
+            return Bottom(), pos + 1
+        else:
+            return self.parse_recursion(tokens, pos)
+
+    def parse_recursion(self, tokens, pos):
+        return self.parse_implies(tokens, pos)
+
+    def parse_implies(self, tokens, pos):
+        left, pos = self.parse_and(tokens, pos)
+        while pos < len(tokens) and tokens[pos].type in ("IMPLIES","IFF"):
+            op = tokens[pos]
+            right, pos = self.parse_and(tokens, pos+1)
+            if op.type == "IMPLIES":
+                left = Implies(left, right)
+            elif op.type == "IFF":
+                left = Iff(left, right)
+        return left, pos
+
+    def parse_and(self, tokens, pos):
+        left, pos = self.parse_primary(tokens, pos)
+        while pos < len(tokens) and tokens[pos].type in ("AND","OR"):
+            op = tokens[pos]
+            right, pos = self.parse_primary(tokens, pos+1)
+            if op.type == "AND":
+                left = And(left, right)
+            elif op.type == "OR":
+                left = Or(left, right)
+        return left, pos
 
 # === ヘルパー関数 ===
 def parse_file_from_source(src: str):
@@ -374,6 +504,27 @@ def pretty(node, indent=0):
 
     else:
         raise TypeError(f"Unsupported node type: {type(node)}")
+
+def pretty_expr(expr):
+    if isinstance(expr, Symbol):
+        if expr.name == "in":
+            return f"{expr.args[0]} \\in {expr.args[1]}"
+        return expr.name
+    if isinstance(expr, Implies):
+        return f"{pretty_expr(expr.left)} \\to {pretty_expr(expr.right)}"
+    if isinstance(expr, And):
+        return f"{pretty_expr(expr.left)} \\wedge {pretty_expr(expr.right)}"
+    if isinstance(expr, Or):
+        return f"{pretty_expr(expr.left)} \\vee {pretty_expr(expr.right)}"
+    if isinstance(expr, Not):
+        return f"\\neg({pretty_expr(expr.body)})"
+    if isinstance(expr, Forall):
+        return f"\\forall {expr.var}({pretty_expr(expr.body)})"
+    if isinstance(expr, Exists):
+        return f"\\exists {expr.var}({pretty_expr(expr.body)})"
+    if isinstance(expr, Bottom):
+        return "\\bot"
+    raise TypeError(f"Unsupported node type: {type(expr)}")
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format="%(message)s")
