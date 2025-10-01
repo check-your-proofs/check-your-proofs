@@ -1,5 +1,5 @@
 # checker.py
-from ast_types import Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, pretty, pretty_expr
 
 # === α同値判定 ===
 from itertools import permutations
@@ -8,14 +8,6 @@ from itertools import permutations
 from typing import List
 
 import logging
-
-from dataclasses import dataclass
-
-@dataclass
-class Context:
-    formulas: list        # 通常の論理式
-    bot_derived: bool = False  # 矛盾導出フラグ
-
 logger = logging.getLogger(__name__)
 
 def flatten_or(expr) -> List:
@@ -248,7 +240,7 @@ def check_proof(node, context=None, indent=0):
     # --- Theorem ---
     if isinstance(node, Theorem):
         logger.debug(f"{sp}[Theorem] {node.name}: {pretty_expr(node.conclusion)}")
-        local_ctx = Context(list(context), False)
+        local_ctx = Context(list(context.formulas), False)
         for stmt in node.proof:
             if not check_proof(stmt, local_ctx, indent+1):
                 logger.error(f"{sp}❌ [Theorem] Failed")

@@ -4,6 +4,11 @@ from typing import List
 import logging
 logger = logging.getLogger(__name__)
 
+@dataclass
+class Context:
+    formulas: list        # 通常の論理式
+    bot_derived: bool = False  # 矛盾導出フラグ
+
 # === DSL ノード定義 ===
 @dataclass
 class Atom:

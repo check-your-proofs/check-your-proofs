@@ -1,5 +1,5 @@
 from typing import List, Union
-from ast_types import Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, pretty, pretty_expr
 from lexer import Token, lex
 from checker import check_proof
 
@@ -37,7 +37,7 @@ class Parser:
                 for definition in self.declared_definitions.values():
                     formulas.append(definition.formula)
                 logger.debug(f"[Context] {[pretty_expr(formula) for formula in formulas]}")
-                check_proof(theorem, formulas)
+                check_proof(theorem, Context(formulas, False))
             elif tok.type == "DEFINITION":
                 self.parse_definition()
             else:
