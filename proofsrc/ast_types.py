@@ -80,8 +80,10 @@ class Lift:
 
 @dataclass
 class Definition:
+    type: str
     name: str
-    body: str  # TODO: 式パーサーに統合可能
+    arity: int
+    formula: object
 
 @dataclass
 class Symbol:
@@ -208,6 +210,8 @@ def pretty_expr(expr):
         return f"{expr.name}({",".join(expr.args)})"
     if isinstance(expr, Implies):
         return f"{pretty_expr(expr.left)} \\to {pretty_expr(expr.right)}"
+    if isinstance(expr, Iff):
+        return f"{pretty_expr(expr.left)} \\leftrightarrow {pretty_expr(expr.right)}"
     if isinstance(expr, And):
         return f"{pretty_expr(expr.left)} \\wedge {pretty_expr(expr.right)}"
     if isinstance(expr, Or):

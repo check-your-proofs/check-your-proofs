@@ -1,6 +1,5 @@
 # checker.py
-from ast_types import Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, pretty, pretty_expr
-from parser import parse_file_from_source
+from ast_types import Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, pretty, pretty_expr
 
 # === α同値判定 ===
 from itertools import permutations
@@ -107,6 +106,9 @@ def alpha_equiv(e1, e2, env=None):
 
     if isinstance(e1, Implies) and isinstance(e2, Implies):
         return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
+    
+    if isinstance(e1, Iff) and isinstance(e2, Iff):
+        return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
 
     if isinstance(e1, And) and isinstance(e2, And):
         return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
@@ -177,6 +179,8 @@ def expr_in_context(expr, context):
 def split_conjunction(expr):
     if isinstance(expr, And):
         return split_conjunction(expr.left) + split_conjunction(expr.right)
+    if isinstance(expr, Iff):
+        return [Implies(expr.left, expr.right), Implies(expr.right, expr.left)]
     else:
         return [expr]
 
@@ -186,6 +190,8 @@ def derivable_flat(goal, flat_ctx):
         return derivable_flat(goal.left, flat_ctx) and derivable_flat(goal.right, flat_ctx)
     if isinstance(goal, Or):
         return derivable_flat(goal.left, flat_ctx) or derivable_flat(goal.right, flat_ctx) or expr_in_context(goal, flat_ctx)
+    if isinstance(goal, Iff):
+        return derivable_flat(Implies(goal.left, goal.right), flat_ctx) and derivable_flat(Implies(goal.right, goal.left), flat_ctx)
     # α同値チェック
     return expr_in_context(goal, flat_ctx)
 
@@ -242,16 +248,16 @@ def check_proof(node, context=None, indent=0):
     # --- Theorem ---
     if isinstance(node, Theorem):
         logger.debug(f"{sp}[Theorem] {node.name}: {pretty_expr(node.conclusion)}")
-        local_ctx = Context([], False)
+        local_ctx = Context(list(context), False)
         for stmt in node.proof:
             if not check_proof(stmt, local_ctx, indent+1):
                 logger.error(f"{sp}❌ [Theorem] Failed")
                 return False
         if derivable(node.conclusion, local_ctx):
-            logger.debug(f"{sp}[Theorem] {node.name} proved: {pretty_expr(node.conclusion)}")
+            logger.info(f"{sp}[Theorem] {node.name} proved: {pretty_expr(node.conclusion)}")
             return True
         else:
-            logger.error(f"{sp}❌ [Theorem] {node.name} not proved: {pretty_expr(node.conclusion)}")
+            logger.info(f"{sp}❌ [Theorem] {node.name} not proved: {pretty_expr(node.conclusion)}")
             return False
 
     # --- Check ---

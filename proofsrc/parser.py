@@ -1,6 +1,7 @@
 from typing import List, Union
 from ast_types import Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, pretty, pretty_expr
 from lexer import Token, lex
+from checker import check_proof
 
 import logging
 logger = logging.getLogger(__name__)
@@ -25,18 +26,22 @@ class Parser:
 
     def parse_file(self):
         self.declared_atoms = {}  # name -> Atom
-        ast = []
+        self.declared_definitions = {}
         while self.peek():
             tok = self.peek()
             if tok.type == "ATOM":
-                ast.append(self.parse_atom())
+                self.parse_atom()
             elif tok.type == "THEOREM":
-                ast.append(self.parse_theorem())
+                theorem = self.parse_theorem()
+                formulas = []
+                for definition in self.declared_definitions.values():
+                    formulas.append(definition.formula)
+                logger.debug(f"[Context] {[pretty_expr(formula) for formula in formulas]}")
+                check_proof(theorem, formulas)
             elif tok.type == "DEFINITION":
-                ast.append(self.parse_definition())
+                self.parse_definition()
             else:
                 raise SyntaxError(f"Unexpected token {tok}")
-        return ast
 
     def parse_atom(self):
         self.consume("ATOM")
@@ -48,7 +53,6 @@ class Parser:
             arity = int(self.consume("NUMBER").value)
             atom = Atom(type=tok.type, name=name, arity=arity)
             self.declared_atoms[name] = atom
-            return atom
         else:
             raise SyntaxError(f"Unexpected token {tok}")
 
@@ -229,30 +233,38 @@ class Parser:
 
     def parse_definition(self):
         self.consume("DEFINITION")
-        name = self.consume("IDENT").value
-        self.consume("LBRACE")
-        # とりあえず文字列で保持（後で expr_parser に流せるよう拡張）
-        body_tok = []
-        while self.peek() and self.peek().type != "RBRACE":
-            body_tok.append(self.consume())
-        self.consume("RBRACE")
-        return Definition(name=name, body=" ".join(t.value for t in body_tok))
+        tok = self.peek()
+        if tok.type == "PREDICATE":
+            self.consume("PREDICATE")
+            name = self.consume("IDENT").value
+            self.consume("ARITY")
+            arity = int(self.consume("NUMBER").value)
+            self.declared_definitions[name] = Definition(type=tok.type, name=name, arity=arity, formula=None)
+            formula = self.parse_expr()
+            definition = Definition(type=tok.type, name=name, arity=arity, formula=formula)
+            self.declared_definitions[name] = definition
+        else:
+            raise SyntaxError(f"Unexpected token {tok}")
 
     def parse_primary(self):
         tok = self.peek()
         if tok.type == "IDENT":
-            atom_name = self.consume("IDENT").value
-            if atom_name not in self.declared_atoms:
+            name = self.consume("IDENT").value
+            if name in self.declared_atoms:
+                arity = self.declared_atoms[name].arity
+            elif name in self.declared_definitions:
+                arity = self.declared_definitions[name].arity
+            else:
                 raise SyntaxError("atom is not found")
             self.consume("LPAREN")
             args = [self.consume("IDENT").value]
             while self.peek().type == "COMMA":
                 self.consume("COMMA")
                 args.append(self.consume("IDENT").value)
-            if len(args) != self.declared_atoms[atom_name].arity:
+            if len(args) != arity:
                 raise SyntaxError("arity is different")
             self.consume("RPAREN")
-            return Symbol(atom_name, args)
+            return Symbol(name, args)
 
         elif tok.type == "LPAREN":
             self.consume("LPAREN")
@@ -332,7 +344,7 @@ class Parser:
 def parse_file_from_source(src: str):
     tokens = lex(src)
     parser = Parser(tokens)
-    return parser.parse_file()
+    parser.parse_file()
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format="%(message)s")
@@ -341,6 +353,4 @@ if __name__ == "__main__":
     f = open(path)
     src = f.read()
     f.close()
-    ast = parse_file_from_source(src)
-    for node in ast:
-        pretty(node)
+    parse_file_from_source(src)

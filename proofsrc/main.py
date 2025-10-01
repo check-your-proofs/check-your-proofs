@@ -8,15 +8,7 @@ def main(args):
     f = open(args.input_file)
     src = f.read()
     f.close()
-    ast = parse_file_from_source(src)
-    for node in ast:
-        pretty(node)
-        if hasattr(node, "proof"):
-            result = check_proof(node)
-            if result:
-                print(f"✔ theorem {node.name}: OK")
-            else:
-                print(f"❌ theorem {node.name}: Failed")
+    parse_file_from_source(src)
 
 if __name__ == "__main__":
     import argparse
