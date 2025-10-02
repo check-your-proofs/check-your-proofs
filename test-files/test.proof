@@ -227,9 +227,7 @@ definition predicate subset arity 2 \forall x\forall y(subset(x,y)\leftrightarro
 theorem subset01 \forall z\forall x\forall y(in(z,x)\wedge subset(x,y)\to in(z,y)) {
   any x,y,z conclude in(z,x)\wedge subset(x,y)\to in(z,y) {
     assume in(z,x)\wedge subset(x,y) conclude in(z,y) {
-      apply \forall x\forall y(subset(x,y)\leftrightarrow\forall z(in(z,x)\to in(z,y))) for x:x,y:y conclude subset(x,y)\leftrightarrow\forall z(in(z,x)\to in(z,y))
-      apply subset(x,y)\to\forall z(in(z,x)\to in(z,y)) with subset(x,y) conclude \forall z(in(z,x)\to in(z,y))
-      apply \forall z(in(z,x)\to in(z,y)) for z:z with in(z,x) conclude in(z,y)
+      apply subset(x,y) for z:z with in(z,x) conclude in(z,y)
     }
   }
 }

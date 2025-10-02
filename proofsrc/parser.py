@@ -26,18 +26,15 @@ class Parser:
 
     def parse_file(self):
         self.declared_atoms = {}  # name -> Atom
-        self.declared_definitions = {}
+        self.context = Context([], False, {})
         while self.peek():
             tok = self.peek()
             if tok.type == "ATOM":
                 self.parse_atom()
             elif tok.type == "THEOREM":
                 theorem = self.parse_theorem()
-                formulas = []
-                for definition in self.declared_definitions.values():
-                    formulas.append(definition.formula)
-                logger.debug("[Context] " + ", ".join(pretty_expr(formula) for formula in formulas))
-                if check_proof(theorem, Context(formulas, False)):
+                logger.debug("context.definitions.keys(): " + ", ".join([name for name in self.context.definitions.keys()]))
+                if check_proof(theorem, self.context):
                     print(f"[{theorem.name}] proved")
                 else:
                     print(f"❌ [{theorem.name}] not proved")
@@ -242,10 +239,10 @@ class Parser:
             name = self.consume("IDENT").value
             self.consume("ARITY")
             arity = int(self.consume("NUMBER").value)
-            self.declared_definitions[name] = Definition(type=tok.type, name=name, arity=arity, formula=None)
+            self.context.definitions[name] = Definition(type=tok.type, name=name, arity=arity, formula=None)
             formula = self.parse_expr()
             definition = Definition(type=tok.type, name=name, arity=arity, formula=formula)
-            self.declared_definitions[name] = definition
+            self.context.definitions[name] = definition
         else:
             raise SyntaxError(f"Unexpected token {tok}")
 
@@ -255,8 +252,8 @@ class Parser:
             name = self.consume("IDENT").value
             if name in self.declared_atoms:
                 arity = self.declared_atoms[name].arity
-            elif name in self.declared_definitions:
-                arity = self.declared_definitions[name].arity
+            elif name in self.context.definitions:
+                arity = self.context.definitions[name].arity
             else:
                 raise SyntaxError("atom is not found")
             self.consume("LPAREN")

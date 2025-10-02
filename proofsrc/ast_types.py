@@ -7,7 +7,8 @@ logger = logging.getLogger("proof")
 @dataclass
 class Context:
     formulas: list        # 通常の論理式
-    bot_derived: bool = False  # 矛盾導出フラグ
+    bot_derived: bool  # 矛盾導出フラグ
+    definitions: dict
 
 # === DSL ノード定義 ===
 @dataclass

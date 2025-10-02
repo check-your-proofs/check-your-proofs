@@ -233,14 +233,14 @@ def add_conclusion(context, conclusion):
 # === 証明チェッカー ===
 def check_proof(node, context=None, indent=0):
     if context is None:
-        context = Context([], False)
+        context = Context([], False, {})
 
     sp = "  " * indent
 
     # --- Theorem ---
     if isinstance(node, Theorem):
         logger.debug(f"{sp}[Theorem] {node.name}: {pretty_expr(node.conclusion)}")
-        local_ctx = Context(list(context.formulas), False)
+        local_ctx = Context(list(context.formulas), False, context.definitions)
         for stmt in node.proof:
             if not check_proof(stmt, local_ctx, indent+1):
                 logger.error(f"{sp}❌ [Theorem] Failed")
@@ -265,7 +265,7 @@ def check_proof(node, context=None, indent=0):
     # --- Assume ---
     if isinstance(node, Assume):
         logger.debug(f"{sp}[Assume] premise={pretty_expr(node.premise)}, conclusion={pretty_expr(node.conclusion)}")
-        local_ctx = Context(list(context.formulas + [node.premise]), False)
+        local_ctx = Context(list(context.formulas + [node.premise]), False, context.definitions)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -282,7 +282,7 @@ def check_proof(node, context=None, indent=0):
     # --- Any ---
     if isinstance(node, Any):
         logger.debug(f"{sp}[Any] Taking {node.vars}")
-        local_ctx = Context(list(context.formulas), False)
+        local_ctx = Context(list(context.formulas), False, context.definitions)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -313,7 +313,7 @@ def check_proof(node, context=None, indent=0):
             logger.error(f"{sp}❌ [Divide] not matched: fact={pretty_expr(node.fact)}, conected_premise={pretty_expr(connected_premise)}")
             return False
         logger.debug(f"{sp}[Divide] fact={pretty_expr(node.fact)}, goal={pretty_expr(node.conclusion)}")
-        local_ctx = Context(list(context.formulas), False)
+        local_ctx = Context(list(context.formulas), False, context.definitions)
         for stmt in node.cases:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -323,7 +323,7 @@ def check_proof(node, context=None, indent=0):
 
     if isinstance(node, Case):
         logger.debug(f"{sp}[Case] premise={pretty_expr(node.premise)}")
-        local_ctx = Context(list(context.formulas + [node.premise]), False)
+        local_ctx = Context(list(context.formulas + [node.premise]), False, context.definitions)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -343,7 +343,7 @@ def check_proof(node, context=None, indent=0):
             return False
         logger.debug(f"{sp}[Some] derivable: {pretty_expr(fact)}")
         logger.debug(f"{sp}[Some] Taking {node.vars}, premise={pretty_expr(node.premise)}")
-        local_ctx = Context(list(context.formulas + [node.premise]), False)
+        local_ctx = Context(list(context.formulas + [node.premise]), False, context.definitions)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -357,7 +357,7 @@ def check_proof(node, context=None, indent=0):
     
     if isinstance(node, Deny):
         logger.debug(f"{sp}[Deny] premise={pretty_expr(node.premise)}")
-        local_ctx = Context(list(context.formulas + [node.premise]), False)
+        local_ctx = Context(list(context.formulas + [node.premise]), False, context.definitions)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -394,8 +394,20 @@ def check_proof(node, context=None, indent=0):
             logger.error(f"{sp}❌ [Apply] Cannot derive fact: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Apply] Drivable fact: {pretty_expr(node.fact)}")
+        if isinstance(node.fact, Symbol):
+            if node.fact.name not in context.definitions:
+                logger.error(f"{sp}❌ [Apply] Undefined name: {node.fact.name}")
+                return False
+            vars, body = collect_forall_vars(context.definitions[node.fact.name].formula)
+            if len(vars) != len(node.fact.args):
+                logger.error(f"{sp}❌ [Apply] not matched: len(vars)={len(vars)}, len(node.fact.args)={len(node.fact.args)}")
+                return False
+            fact = substitute(body, dict(zip(vars, node.fact.args))).right
+            logger.debug(f"{sp}[Apply] replace {pretty_expr(node.fact)} to {pretty_expr(fact)}")
+        else:
+            fact = node.fact
         if node.env is not None:
-            vars, body = collect_forall_vars(node.fact)
+            vars, body = collect_forall_vars(fact)
             if set(vars) != set(node.env.keys()):
                 logger.error(f"{sp}❌ [Apply] matched: vars={vars}, env={node.env}")
                 return False
@@ -413,7 +425,7 @@ def check_proof(node, context=None, indent=0):
             else:
                 implication = instantiation
         else:
-            implication = node.fact
+            implication = fact
         if not isinstance(implication, Implies):
             logger.error(f"{sp}❌ [Apply] Not Implies object: {pretty_expr(implication)}")
             return False
