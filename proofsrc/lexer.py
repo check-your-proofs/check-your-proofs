@@ -8,7 +8,7 @@ class Token:
     pos: int
     line: int
 
-KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "with", "check", "lift", "atom", "predicate", "arity", "axiom", "invoke", "expand"}
+KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "with", "check", "lift", "atom", "predicate", "arity", "axiom", "invoke", "expand", "characterize"}
 
 SYMBOLS = {
     "{": "LBRACE",
@@ -46,6 +46,9 @@ def lex(src: str) -> list[Token]:
         elif src[i:].startswith("\\forall"):
             tokens.append(Token("FORALL", "\\forall", i, line))
             i += len("\\forall")
+        elif src[i:].startswith("\\exists!"):
+            tokens.append(Token("EXISTS_UNIQ", "\\exists!", i, line))
+            i += len("\\exists!")
         elif src[i:].startswith("\\exists"):
             tokens.append(Token("EXISTS", "\\exists", i, line))
             i += len("\\exists")
@@ -68,7 +71,7 @@ def lex(src: str) -> list[Token]:
             tokens.append(Token("BOT", "\\bot", i, line))
             i += len("\\bot")
         else:
-            m = re.match(r"(\\[A-Za-z][A-Za-z0-9_]*)|([A-Za-z_][A-Za-z0-9_]*)", src[i:])
+            m = re.match(r"(\\[A-Za-z][A-Za-z0-9_]*)|([A-Za-z_][A-Za-z0-9_]*'*)", src[i:])
             if m:
                 text = m.group(0)
                 if text in KEYWORDS:

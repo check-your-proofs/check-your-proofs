@@ -105,7 +105,7 @@ theorem test14 \forall x\forall y(in(x,x)\vee in(x,y)\vee in(y,x)\to in(x,x)\vee
 
 theorem test15 \exists x\exists y(in(x,y))\to\exists x\exists y(in(x,y)\wedge in(x,y)) {
   assume \exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(x,y)) {
-    some x, y such in(x,y) conclude \exists x\exists y(in(x,y)\wedge in(x,y)) {
+    some x:x, y:y such \exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(x,y)) {
       lift in(x,y)\wedge in(x,y) for x: x, y: y conclude \exists x\exists y(in(x,y)\wedge in(x,y))
     }
   }
@@ -117,7 +117,7 @@ theorem test16 \forall x\forall y(in(x,y))\to\forall x\forall y(in(x,y)) {
 
 theorem test17 \exists x(in(x,x))\to\exists x(in(x,x)) {
   assume \exists x(in(x,x)) conclude \exists x(in(x,x)) {
-    some x such in(x,x) conclude \exists x(in(x,x)) {
+    some x:x such \exists x(in(x,x)) conclude \exists x(in(x,x)) {
       lift in(x,x) for x: x conclude \exists x(in(x,x))
     }
   }
@@ -125,7 +125,7 @@ theorem test17 \exists x(in(x,x))\to\exists x(in(x,x)) {
 
 theorem test18 \exists x\exists y(in(x,y)\vee in(y,x))\to\exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x)))) {
   assume \exists x\exists y(in(x,y)\vee in(y,x)) conclude \exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x)))) {
-    some x, y such in(x,y)\vee in(y,x) conclude \exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x)))) {
+    some x:x, y:y such \exists x\exists y(in(x,y)\vee in(y,x)) conclude \exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x)))) {
       divide in(x,y)\vee in(y,x) conclude \neg(\neg(in(x,y))\wedge\neg(in(y,x)))
         case in(x,y) {
           deny \neg(in(x,y))\wedge\neg(in(y,x)) {
@@ -144,7 +144,7 @@ theorem test18 \exists x\exists y(in(x,y)\vee in(y,x))\to\exists x\exists y(\neg
 
 theorem test19 \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x)))\to\exists x\exists y(in(x,y)) {
   assume \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x))) conclude \exists x\exists y(in(x,y)) {
-    some x, y such (in(x,y)\vee in(y,x))\wedge\neg(in(y,x)) conclude \exists x\exists y(in(x,y)) {
+    some x:x, y:y such \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x))) conclude \exists x\exists y(in(x,y)) {
       divide in(x,y)\vee in(y,x) conclude in(x,y)
         case in(x,y) {}
         case in(y,x) {
@@ -158,7 +158,7 @@ theorem test19 \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x)))\to\e
 
 theorem test20 \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\exists y(in(x,y))\to\exists x\exists y(in(x,y)\wedge in(y,x)) {
   assume \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(y,x)) {
-    some x, y such in(x,y) conclude \exists x\exists y(in(x,y)\wedge in(y,x)) {
+    some x:x, y:y such \exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(y,x)) {
       apply \forall x\forall y(in(x,y)\to\forall z(in(z,x))) for x: x, y: y with in(x,y) conclude \forall z(in(z,x))
       apply \forall z(in(z,x)) for z: y conclude in(y,x)
       lift in(x,y)\wedge in(y,x) for x: x, y: y conclude \exists x\exists y(in(x,y)\wedge in(y,x))
@@ -169,7 +169,7 @@ theorem test20 \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\e
 theorem test21 \forall x\forall y(in(x,y))\to\neg(\exists x\exists y(\neg(in(x,y)))) {
   assume \forall x\forall y(in(x,y)) conclude \neg(\exists x\exists y(\neg(in(x,y)))) {
     deny \exists x\exists y(\neg(in(x,y))) {
-      some x, y such \neg(in(x,y)) conclude \bot {
+      some x:x, y:y such \exists x\exists y(\neg(in(x,y))) conclude \bot {
         apply \forall x\forall y(in(x,y)) for x: x, y: y conclude in(x,y)
         contradict in(x,y)
       }
@@ -203,7 +203,7 @@ theorem test23 \forall x(in(x,x)\to\neg(in(x,x)))\to(\forall x(in(x,x))\to\foral
 theorem test24 \forall x\forall y(\neg(in(x,y)))\to\neg(\exists x\exists y(in(x,y))) {
   assume \forall x\forall y(\neg(in(x,y))) conclude \neg(\exists x\exists y(in(x,y))) {
     deny \exists x\exists y(in(x,y)) {
-      some x, y such in(x,y) conclude \bot {
+      some x:x, y:y such \exists x\exists y(in(x,y)) conclude \bot {
         apply \forall x\forall y(\neg(in(x,y))) for x: x, y: y conclude \neg(in(x,y))
         contradict in(x,y)
       }
@@ -274,6 +274,32 @@ theorem in_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge equ
         invoke in(y,u)\to in(y,v) conclude in(y,v)
       }
     }
+  }
+}
+
+definition predicate notin arity 2 \forall x\forall y(notin(x,y)\leftrightarrow\neg(in(x,y)))
+
+axiom axiom_of_emptyset \exists x\forall y(notin(y,x))
+
+theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {
+  some x:x such axiom_of_emptyset conclude \exists!x\forall y(notin(y,x)) {
+    any x' conclude \forall y(notin(y,x'))\to equal(x',x) {
+      assume \forall y(notin(y,x')) conclude equal(x',x) {
+        any y conclude in(y,x')\leftrightarrow in(y,x) {
+          assume in(y,x') conclude in(y,x) {
+            apply \forall y(notin(y,x')) for y:y conclude notin(y,x')
+            contradict in(y,x')
+            explode in(y,x)
+          }
+          assume in(y,x) conclude in(y,x') {
+            apply \forall y(notin(y,x)) for y:y conclude notin(y,x)
+            contradict in(y,x)
+            explode in(y,x')
+          }
+        }
+      }
+    }
+    characterize \forall y(notin(y,x))\wedge\forall x'(\forall y(notin(y,x'))\to equal(x',x)) for x:x conclude \exists!x\forall y(notin(y,x))
   }
 }
 

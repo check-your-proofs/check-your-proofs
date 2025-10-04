@@ -1,5 +1,5 @@
 # checker.py
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, pretty, pretty_expr
 
 # === α同値判定 ===
 from itertools import permutations
@@ -65,36 +65,21 @@ def alpha_equiv(e1, e2, env=None):
     if isinstance(e1, Not) != isinstance(e2, Not):
         return False
 
-    if isinstance(e1, Forall) and isinstance(e2, Forall):
-        vars1, body1 = collect_forall_vars(e1)
-        vars2, body2 = collect_forall_vars(e2)
+    for quantifier_type in (Forall, Exists, ExistsUniq):
+        if isinstance(e1, quantifier_type) and isinstance(e2, quantifier_type):
+            vars1, body1 = collect_quantifier_vars(e1, quantifier_type)
+            vars2, body2 = collect_quantifier_vars(e2, quantifier_type)
 
-        if len(vars1) != len(vars2):
+            if len(vars1) != len(vars2):
+                return False
+
+            for perm in permutations(vars2):
+                newenv = env.copy()
+                for v1, v2 in zip(vars1, perm):
+                    newenv[v1] = v2
+                if alpha_equiv(body1, body2, newenv):
+                    return True
             return False
-
-        # vars2 の順列ごとに試す
-        for perm in permutations(vars2):
-            newenv = env.copy()
-            for v1, v2 in zip(vars1, perm):
-                newenv[v1] = v2
-            if alpha_equiv(body1, body2, newenv):
-                return True
-        return False
-    
-    if isinstance(e1, Exists) and isinstance(e2, Exists):
-        vars1, body1 = collect_exists_vars(e1)
-        vars2, body2 = collect_exists_vars(e2)
-
-        if len(vars1) != len(vars2):
-            return False
-        
-        for perm in permutations(vars2):
-            newenv = env.copy()
-            for v1, v2 in zip(vars1, perm):
-                newenv[v1] = v2
-            if alpha_equiv(body1, body2, newenv):
-                return True
-        return False
 
     if isinstance(e1, Implies) and isinstance(e2, Implies):
         return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
@@ -119,20 +104,10 @@ def alpha_equiv(e1, e2, env=None):
 
     return False
 
-# --- ヘルパー関数 ---
-def collect_forall_vars(e):
-    """連続する Forall をリストにして本体と返す"""
+def collect_quantifier_vars(e, quantifier_type):
     vars_ = []
     body = e
-    while isinstance(body, Forall):
-        vars_.append(body.var)
-        body = body.body
-    return vars_, body
-
-def collect_exists_vars(e):
-    vars_ = []
-    body = e
-    while isinstance(body, Exists):
+    while isinstance(body, quantifier_type):
         vars_.append(body.var)
         body = body.body
     return vars_, body
@@ -187,6 +162,27 @@ def derivable_flat(goal, flat_ctx):
     # α同値チェック
     return expr_in_context(goal, flat_ctx)
 
+def expand_definitions(expr, context):
+    if isinstance(expr, Symbol):
+        if expr.name in context.definitions:
+            definition = context.definitions[expr.name].formula
+            vars, body = collect_quantifier_vars(definition, Forall)
+            expanded = substitute(body, dict(zip(vars, expr.args))).right
+            return expanded
+        else:
+            return expr
+    elif isinstance(expr, Not):
+        return Not(expand_definitions(expr.body, context))
+    elif isinstance(expr, (And, Or, Implies, Iff)):
+        left = expand_definitions(expr.left, context)
+        right = expand_definitions(expr.right, context)
+        return type(expr)(left, right)
+    elif isinstance(expr, (Forall, Exists)):
+        body = expand_definitions(expr.body, context)
+        return type(expr)(expr.var, body)
+    else:
+        return expr
+
 def derivable(goal, context):
     if isinstance(goal, Bottom):
         return context.bot_derived
@@ -198,12 +194,9 @@ def derivable(goal, context):
         flat_ctx = []
         for c in context.formulas:
             flat_ctx.extend(split_conjunction(c))
-        if isinstance(goal, Symbol) and goal.name in context.definitions:
-            vars, body = collect_forall_vars(context.definitions[goal.name].formula)
-            replacement = substitute(body, dict(zip(vars, goal.args))).right
-            return derivable_flat(goal, flat_ctx) or derivable_flat(replacement, flat_ctx)
-        else:
-            return derivable_flat(goal, flat_ctx)
+        expanded_ctx = [expand_definitions(c, context) for c in flat_ctx]
+        expanded_goal = expand_definitions(goal, context)
+        return derivable_flat(expanded_goal, expanded_ctx)
 
 def fresh_var(var, used):
     """used に含まれない新しい変数名を作る"""
@@ -368,15 +361,26 @@ def check_proof(node, context: Context, indent=0):
             return False
 
     if isinstance(node, Some):
-        fact = node.premise
-        for v in reversed(node.vars):
-            fact = Exists(v, fact)
-        if not derivable(fact, context):
-            logger.error(f"{sp}❌ [Some] not derivable: {pretty_expr(fact)}")
+        if not derivable(node.fact, context):
+            logger.error(f"{sp}❌ [Some] not derivable: {pretty_expr(node.fact)}")
             return False
-        logger.debug(f"{sp}[Some] derivable: {pretty_expr(fact)}")
-        logger.debug(f"{sp}[Some] Taking {node.vars}, premise={pretty_expr(node.premise)}")
-        local_ctx = context.copy(list(context.formulas + [node.premise]), False)
+        logger.debug(f"{sp}[Some] derivable: {pretty_expr(node.fact)}")
+        if isinstance(node.fact, Axiom):
+            fact = node.fact.conclusion
+        elif isinstance(node.fact, Theorem):
+            fact = node.fact.conclusion
+        else:
+            fact = node.fact
+        if not isinstance(fact, Exists):
+            logger.error(f"{sp}❌ Not Exists object: {pretty_expr(node.fact)}")
+            return False
+        vars, body = collect_quantifier_vars(fact, Exists)
+        if not set(node.env.keys()).issubset(set(vars)):
+            logger.error(f"{sp}❌ invalid vars: node.env.keys()={node.env.keys()}, vars={vars}")
+            return False
+        premise = substitute(body, node.env)
+        logger.debug(f"{sp}[Some] Taking {node.env.values()}, premise={pretty_expr(premise)}")
+        local_ctx = context.copy(list(context.formulas + [premise]), False)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -435,7 +439,7 @@ def check_proof(node, context: Context, indent=0):
             if node.fact.name not in context.definitions:
                 logger.error(f"{sp}❌ [Apply] Undefined name: {node.fact.name}")
                 return False
-            vars, body = collect_forall_vars(context.definitions[node.fact.name].formula)
+            vars, body = collect_quantifier_vars(context.definitions[node.fact.name].formula, Forall)
             if len(vars) != len(node.fact.args):
                 logger.error(f"{sp}❌ [Apply] not matched: len(vars)={len(vars)}, len(node.fact.args)={len(node.fact.args)}")
                 return False
@@ -444,7 +448,7 @@ def check_proof(node, context: Context, indent=0):
         else:
             fact = node.fact
         if node.env is not None:
-            vars, body = collect_forall_vars(fact)
+            vars, body = collect_quantifier_vars(fact, Forall)
             if set(vars) != set(node.env.keys()):
                 logger.error(f"{sp}❌ [Apply] matched: vars={vars}, env={node.env}")
                 return False
@@ -539,7 +543,7 @@ def check_proof(node, context: Context, indent=0):
             logger.error(f"{sp}❌ [Expand] Not defined: {node.fact.name}")
             return False
         logger.debug(f"{sp}[Expand] Defined: {node.fact.name}")
-        vars, body = collect_forall_vars(context.definitions[node.fact.name].formula)
+        vars, body = collect_quantifier_vars(context.definitions[node.fact.name].formula, Forall)
         if len(vars) != len(node.fact.args):
             logger.error(f"{sp}❌ [Expand] Length not matched: vars={vars}, node.fact.args={node.fact.args}")
             return False
@@ -552,6 +556,33 @@ def check_proof(node, context: Context, indent=0):
         logger.debug(f"{sp}[Expand] Matched: node.conclusion={pretty_expr(node.conclusion)}, expanded={pretty_expr(expanded)}")
         add_conclusion(context, node.conclusion)
         logger.debug(f"{sp}[Expand] Added: {pretty_expr(node.conclusion)}")
+        return True
+
+    if isinstance(node, Characterize):
+        if not derivable(node.fact.left, context):
+            logger.error(f"{sp}❌ [Characterize] Not derived: {pretty_expr(node.fact.left)}")
+            return False
+        logger.debug(f"{sp}[Characterize] Derived: {pretty_expr(node.fact.left)}")
+        free_vars, _ = collect_vars(node.fact.left)
+        if not set(node.env.values()).issubset(free_vars):
+            logger.error(f"{sp}❌ [Characterize] Invalid env: vars={sorted(free_vars)}, env={node.env}")
+            return False
+        logger.debug(f"{sp}[Characterize] Valid env: vars={sorted(free_vars)}, env={node.env}")
+        if not alpha_equiv(substitute(node.fact.left, {list(node.env.values())[0]: node.fact.right.var}), node.fact.right.body.left):
+            logger.error(f"{sp}❌ [Characterize] Not matched: node.fact.left={pretty_expr(node.fact.left)}, node.fact.right.body.left={pretty_expr(node.fact.right.body.left)}")
+            return False
+        logger.debug(f"{sp}[Characterize] Matched: node.fact.left={pretty_expr(node.fact.left)}, node.fact.right.body.left={pretty_expr(node.fact.right.body.left)}")
+        if not (node.fact.right.body.right.name == "equal" and set(node.fact.right.body.right.args) == set([list(node.env.values())[0], node.fact.right.var])):
+            logger.error(f"{sp}❌ [Characterized] Unexpected: node.fact.right.body.right={pretty_expr(node.fact.right.body.right)}")
+            return False
+        logger.debug(f"{sp}[Characterized] Expected: node.fact.right.body.right={pretty_expr(node.fact.right.body.right)}")
+        characterized = ExistsUniq(list(node.env.keys())[0], substitute(node.fact.left, {v: k for k, v in node.env.items()}))
+        logger.debug(f"{sp}[Characterize] derived formula: {pretty_expr(characterized)}")
+        if not alpha_equiv(node.conclusion, characterized):
+            logger.error(f"{sp}❌ [Characterize] Not matched: node.conclusion={pretty_expr(node.conclusion)}, derived={pretty_expr(characterized)}")
+            return False
+        logger.debug(f"{sp}[Characterize] Matched: node.conclusion={pretty_expr(node.conclusion)}, derived={pretty_expr(characterized)}")
+        add_conclusion(context, node.conclusion)
         return True
 
     logger.error(f"{sp}❌ Unsupported node {node}")

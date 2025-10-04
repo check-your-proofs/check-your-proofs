@@ -1,5 +1,5 @@
 from typing import List, Union
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, pretty, pretty_expr
 from lexer import Token, lex
 from checker import check_proof
 
@@ -35,9 +35,11 @@ class Parser:
                 self.parse_axiom()
             elif tok.type == "THEOREM":
                 theorem = self.parse_theorem()
-                check_proof(theorem, self.context)
-                self.context.theorems[theorem.name] = theorem
-                print(f"[theorem proved] {theorem.name}")
+                if check_proof(theorem, self.context):
+                    self.context.theorems[theorem.name] = theorem
+                    print(f"[theorem proved] {theorem.name}")
+                else:
+                    print(f"❌ [theorem not proved] {theorem.name}")
             elif tok.type == "DEFINITION":
                 self.parse_definition()
             else:
@@ -110,6 +112,8 @@ class Parser:
                 body.append(self.parse_invoke())
             elif tok.type == "EXPAND":
                 body.append(self.parse_expand())
+            elif tok.type == "CHARACTERIZE":
+                body.append(self.parse_characterize())
             else:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
@@ -163,22 +167,24 @@ class Parser:
     
     def parse_some(self):
         self.consume("SOME")
-        vars_ = []
+        env = {}
         while True:
-            tok = self.consume("IDENT")
-            vars_.append(tok.value)
+            bound = self.consume("IDENT").value
+            self.consume("COLON")
+            free = self.consume("IDENT").value
+            env[bound] = free
             if self.peek().type == "COMMA":
                 self.consume("COMMA")
                 continue
             break
         self.consume("SUCH")
-        premise = self.parse_expr()
+        fact = self.parse_expr()
         self.consume("CONCLUDE")
         conclusion = self.parse_expr()
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
-        return Some(vars=vars_, premise=premise, conclusion=conclusion, body=body)
+        return Some(env=env, fact=fact, conclusion=conclusion, body=body)
     
     def parse_deny(self):
         self.consume("DENY")
@@ -258,6 +264,20 @@ class Parser:
         conclusion = self.parse_expr()
         return Expand(fact=fact, conclusion=conclusion)
 
+    def parse_characterize(self):
+        self.consume("CHARACTERIZE")
+        fact = self.parse_expr()
+        if not (isinstance(fact, And) and isinstance(fact.right, Forall) and isinstance(fact.right.body, Implies) and isinstance(fact.right.body.right, Symbol)):
+            raise SyntaxError("[Characterize] invalid fact format")
+        self.consume("FOR")
+        bound = self.consume("IDENT").value
+        self.consume("COLON")
+        free = self.consume("IDENT").value
+        env = {bound: free}
+        self.consume("CONCLUDE")
+        conclusion = self.parse_expr()
+        return Characterize(fact=fact, env=env, conclusion=conclusion)
+
     def parse_definition(self):
         self.consume("DEFINITION")
         tok = self.peek()
@@ -307,28 +327,23 @@ class Parser:
             self.consume("RPAREN")
             return Not(body)
 
-        elif tok.type == "FORALL":
-            vars = []
-            while self.peek().type == "FORALL":
-                self.consume("FORALL")
-                vars.append(self.consume("IDENT").value)
+        elif tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
+            quantifiers = []
+            vars_ = []
+            while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
+                quantifiers.append(self.consume(tok.type).type)
+                vars_.append(self.consume("IDENT").value)
+                tok = self.peek()
             self.consume("LPAREN")
             body = self.parse_recursion()
             self.consume("RPAREN")
-            for var in reversed(vars):
-                body = Forall(var, body)
-            return body
-
-        elif tok.type == "EXISTS":
-            vars = []
-            while self.peek().type == "EXISTS":
-                self.consume("EXISTS")
-                vars.append(self.consume("IDENT").value)
-            self.consume("LPAREN")
-            body = self.parse_recursion()
-            self.consume("RPAREN")
-            for var in reversed(vars):
-                body = Exists(var, body)
+            for quantifier, var in zip(reversed(quantifiers), reversed(vars_)):
+                if quantifier == "FORALL":
+                    body = Forall(var, body)
+                elif quantifier == "EXISTS":
+                    body = Exists(var, body)
+                elif quantifier == "EXISTS_UNIQ":
+                    body = ExistsUniq(var, body)
             return body
 
         else:
@@ -350,7 +365,7 @@ class Parser:
 
     def parse_implies(self):
         left = self.parse_and()
-        while self.peek().type in ("IMPLIES", "IFF"):
+        while self.peek() is not None and self.peek().type in ("IMPLIES", "IFF"):
             op = self.peek().type
             self.consume(op)
             right = self.parse_and()
@@ -362,7 +377,7 @@ class Parser:
 
     def parse_and(self):
         left = self.parse_primary()
-        while self.peek().type in ("AND", "OR"):
+        while self.peek() is not None and self.peek().type in ("AND", "OR"):
             op = self.peek().type
             self.consume(op)
             right = self.parse_primary()

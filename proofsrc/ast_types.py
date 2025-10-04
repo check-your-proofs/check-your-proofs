@@ -67,8 +67,8 @@ class Case:
 
 @dataclass
 class Some:
-    vars: List[str]
-    premise: object
+    env: Dict[str, str]
+    fact: object
     conclusion: object
     body: list
 
@@ -109,6 +109,12 @@ class Expand:
     conclusion: object
 
 @dataclass
+class Characterize:
+    fact: object
+    env: dict
+    conclusion: object
+
+@dataclass
 class Definition:
     type: str
     name: str
@@ -127,6 +133,11 @@ class Forall:
 
 @dataclass
 class Exists:
+    var: str
+    body: object
+
+@dataclass
+class ExistsUniq:
     var: str
     body: object
 
@@ -256,6 +267,8 @@ def pretty_expr(expr):
         return f"\\forall {expr.var}({pretty_expr(expr.body)})"
     if isinstance(expr, Exists):
         return f"\\exists {expr.var}({pretty_expr(expr.body)})"
+    if isinstance(expr, ExistsUniq):
+        return f"\\exists! {expr.var}({pretty_expr(expr.body)})"
     if isinstance(expr, Bottom):
         return "\\bot"
     raise TypeError(f"Unsupported node type: {type(expr)}")
