@@ -39,9 +39,6 @@ def alpha_equiv(e1, e2, env=None):
     if env is None:
         env = {}
 
-    e1 = normalize_neg(e1)
-    e2 = normalize_neg(e2)
-
     # e1, e2 が両方 Not の場合は中身を再帰的に比較
     if isinstance(e1, Not) and isinstance(e2, Not):
         return alpha_equiv(e1.body, e2.body, env)
@@ -328,10 +325,9 @@ def to_neg_wedge_exists(expr, context):
     expr_norm = expand_definitions(expr, context)
     expr_norm = to_nnf(expr_norm, context)
     expr_norm = vee_to_neg_wedge(expr_norm)
-    expr_norm = normalize_neg2(expr_norm)
     expr_norm = forall_to_exists(expr_norm)
-    expr_norm = normalize_neg2(expr_norm)
     expr_norm = to_pnf(expr_norm, context)
+    expr_norm = normalize_neg2(expr_norm)
     return expr_norm
 
 def logic_equiv(expr1, expr2, context):
