@@ -1,5 +1,5 @@
 from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, Atom, Definition, DefCon, Identify, pretty, pretty_expr
-from logic_utils import normalize_neg, expr_in_context, expand_definitions, alpha_equiv, collect_quantifier_vars, substitute, collect_vars
+from logic_utils import normalize_neg, expr_in_context, expand_definitions, logic_equiv, collect_quantifier_vars, substitute, collect_vars
 
 import logging
 logger = logging.getLogger("proof")
@@ -14,18 +14,18 @@ def split_conjunction(expr):
     else:
         return [expr]
 
-def derivable_flat(goal, flat_ctx):
+def derivable_flat(goal, formulas, context):
     # goal が And のとき
     if isinstance(goal, And):
-        return derivable_flat(goal.left, flat_ctx) and derivable_flat(goal.right, flat_ctx)
+        return derivable_flat(goal.left, formulas, context) and derivable_flat(goal.right, formulas, context)
     if isinstance(goal, Or):
-        return derivable_flat(goal.left, flat_ctx) or derivable_flat(goal.right, flat_ctx) or expr_in_context(goal, flat_ctx)
+        return derivable_flat(goal.left, formulas, context) or derivable_flat(goal.right, formulas, context) or expr_in_context(goal, formulas, context)
     if isinstance(goal, Iff):
-        if expr_in_context(goal, flat_ctx):
+        if expr_in_context(goal, formulas, context):
             return True
-        return derivable_flat(Implies(goal.left, goal.right), flat_ctx) and derivable_flat(Implies(goal.right, goal.left), flat_ctx)
+        return derivable_flat(Implies(goal.left, goal.right), formulas, context) and derivable_flat(Implies(goal.right, goal.left), formulas, context)
     # α同値チェック
-    return expr_in_context(goal, flat_ctx)
+    return expr_in_context(goal, formulas, context)
 
 def derivable(goal, context, indent):
     sp = '  ' * indent
@@ -38,12 +38,12 @@ def derivable(goal, context, indent):
     elif isinstance(goal, Theorem):
         return goal.name in context.theorems
     else:
-        flat_ctx = []
-        for c in context.formulas:
-            flat_ctx.extend(split_conjunction(c))
-        expanded_ctx = [expand_definitions(c, context) for c in flat_ctx]
+        flat_formulas = []
+        for f in context.formulas:
+            flat_formulas.extend(split_conjunction(f))
+        expanded_flat_formulas = [expand_definitions(f, context) for f in flat_formulas]
         expanded_goal = expand_definitions(goal, context)
-        return derivable_flat(expanded_goal, expanded_ctx)
+        return derivable_flat(expanded_goal, expanded_flat_formulas, context)
 
 def add_conclusion(context, conclusion):
     if isinstance(conclusion, Bottom):
@@ -75,7 +75,7 @@ def check_proof(node, context: Context, indent=0):
         local_ctx = context.copy([], False)
         for stmt in node.proof:
             if not check_proof(stmt, local_ctx, indent+1):
-                logger.error(f"{sp}❌ [Theorem] Failed")
+                logger.error(f"{sp}❌ [Theorem] {node.name} not proved: {pretty_expr(node.conclusion)}")
                 return False
         if derivable(node.conclusion, local_ctx, indent+1):
             logger.debug(f"{sp}[Theorem] {node.name} proved: {pretty_expr(node.conclusion)}")
@@ -140,7 +140,7 @@ def check_proof(node, context: Context, indent=0):
         while i < len(node.cases):
             connected_premise = Or(connected_premise, node.cases[i].premise)
             i += 1
-        if alpha_equiv(connected_premise, node.fact):
+        if logic_equiv(connected_premise, node.fact, context):
             logger.debug(f"{sp}[Divide] mathched: fact={pretty_expr(node.fact)}, connected_premise={pretty_expr(connected_premise)}")
         else:
             logger.error(f"{sp}❌ [Divide] not matched: fact={pretty_expr(node.fact)}, conected_premise={pretty_expr(connected_premise)}")
@@ -263,7 +263,7 @@ def check_proof(node, context: Context, indent=0):
             instantiation = substitute(body, node.env)
             logger.debug(f"{sp}[Apply] \\forall-elimination is done: instantiation={pretty_expr(instantiation)}")
             if node.premise is None:
-                if not alpha_equiv(node.conclusion, instantiation):
+                if not logic_equiv(node.conclusion, instantiation, context):
                     logger.error(f"{sp}❌ [Apply] Not matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
                     return False
                 logger.debug(f"{sp}[Apply] Matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
@@ -282,12 +282,12 @@ def check_proof(node, context: Context, indent=0):
             logger.error(f"{sp}❌ [Apply] Cannot derive premise: {pretty_expr(node.premise)}")
             return False
         logger.debug(f"{sp}[Apply] Derivable premise: {pretty_expr(node.premise)}")
-        if not alpha_equiv(implication.left, node.premise):
+        if not logic_equiv(implication.left, node.premise, context):
             logger.error(f"{sp}❌ [Apply] Not matched: implication.left={pretty_expr(implication.left)}, node.premise={pretty_expr(node.premise)}")
             return False
         logger.debug(f"{sp}[Apply] Matched: implication.left={pretty_expr(implication.left)}, node.premise={pretty_expr(node.premise)}")
         logger.debug(f"{sp}[Apply] \\to-elimination is done: {pretty_expr(implication.right)}")
-        if not alpha_equiv(node.conclusion, implication.right):
+        if not logic_equiv(node.conclusion, implication.right, context):
             logger.error(f"{sp}❌ [Apply] Not matched: node.conclusion={pretty_expr(node.conclusion)}, implication.right={pretty_expr(implication.right)}")
             return False
         logger.debug(f"{sp}[Apply] Matched: node.conclusion={pretty_expr(node.conclusion)}, implication.right={pretty_expr(implication.right)}")
@@ -309,7 +309,7 @@ def check_proof(node, context: Context, indent=0):
         for k in reversed(list(node.env.keys())):
             lifted = Exists(k, lifted)
         logger.debug(f"{sp}[Lift] lifted formula: {pretty_expr(lifted)}")
-        if not alpha_equiv(node.conclusion, lifted):
+        if not logic_equiv(node.conclusion, lifted, context):
             logger.error(f"{sp}❌ [Lift] Not matched: node.conclusion={pretty_expr(node.conclusion)}, lifted={pretty_expr(lifted)}")
             return False
         logger.debug(f"{sp}[Lift] Matched: node.conclusion={pretty_expr(node.conclusion)}, lifted={pretty_expr(lifted)}")        
@@ -329,7 +329,7 @@ def check_proof(node, context: Context, indent=0):
             logger.error(f"{sp}❌ [Invoke] Left of Implies object not derived: {pretty_expr(node.fact.left)}")
             return False
         logger.debug(f"{sp}[Invoke] Left of Implies object derived: {pretty_expr(node.fact.left)}")
-        if not alpha_equiv(node.conclusion, node.fact.right):
+        if not logic_equiv(node.conclusion, node.fact.right, context):
             logger.error(f"{sp}❌ [Invoke] Not matched: node.conclusion={pretty_expr(node.conclusion)}, node.fact.right={pretty_expr(node.fact.right)}")
             return False
         logger.debug(f"{sp}[Invoke] Matched: node.conclusion={pretty_expr(node.conclusion)}, node.fact.right={pretty_expr(node.fact.right)}")
@@ -357,7 +357,7 @@ def check_proof(node, context: Context, indent=0):
         logger.debug(f"{sp}[Expand] Length matched: vars={vars}, node.fact.args={node.fact.args}")
         expanded = substitute(body, dict(zip(vars, node.fact.args))).right
         logger.debug(f"{sp}[Expand] Expanded: {pretty_expr(expanded)}")
-        if not alpha_equiv(node.conclusion, expanded):
+        if not logic_equiv(node.conclusion, expanded, context):
             logger.error(f"{sp}❌ [Expand] Not matched: node.conclusion={pretty_expr(node.conclusion)}, expanded={pretty_expr(expanded)}")
             return False
         logger.debug(f"{sp}[Expand] Matched: node.conclusion={pretty_expr(node.conclusion)}, expanded={pretty_expr(expanded)}")
@@ -375,7 +375,7 @@ def check_proof(node, context: Context, indent=0):
             logger.error(f"{sp}❌ [Characterize] Invalid env: vars={sorted(free_vars)}, env={node.env}")
             return False
         logger.debug(f"{sp}[Characterize] Valid env: vars={sorted(free_vars)}, env={node.env}")
-        if not alpha_equiv(substitute(node.fact.left, {list(node.env.values())[0]: node.fact.right.var}), node.fact.right.body.left):
+        if not logic_equiv(substitute(node.fact.left, {list(node.env.values())[0]: node.fact.right.var}), node.fact.right.body.left, context):
             logger.error(f"{sp}❌ [Characterize] Not matched: node.fact.left={pretty_expr(node.fact.left)}, node.fact.right.body.left={pretty_expr(node.fact.right.body.left)}")
             return False
         logger.debug(f"{sp}[Characterize] Matched: node.fact.left={pretty_expr(node.fact.left)}, node.fact.right.body.left={pretty_expr(node.fact.right.body.left)}")
@@ -385,7 +385,7 @@ def check_proof(node, context: Context, indent=0):
         logger.debug(f"{sp}[Characterized] Expected: node.fact.right.body.right={pretty_expr(node.fact.right.body.right)}")
         characterized = ExistsUniq(list(node.env.keys())[0], substitute(node.fact.left, {v: k for k, v in node.env.items()}))
         logger.debug(f"{sp}[Characterize] derived formula: {pretty_expr(characterized)}")
-        if not alpha_equiv(node.conclusion, characterized):
+        if not logic_equiv(node.conclusion, characterized, context):
             logger.error(f"{sp}❌ [Characterize] Not matched: node.conclusion={pretty_expr(node.conclusion)}, derived={pretty_expr(characterized)}")
             return False
         logger.debug(f"{sp}[Characterize] Matched: node.conclusion={pretty_expr(node.conclusion)}, derived={pretty_expr(characterized)}")
