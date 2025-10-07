@@ -1,5 +1,5 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, Atom, Definition, DefCon, Identify, pretty, pretty_expr
-from logic_utils import normalize_neg, expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, Atom, Definition, DefCon, Identify, Pad, pretty, pretty_expr
+from logic_utils import normalize_neg, expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op
 
 import logging
 logger = logging.getLogger("proof")
@@ -18,8 +18,6 @@ def derivable_flat(goal, formulas, context):
     # goal が And のとき
     if isinstance(goal, And):
         return derivable_flat(goal.left, formulas, context) and derivable_flat(goal.right, formulas, context)
-    if isinstance(goal, Or):
-        return derivable_flat(goal.left, formulas, context) or derivable_flat(goal.right, formulas, context) or expr_in_context(goal, formulas, context)
     if isinstance(goal, Iff):
         if expr_in_context(goal, formulas, context):
             return True
@@ -397,6 +395,24 @@ def check_proof(node, context: Context, indent=0):
         logger.debug(f"{sp}[Identify] Derivable: {pretty_expr(node.fact)}")
         logger.debug(f"{sp}[Identify] Add conclusion: {pretty_expr(node.conclusion)}")
         add_conclusion(context, node.conclusion)
+        return True
+
+    if isinstance(node, Pad):
+        if not derivable(node.fact, context, indent+1):
+            logger.error(f"{sp}❌ [Pad] Not derivable: {pretty_expr(node.fact)}")
+            return False
+        logger.debug(f"{sp}[Pad] Derivable: {pretty_expr(node.fact)}")
+        if not isinstance(node.conclusion, Or):
+            logger.error(f"{sp}❌ [Pad] Not Or object: {pretty_expr(node.conclusion)}")
+            return False
+        logger.debug(f"{sp}[Pad] Or object: {pretty_expr(node.conclusion)}")
+        fact_parts = flatten_op(node.fact, Or)
+        conclusion_parts = flatten_op(node.conclusion, Or)
+        if not all(any(logic_equiv(c, f, context) for c in conclusion_parts) for f in fact_parts):
+            logger.error(f"{sp}❌ [Pad] neither left or right not derivable: {pretty_expr(node.conclusion)}")
+            return False
+        add_conclusion(context, node.conclusion)
+        logger.debug(f"{sp}[Pad] Derivable, added {pretty_expr(node.conclusion)}")
         return True
 
     if isinstance(node, Definition):

@@ -1,5 +1,5 @@
 from typing import List, Union
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, DefCon, Identify, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, DefCon, Identify, Pad, pretty, pretty_expr
 from lexer import Token, lex
 
 import logging
@@ -116,6 +116,8 @@ class Parser:
                 body.append(self.parse_characterize())
             elif tok.type == "IDENTIFY":
                 body.append(self.parse_identify())
+            elif tok.type == "PAD":
+                body.append(self.parse_pad())
             else:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
@@ -295,6 +297,13 @@ class Parser:
         if not isinstance(conclusion, Symbol):
             raise SyntaxError("[Identify] conclusion not Symbol")
         return Identify(fact=fact, env=env, conclusion=conclusion)
+
+    def parse_pad(self):
+        self.consume("PAD")
+        fact = self.parse_expr()
+        self.consume("CONCLUDE")
+        conclusion = self.parse_expr()
+        return Pad(fact=fact, conclusion=conclusion)
 
     def parse_definition(self):
         self.consume("DEFINITION")

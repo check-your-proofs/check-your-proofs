@@ -72,7 +72,9 @@ theorem test10 \forall v\forall u(in(u,v)\to in(u,v)) {
 
 theorem test11 \forall u\forall v(in(u,v)\to in(u,v)\vee in(v,u)) {
   any x, y conclude in(x,y)\to(in(x,y)\vee in(y,x)) {
-    assume in(x,y) conclude in(x,y)\vee in(y,x) {}
+    assume in(x,y) conclude in(x,y)\vee in(y,x) {
+      pad in(x,y) conclude in(x,y)\vee in(y,x)
+    }
   }
 }
 
@@ -86,8 +88,12 @@ theorem test13 \forall x\forall y(in(x,y)\vee in(y,x)\to(in(x,y)\wedge in(x,y))\
   any x, y conclude in(x,y)\vee in(y,x)\to(in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x)) {
     assume in(x,y)\vee in(y,x) conclude (in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x)) {
       divide in(x,y)\vee in(y,x) conclude (in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x))
-        case in(x,y) {}
-        case in(y,x) {}
+        case in(x,y) {
+          pad in(x,y)\wedge in(x,y) conclude (in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x))
+        }
+        case in(y,x) {
+          pad in(y,x)\wedge in(y,x) conclude (in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x))
+        }
     }
   }
 }

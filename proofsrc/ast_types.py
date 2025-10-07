@@ -123,6 +123,11 @@ class Identify:
     conclusion: object
 
 @dataclass
+class Pad:
+    fact: object
+    conclusion: object
+
+@dataclass
 class Definition:
     type: str
     name: str
