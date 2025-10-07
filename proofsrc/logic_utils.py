@@ -141,6 +141,12 @@ def expand_definitions(expr, context):
     elif isinstance(expr, (Forall, Exists)):
         body = expand_definitions(expr.body, context)
         return type(expr)(expr.var, body)
+    elif isinstance(expr, ExistsUniq):
+        used_vars = {expr.var} | collect_vars(expr.body)[0] | collect_vars(expr.body)[1]
+        vardash = fresh_var(expr.var + "'", used_vars)
+        body_subst = substitute(expr.body, {expr.var: vardash})
+        expanded = And(Exists(expr.var, expr.body), Forall(vardash, Implies(body_subst, Symbol("equal", [vardash, expr.var]))))
+        return expand_definitions(expanded, context)
     else:
         return expr
 
@@ -203,8 +209,6 @@ def to_nnf(expr, context: Context):
     if isinstance(expr, Symbol):
         if expr.name in context.atoms:
             return expr
-        elif expr.name in context.definitions:
-            return to_nnf(expand_definitions(expr, context), context)
         else:
             raise Exception(f"Unexpected expr (Symbol): {pretty_expr(expr)}")
     elif isinstance(expr, Not):
@@ -212,8 +216,6 @@ def to_nnf(expr, context: Context):
         if isinstance(body, Symbol):
             if body.name in context.atoms:
                 return expr
-            elif body.name in context.definitions:
-                return to_nnf(Not(expand_definitions(body, context)), context)
             else:
                 raise Exception(f"Unexpected expr (Not -> Symbol): {pretty_expr(expr)}")
         elif isinstance(body, Not):
@@ -238,12 +240,6 @@ def to_nnf(expr, context: Context):
         return to_nnf(And(Implies(expr.left, expr.right), Implies(expr.right, expr.left)), context)
     elif isinstance(expr, (Exists, Forall)):
         return type(expr)(expr.var, to_nnf(expr.body, context))
-    elif isinstance(expr, ExistsUniq):
-        used_vars = {expr.var} | collect_vars(expr.body)[0] | collect_vars(expr.body)[1]
-        vardash = fresh_var(expr.var + "'", used_vars)
-        body_subst = substitute(expr.body, {expr.var: vardash})
-        expanded = And(Exists(expr.var, expr.body), Implies(Forall(vardash, body_subst), Symbol("equal", [vardash, expr.var])))
-        return to_nnf(expanded, context)
     else:
         raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
 

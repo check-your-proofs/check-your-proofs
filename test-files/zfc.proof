@@ -169,7 +169,8 @@ theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {
         }
       }
     }
-    characterize \forall y(notin(y,x))\wedge\forall x'(\forall y(notin(y,x'))\to equal(x',x)) for x:x conclude \exists!x\forall y(notin(y,x))
+    connect \forall y(notin(y,x))\wedge\forall x'(\forall y(notin(y,x'))\to equal(x',x))
+    lift \forall y(notin(y,x))\wedge\forall x'(\forall y(notin(y,x'))\to equal(x',x)) for x:x conclude \exists!x\forall y(notin(y,x))
   }
 }
 
