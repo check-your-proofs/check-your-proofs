@@ -117,32 +117,35 @@ def collect_vars(expr, bound=None):
 def expr_in_context(expr, context):
     return any(logic_equiv(expr, f, context) for f in context.formulas)
 
-def expand_definitions(expr, context):
+def to_core_logic_form(expr, context):
     if isinstance(expr, Symbol):
+        if expr.name in context.atoms:
+            return expr
         if expr.name in context.definitions:
             definition = context.definitions[expr.name].formula
             vars, body = collect_quantifier_vars(definition, Forall)
             expanded = substitute(body, dict(zip(vars, expr.args))).right
-            return expand_definitions(expanded, context)
+            return to_core_logic_form(expanded, context)
         else:
-            return expr
+            raise Exception(f"Unexpected expr (Symbol): {pretty_expr(expr)}")
     elif isinstance(expr, Not):
-        return Not(expand_definitions(expr.body, context))
-    elif isinstance(expr, (And, Or, Implies, Iff)):
-        left = expand_definitions(expr.left, context)
-        right = expand_definitions(expr.right, context)
-        return type(expr)(left, right)
-    elif isinstance(expr, (Forall, Exists)):
-        body = expand_definitions(expr.body, context)
-        return type(expr)(expr.var, body)
+        return Not(to_core_logic_form(expr.body, context))
+    elif isinstance(expr, (And, Or)):
+        return type(expr)(to_core_logic_form(expr.left, context), to_core_logic_form(expr.right, context))
+    elif isinstance(expr, Implies):
+        return to_core_logic_form(Or(Not(expr.left), expr.right), context)
+    elif isinstance(expr, Iff):
+        return to_core_logic_form(And(Implies(expr.left, expr.right), Implies(expr.right, expr.left)), context)
+    elif isinstance(expr, (Exists, Forall)):
+        return type(expr)(expr.var, to_core_logic_form(expr.body, context))
     elif isinstance(expr, ExistsUniq):
         used_vars = {expr.var} | collect_vars(expr.body)[0] | collect_vars(expr.body)[1]
         vardash = fresh_var(expr.var + "'", used_vars)
         body_subst = substitute(expr.body, {expr.var: vardash})
         expanded = And(Exists(expr.var, expr.body), Forall(vardash, Implies(body_subst, Symbol("equal", [vardash, expr.var]))))
-        return expand_definitions(expanded, context)
+        return to_core_logic_form(expanded, context)
     else:
-        return expr
+        raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
 
 def fresh_var(var, used):
     """used に含まれない新しい変数名を作る"""
@@ -199,82 +202,31 @@ def rename_var(expr, old_var, new_var):
         return type(expr)(v, rename_var(expr.body, old_var, new_var))
     return expr
 
-def to_nnf(expr, context: Context):
+def to_nnf(expr):
     if isinstance(expr, Symbol):
-        if expr.name in context.atoms:
-            return expr
-        else:
-            raise Exception(f"Unexpected expr (Symbol): {pretty_expr(expr)}")
+        return expr
     elif isinstance(expr, Not):
         body = expr.body
         if isinstance(body, Symbol):
-            if body.name in context.atoms:
-                return expr
-            else:
-                raise Exception(f"Unexpected expr (Not -> Symbol): {pretty_expr(expr)}")
+            return expr
         elif isinstance(body, Not):
-            return to_nnf(body.body, context)
+            return to_nnf(body.body)
         elif isinstance(body, And):
-            return Or(to_nnf(Not(body.left), context), to_nnf(Not(body.right), context))
+            return Or(to_nnf(Not(body.left)), to_nnf(Not(body.right)))
         elif isinstance(body, Or):
-            return And(to_nnf(Not(body.left), context), to_nnf(Not(body.right), context))
-        elif isinstance(body, (Implies, Iff)):
-            return Not(to_nnf(body, context))
+            return And(to_nnf(Not(body.left)), to_nnf(Not(body.right)))
         elif isinstance(body, Exists):
-            return Forall(body.var, to_nnf(Not(body.body), context))
+            return Forall(body.var, to_nnf(Not(body.body)))
         elif isinstance(body, Forall):
-            return Exists(body.var, to_nnf(Not(body.body), context))
+            return Exists(body.var, to_nnf(Not(body.body)))
         else:
             raise Exception(f"Unexpected expr (Not): {pretty_expr(expr)}")
     elif isinstance(expr, (And, Or)):
-        return type(expr)(to_nnf(expr.left, context), to_nnf(expr.right, context))
-    elif isinstance(expr, Implies):
-        return to_nnf(Or(Not(expr.left), expr.right), context)
-    elif isinstance(expr, Iff):
-        return to_nnf(And(Implies(expr.left, expr.right), Implies(expr.right, expr.left)), context)
+        return type(expr)(to_nnf(expr.left), to_nnf(expr.right))
     elif isinstance(expr, (Exists, Forall)):
-        return type(expr)(expr.var, to_nnf(expr.body, context))
+        return type(expr)(expr.var, to_nnf(expr.body))
     else:
         raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
-
-def normalize_neg(expr):
-    if isinstance(expr, Symbol):
-        return expr
-    elif isinstance(expr, Not):
-        if isinstance(expr.body, Not):
-            return normalize_neg(expr.body.body)
-        else:
-            return Not(normalize_neg(expr.body))
-    elif isinstance(expr, (And, Or)):
-        return type(expr)(normalize_neg(expr.left), normalize_neg(expr.right))
-    elif isinstance(expr, (Exists, Forall)):
-        return type(expr)(expr.var, normalize_neg(expr.body))
-    else:
-        Exception(f"Unexpected e: {pretty_expr(expr)}")
-
-def forall_to_exists(expr):
-    if isinstance(expr, Symbol):
-        return expr
-    if isinstance(expr, Not):
-        return Not(forall_to_exists(expr.body))
-    if isinstance(expr, (And, Or)):
-        return type(expr)(forall_to_exists(expr.left), forall_to_exists(expr.right))
-    if isinstance(expr, Exists):
-        return Exists(expr.var, forall_to_exists(expr.body))
-    if isinstance(expr, Forall):
-        return Not(Exists(expr.var, Not(forall_to_exists(expr.body))))
-
-def vee_to_neg_wedge(expr):
-    if isinstance(expr, Symbol):
-        return expr
-    if isinstance(expr, Not):
-        return Not(vee_to_neg_wedge(expr.body))
-    if isinstance(expr, And):
-        return And(vee_to_neg_wedge(expr.left), vee_to_neg_wedge(expr.right))
-    if isinstance(expr, Or):
-        return Not(And(Not(vee_to_neg_wedge(expr.left)), Not(vee_to_neg_wedge(expr.right))))
-    if isinstance(expr, (Exists, Forall)):
-        return type(expr)(expr.var, vee_to_neg_wedge(expr.body))
 
 def strip_quantifiers(expr):
     qs = []
@@ -290,50 +242,127 @@ def make_quantifiers(qs, body):
         expr = type(q)(q.var, expr)
     return expr
 
-def to_pnf(expr, context: Context):
-    if (isinstance(expr, Symbol) and expr.name in context.atoms) or isinstance(expr, Not):
+def alpha_rename(expr, rename_map):
+    if isinstance(expr, Symbol):
+        return Symbol(expr.name, [rename_map.get(a, a) for a in expr.args])
+    elif isinstance(expr, Not):
+        return Not(alpha_rename(expr.body, rename_map))
+    elif isinstance(expr, (And, Or, Implies, Iff)):
+        return type(expr)(alpha_rename(expr.left, rename_map), alpha_rename(expr.right, rename_map))
+    elif isinstance(expr, (Exists, Forall)):
+        var = rename_map.get(expr.var, expr.var)
+        return type(expr)(var, alpha_rename(expr.body, rename_map))
+    else:
         return expr
 
-    if isinstance(expr, And) or isinstance(expr, Or):
-        left_pnf = to_pnf(expr.left, context)
-        right_pnf = to_pnf(expr.right, context)
+def rename_bound(expr, bound_vars, used):
+    rename_map = {}
+    for v in bound_vars:
+        if v in used:
+            rename_map[v] = fresh_var(v, used)
+    return alpha_rename(expr, rename_map)
+
+def to_pnf(expr):
+    if isinstance(expr, Symbol):
+        return expr
+    elif isinstance(expr, Not):
+        return Not(to_pnf(expr.body))
+    elif isinstance(expr, And) or isinstance(expr, Or):
+        left_pnf = to_pnf(expr.left)
+        right_pnf = to_pnf(expr.right)
+        left_free, left_bound = collect_vars(left_pnf)
+        right_free, right_bound = collect_vars(right_pnf)
+        left_pnf = rename_bound(left_pnf, left_bound, right_free)
+        right_pnf = rename_bound(right_pnf, right_bound, left_free | left_bound)
         qs_left, core_left = strip_quantifiers(left_pnf)
         qs_right, core_right = strip_quantifiers(right_pnf)
-        core = And(core_left, core_right) if isinstance(expr, And) else Or(core_left, core_right)
+        core = type(expr)(core_left, core_right)
         return make_quantifiers(qs_left + qs_right, core)
+    elif isinstance(expr, (Exists, Forall)):
+        return type(expr)(expr.var, to_pnf(expr.body))
+    else:
+        raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
 
-    if isinstance(expr, Implies):
-        return to_pnf(Or(Not(expr.left), expr.right), context)
+def to_cnf(expr):
+    if isinstance(expr, Symbol):
+        return expr
+    elif isinstance(expr, Not):
+        return Not(to_cnf(expr.body))
+    elif isinstance(expr, And):
+        return And(to_cnf(expr.left), to_cnf(expr.right))
+    elif isinstance(expr, Or):
+        left_cnf = to_cnf(expr.left)
+        right_cnf = to_cnf(expr.right)
+        if isinstance(left_cnf, And):
+            return And(to_cnf(Or(left_cnf.left, right_cnf)), to_cnf(Or(left_cnf.right, right_cnf)))
+        elif isinstance(right_cnf, And):
+            return And(to_cnf(Or(left_cnf, right_cnf.left)), to_cnf(Or(left_cnf, right_cnf.right)))
+        else:
+            return Or(left_cnf, right_cnf)
+    elif isinstance(expr, (Exists, Forall)):
+        return type(expr)(expr.var, to_cnf(expr.body))
+    else:
+        raise Exception(f"Unexpected expr: {expr}")
 
-    if isinstance(expr, Iff):
-        return to_pnf(And(Implies(expr.left, expr.right), Implies(expr.right, expr.left)), context)
-
-    if isinstance(expr, (Exists, Forall)):
-        return type(expr)(expr.var, to_pnf(expr.body, context))
-
-def to_neg_wedge_exists(expr, context):
-    expr_norm = expand_definitions(expr, context)
-    expr_norm = to_nnf(expr_norm, context)
-    expr_norm = vee_to_neg_wedge(expr_norm)
-    expr_norm = forall_to_exists(expr_norm)
-    expr_norm = to_pnf(expr_norm, context)
-    expr_norm = normalize_neg(expr_norm)
+def to_caconical_form(expr, context):
+    expr_norm = to_core_logic_form(expr, context)
+    expr_norm = to_nnf(expr_norm)
+    expr_norm = to_pnf(expr_norm)
+    expr_norm = to_cnf(expr_norm)
     return expr_norm
 
 def logic_equiv(expr1, expr2, context):
-    expr1_norm = to_neg_wedge_exists(expr1, context)
-    expr2_norm = to_neg_wedge_exists(expr2, context)
+    expr1_norm = to_caconical_form(expr1, context)
+    expr2_norm = to_caconical_form(expr2, context)
     return alpha_equiv(expr1_norm, expr2_norm)
 
+def print_tree(expr, prefix="", is_root=True, is_last=True):
+    print_prefix = prefix + ("" if is_root else ("└─" if is_last else "├─"))
+    if isinstance(expr, Symbol):
+        print(f"{print_prefix}Symbol({expr.name}, [{", ".join(expr.args)}])")
+    elif isinstance(expr, Not):
+        print(f"{print_prefix}Not")
+        print_tree(expr.body, prefix + ("" if is_root else ("   " if is_last else "│  ")), False, True)
+    elif isinstance(expr, (And, Or, Implies, Iff)):
+        print(f"{print_prefix}{type(expr).__name__}")
+        print_tree(expr.left, prefix + ("" if is_root else ("   " if is_last else "│  ")), False, False)
+        print_tree(expr.right, prefix + ("" if is_root else ("   " if is_last else "│  ")), False, True)
+    elif isinstance(expr, (Exists, Forall, ExistsUniq)):
+        print(f"{print_prefix}{type(expr).__name__}({expr.var})")
+        print_tree(expr.body, prefix + ("" if is_root else ("   " if is_last else "│  ")), False, True)
+    else:
+        raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
+
 if __name__ == "__main__":
-    from ast_types import Atom
-    expr1 = Or(Symbol("in", ["x", "y"]), Symbol("in", ["y", "x"]))
-    expr2 = Or(Symbol("in", ["y", "x"]), Symbol("in", ["x", "y"]))
-    context = Context([], False, {"in": Atom("PREDICATE", "in", 2)}, {}, {}, {}, {})
-    expr1_norm = to_neg_wedge_exists(expr1, context)
-    expr2_norm = to_neg_wedge_exists(expr2, context)
-    print(f"expr1: {pretty_expr(expr1)}")
-    print(f"expr1_norm: {pretty_expr(expr1_norm)}")
-    print(f"expr2: {pretty_expr(expr2)}")
-    print(f"expr2_norm: {pretty_expr(expr2_norm)}")
-    print(f"alpha_equiv(expr1_norm, expr2_norm): {alpha_equiv(expr1_norm, expr2_norm)}")
+    from ast_types import Atom, Definition
+    context = Context([], False, {"in": Atom("PREDICATE", "in", 2)}, {}, {}, {"equal": Definition("PREDICATE", "equal", 2, Forall("x", Forall("y", Iff(Symbol("equal", ["x", "y"]), Forall("z", Iff(Symbol("in", ["z", "x"]), Symbol("in", ["z", "y"])))))))}, {})
+
+    expr = Iff(Exists("x", Symbol("equal", ["x", "x"])), Exists("x", Symbol("equal", ["x", "x"])))
+    print("expr")
+    print()
+    print_tree(expr)
+    print()
+
+    expr_norm = to_core_logic_form(expr, context)
+    print("to_core_logic_form()")
+    print()
+    print_tree(expr_norm)
+    print()
+
+    expr_norm = to_nnf(expr_norm)
+    print("to_nnf()")
+    print()
+    print_tree(expr_norm)
+    print()
+
+    expr_norm = to_pnf(expr_norm)
+    print("to_pnf()")
+    print()
+    print_tree(expr_norm)
+    print()
+
+    expr_norm = to_cnf(expr_norm)
+    print("to_cnf()")
+    print()
+    print_tree(expr_norm)
+    print()
