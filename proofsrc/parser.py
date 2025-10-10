@@ -1,5 +1,5 @@
 from typing import List, Union
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Identify, Pad, Split, Connect, DefConExist, DefConUniq, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, pretty, pretty_expr
 from lexer import Token, lex
 
 import logging
@@ -112,8 +112,6 @@ class Parser:
                 body.append(self.parse_invoke())
             elif tok.type == "EXPAND":
                 body.append(self.parse_expand())
-            elif tok.type == "IDENTIFY":
-                body.append(self.parse_identify())
             elif tok.type == "PAD":
                 body.append(self.parse_pad())
             elif tok.type == "SPLIT":
@@ -269,22 +267,6 @@ class Parser:
         self.consume("CONCLUDE")
         conclusion = self.parse_expr()
         return Expand(fact=fact, conclusion=conclusion)
-
-    def parse_identify(self):
-        self.consume("IDENTIFY")
-        fact = self.parse_expr()
-        self.consume("FOR")
-        free = self.consume("IDENT").value
-        self.consume("COLON")
-        constant = self.consume("IDENT").value
-        if constant not in self.context.defcons:
-            raise SyntaxError("[Identify] constant not defined")
-        env = {free: constant}
-        self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
-        if not isinstance(conclusion, Symbol):
-            raise SyntaxError("[Identify] conclusion not Symbol")
-        return Identify(fact=fact, env=env, conclusion=conclusion)
 
     def parse_pad(self):
         self.consume("PAD")

@@ -135,12 +135,6 @@ class Expand:
     conclusion: object
 
 @dataclass
-class Identify:
-    fact: object
-    env: dict
-    conclusion: object
-
-@dataclass
 class Pad:
     fact: object
     conclusion: object

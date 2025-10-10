@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, Definition, DefCon, Identify, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, Definition, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, pretty, pretty_expr
 from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var
 
 import logging
@@ -343,15 +343,6 @@ def check_proof(node, context: Context, indent=0):
         logger.debug(f"{sp}[Expand] Matched: node.conclusion={pretty_expr(node.conclusion)}, expanded={pretty_expr(expanded)}")
         add_conclusion(context, node.conclusion)
         logger.debug(f"{sp}[Expand] Added: {pretty_expr(node.conclusion)}")
-        return True
-
-    if isinstance(node, Identify):
-        if not goal_in_context(node.fact, context, indent+1):
-            logger.error(f"{sp}❌ [Identify] Not derivable: {pretty_expr(node.fact)}")
-            return False
-        logger.debug(f"{sp}[Identify] Derivable: {pretty_expr(node.fact)}")
-        logger.debug(f"{sp}[Identify] Add conclusion: {pretty_expr(node.conclusion)}")
-        add_conclusion(context, node.conclusion)
         return True
 
     if isinstance(node, Pad):
