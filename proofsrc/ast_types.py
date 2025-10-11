@@ -11,15 +11,15 @@ class Context:
     atoms: dict
     axioms: dict
     theorems: dict
-    definitions: Dict[str, "Definition"]
+    defpres: Dict[str, "DefPre"]
     defcons: Dict[str, "DefCon"]
 
     @staticmethod
     def init():
-        return Context(formulas=[], bot_derived=False, atoms={}, axioms={}, theorems={}, definitions={}, defcons={})
+        return Context(formulas=[], bot_derived=False, atoms={}, axioms={}, theorems={}, defpres={}, defcons={})
 
     def copy(self, formulas, bot_derived):
-        return Context(formulas=formulas, bot_derived=bot_derived, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, definitions=self.definitions, defcons=self.defcons)
+        return Context(formulas=formulas, bot_derived=bot_derived, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, defpres=self.defpres, defcons=self.defcons)
 
     def has_defcon_existence(self, existence_name):
         for defcon in self.defcons.values():
@@ -148,11 +148,16 @@ class Connect:
     conclusion: object
 
 @dataclass
-class Definition:
-    type: str
+class Fold:
+    fact: object
+    conclusion: object
+
+@dataclass
+class DefPre:
     name: str
-    arity: int
+    args: list[str]
     formula: object
+    autoexpand: bool
 
 @dataclass
 class DefCon:
@@ -290,7 +295,7 @@ def pretty(node, indent=0):
         logger.debug(f"{sp}       env: {node.env}")
         logger.debug(f"{sp}       conclusion: {pretty_expr(node.conclusion)}")
 
-    elif isinstance(node, Definition):
+    elif isinstance(node, DefPre):
         logger.debug(f"{sp}Definition {node.name}: {node.body}")
 
     else:

@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, Definition, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, pretty, pretty_expr
 from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var
 
 import logging
@@ -222,16 +222,6 @@ def check_proof(node, context: Context, indent=0):
             fact = node.fact.formula
         elif isinstance(node.fact, DefConUniq):
             fact = node.fact.formula
-        elif isinstance(node.fact, Symbol):
-            if node.fact.name not in context.definitions:
-                logger.error(f"{sp}❌ [Apply] Undefined name: {node.fact.name}")
-                return False
-            vars, body = collect_quantifier_vars(context.definitions[node.fact.name].formula, Forall)
-            if len(vars) != len(node.fact.args):
-                logger.error(f"{sp}❌ [Apply] not matched: len(vars)={len(vars)}, len(node.fact.args)={len(node.fact.args)}")
-                return False
-            fact = substitute(body, dict(zip(vars, node.fact.args))).right
-            logger.debug(f"{sp}[Apply] replace {pretty_expr(node.fact)} to {pretty_expr(fact)}")
         else:
             fact = node.fact
         if node.env is not None:
@@ -326,16 +316,16 @@ def check_proof(node, context: Context, indent=0):
             logger.error(f"{sp}❌ [Expand] Not Symbol object: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Expand] Symbol object: {pretty_expr(node.fact)}")
-        if node.fact.name not in context.definitions:
+        if node.fact.name not in context.defpres:
             logger.error(f"{sp}❌ [Expand] Not defined: {node.fact.name}")
             return False
         logger.debug(f"{sp}[Expand] Defined: {node.fact.name}")
-        vars, body = collect_quantifier_vars(context.definitions[node.fact.name].formula, Forall)
-        if len(vars) != len(node.fact.args):
-            logger.error(f"{sp}❌ [Expand] Length not matched: vars={vars}, node.fact.args={node.fact.args}")
+        defpre = context.defpres[node.fact.name]
+        if len(defpre.args) != len(node.fact.args):
+            logger.error(f"{sp}❌ [Expand] Length not matched: defpre.args={defpre.args}, node.fact.args={node.fact.args}")
             return False
-        logger.debug(f"{sp}[Expand] Length matched: vars={vars}, node.fact.args={node.fact.args}")
-        expanded = substitute(body, dict(zip(vars, node.fact.args))).right
+        logger.debug(f"{sp}[Expand] Length matched: defpre.args={defpre.args}, node.fact.args={node.fact.args}")
+        expanded = substitute(defpre.formula, dict(zip(defpre.args, node.fact.args)))
         logger.debug(f"{sp}[Expand] Expanded: {pretty_expr(expanded)}")
         if not logic_equiv(node.conclusion, expanded, context):
             logger.error(f"{sp}❌ [Expand] Not matched: node.conclusion={pretty_expr(node.conclusion)}, expanded={pretty_expr(expanded)}")
@@ -416,9 +406,39 @@ def check_proof(node, context: Context, indent=0):
             logger.error(f"{sp}❌ [Connect] Not And or Iff object: {pretty_expr(node.conclusion)}")
             return False
 
-    if isinstance(node, Definition):
-        logger.debug(f"{sp}[Definition] type: {node.type}, name: {node.name}, arity: {node.arity}, formula: {pretty_expr(node.formula)}")
-        context.definitions[node.name] = node
+    if isinstance(node, Fold):
+        if not goal_in_context(node.fact, context, indent+1):
+            logger.error(f"{sp}❌ [Fold] Not fact: {pretty_expr(node.fact)}")
+            return False
+        logger.debug(f"{sp}[Fold] fact: {pretty_expr(node.fact)}")
+        if not isinstance(node.conclusion, Symbol):
+            logger.error(f"{sp}❌ [Fold] Not Symbol object: {pretty_expr(node.conclusion)}")
+            return False
+        logger.debug(f"{sp}[Fold] Symbol object: {pretty_expr(node.conclusion)}")
+        if node.conclusion.name not in context.defpres:
+            logger.error(f"{sp}❌ [Fold] Not defined: {node.conclusion.name}")
+            return False
+        logger.debug(f"{sp}[Fold] Defined: {node.conclusion.name}")
+        defpre = context.defpres[node.conclusion.name]
+        if len(defpre.args) != len(node.conclusion.args):
+            logger.error(f"{sp}❌ [DefPre] Length not matched: defpre.args={defpre.args}, node.conclusion.args={node.conclusion.args}")
+            return False
+        logger.debug(f"{sp}[Fold] Length matched: defpre.args={defpre.args}, node.conclusion.args={node.conclusion.args}")
+        expanded = substitute(defpre.formula, dict(zip(defpre.args, node.conclusion.args)))
+        logger.debug(f"{sp}[Fold] Expanded: {pretty_expr(expanded)}")
+        logger.debug(node.fact)
+        logger.debug(expanded)
+        if not logic_equiv(node.fact, expanded, context):
+            logger.error(f"{sp}❌ [Fold] Not matched: node.fact={pretty_expr(node.fact)}, expanded={pretty_expr(folded)}")
+            return False
+        logger.debug(f"{sp}[Fold] Matched: node.fact={pretty_expr(node.fact)}, expanded={pretty_expr(expanded)}")
+        add_conclusion(context, node.conclusion)
+        logger.debug(f"{sp}[Fold] Added: {pretty_expr(node.conclusion)}")
+        return True
+
+    if isinstance(node, DefPre):
+        logger.debug(f"{sp}[DefPre] name: {node.name}, args: {node.args}, formula: {pretty_expr(node.formula)}")
+        context.defpres[node.name] = node
         return True
 
     if isinstance(node, DefCon):

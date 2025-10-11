@@ -1,14 +1,14 @@
 atom predicate in arity 2
 
-definition predicate equal arity 2 \forall x\forall y(equal(x,y)\leftrightarrow\forall z(in(z,x)\leftrightarrow in(z,y)))
+definition predicate equal(x,y) \forall z(in(z,x)\leftrightarrow in(z,y))
 
 theorem equal_reflection \forall x(equal(x,x)) {
   any x conclude equal(x,x) {
     any y conclude in(y,x)\leftrightarrow in(y,x) {
-      assume in(y,x) conclude in(y,x) {
-      }
+      assume in(y,x) conclude in(y,x) {}
       connect in(y,x)\leftrightarrow in(y,x)
     }
+    fold \forall y(in(y,x)\leftrightarrow in(y,x)) conclude equal(x,x)
   }
 }
 
@@ -19,30 +19,37 @@ theorem equal_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge 
         any p conclude in(p,y)\leftrightarrow in(p,v) {
           assume in(p,y) conclude in(p,v) {
             split equal(x,y)\wedge equal(u,v)
-            apply equal(x,y) for z:p conclude in(p,x)\leftrightarrow in(p,y)
+            expand equal(x,y) conclude \forall z(in(z,x)\leftrightarrow in(z,y))
+            apply \forall z(in(z,x)\leftrightarrow in(z,y)) for z:p conclude in(p,x)\leftrightarrow in(p,y)
             split in(p,x)\leftrightarrow in(p,y)
             invoke in(p,y)\to in(p,x) conclude in(p,x)
-            apply equal(x,u) for z:p conclude in(p,x)\leftrightarrow in(p,u)
+            expand equal(x,u) conclude \forall z(in(z,x)\leftrightarrow in(z,u))
+            apply \forall z(in(z,x)\leftrightarrow in(z,u)) for z:p conclude in(p,x)\leftrightarrow in(p,u)
             split in(p,x)\leftrightarrow in(p,u)
             invoke in(p,x)\to in(p,u) conclude in(p,u)
-            apply equal(u,v) for z:p conclude in(p,u)\leftrightarrow in(p,v)
+            expand equal(u,v) conclude \forall z(in(z,u)\leftrightarrow in(z,v))
+            apply \forall z(in(z,u)\leftrightarrow in(z,v)) for z:p conclude in(p,u)\leftrightarrow in(p,v)
             split in(p,u)\leftrightarrow in(p,v)
             invoke in(p,u)\to in(p,v) conclude in(p,v)
           }
           assume in(p,v) conclude in(p,y) {
             split equal(x,y)\wedge equal(u,v)
-            apply equal(u,v) for z:p conclude in(p,u)\leftrightarrow in(p,v)
+            expand equal(u,v) conclude \forall z(in(z,u)\leftrightarrow in(z,v))
+            apply \forall z(in(z,u)\leftrightarrow in(z,v)) for z:p conclude in(p,u)\leftrightarrow in(p,v)
             split in(p,u)\leftrightarrow in(p,v)
             invoke in(p,v)\to in(p,u) conclude in(p,u)
-            apply equal(x,u) for z:p conclude in(p,x)\leftrightarrow in(p,u)
+            expand equal(x,u) conclude \forall z(in(z,x)\leftrightarrow in(z,u))
+            apply \forall z(in(z,x)\leftrightarrow in(z,u)) for z:p conclude in(p,x)\leftrightarrow in(p,u)
             split in(p,x)\leftrightarrow in(p,u)
             invoke in(p,u)\to in(p,x) conclude in(p,x)
-            apply equal(x,y) for z:p conclude in(p,x)\leftrightarrow in(p,y)
+            expand equal(x,y) conclude \forall z(in(z,x)\leftrightarrow in(z,y))
+            apply \forall z(in(z,x)\leftrightarrow in(z,y)) for z:p conclude in(p,x)\leftrightarrow in(p,y)
             split in(p,x)\leftrightarrow in(p,y)
             invoke in(p,x)\to in(p,y) conclude in(p,y)
           }
           connect in(p,y)\leftrightarrow in(p,v)
         }
+        fold \forall p(in(p,y)\leftrightarrow in(p,v)) conclude equal(y,v)
       }
     }
   }
@@ -68,14 +75,15 @@ theorem in_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge equ
   }
 }
 
-definition predicate notin arity 2 \forall x\forall y(notin(x,y)\leftrightarrow\neg(in(x,y)))
+definition predicate autoexpand notin(x,y) \neg(in(x,y))
 
-definition predicate neq arity 2 \forall x\forall y(neq(x,y)\leftrightarrow\neg(equal(x,y)))
+definition predicate autoexpand neq(x,y) \neg(equal(x,y))
 
 theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))) {
   any x, y conclude neq(x,y)\leftrightarrow\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
     assume neq(x,y) conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
       deny \forall z(in(z,x)\leftrightarrow in(z,y)) {
+        fold \forall z(in(z,x)\leftrightarrow in(z,y)) conclude equal(x,y)
         contradict equal(x,y)
       }
       deny \neg(\exists z(\neg(in(z,x)\leftrightarrow in(z,y)))) {
@@ -105,6 +113,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
             deny \neg(in(z,x)\wedge notin(z,y)) {
               assume in(z,x) conclude in(z,y) {
                 deny notin(z,y) {
+                  connect in(z,x)\wedge notin(z,y)
                   contradict in(z,x)\wedge notin(z,y)
                 }
               }
@@ -115,6 +124,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
             deny \neg(notin(z,x)\wedge in(z,y)) {
               assume in(z,y) conclude in(z,x) {
                 deny notin(z,x) {
+                  connect notin(z,x)\wedge in(z,y)
                   contradict notin(z,x)\wedge in(z,y)
                 }
               }
@@ -167,6 +177,7 @@ theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {
           }
           connect in(y,x')\leftrightarrow in(y,x)
         }
+        fold \forall y(in(y,x')\leftrightarrow in(y,x)) conclude equal(x',x)
       }
     }
     connect \forall y(notin(y,x))\wedge\forall x'(\forall y(notin(y,x'))\to equal(x',x))
@@ -195,7 +206,43 @@ theorem not_emptyset_has_a_member \forall x(\neg(equal(x, emptyset))\to\exists y
     }
 }
 
-definition predicate subset arity 2 \forall x\forall y(subset(x,y)\leftrightarrow\forall z(in(z,x)\to in(z,y)))
+axiom axiom_of_pair \forall x\forall y\exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
+
+theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
+  any x, y conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
+    apply axiom_of_pair for x:x, y:y conclude \exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
+    some z:z such \exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
+      any z' conclude \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z) {
+        assume \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) conclude equal(z',z) {
+          any w conclude in(w,z')\leftrightarrow in(w,z) {
+            assume in(w,z') conclude in(w,z) {
+              apply \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w conclude in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
+              split in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
+              invoke in(w,z')\to equal(w,x)\vee equal(w,y) conclude equal(w,x)\vee equal(w,y)
+              apply \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w conclude in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
+              split in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
+              invoke equal(w,x)\vee equal(w,y)\to in(w,z) conclude in(w,z)
+            }
+            assume in(w,z) conclude in(w,z') {
+              apply \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w conclude in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
+              split in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
+              invoke in(w,z)\to equal(w,x)\vee equal(w,y) conclude equal(w,x)\vee equal(w,y)
+              apply \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w conclude in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
+              split in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
+              invoke equal(w,x)\vee equal(w,y)\to in(w,z') conclude in(w,z')
+            }
+            connect in(w,z')\leftrightarrow in(w,z)
+          }
+          fold \forall w(in(w,z')\leftrightarrow in(w,z)) conclude equal(z',z)
+        }
+      }
+      connect \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z))
+      lift \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z)) for z:z conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
+    }
+  }
+}
+
+definition predicate subset(x,y) \forall z(in(z,x)\to in(z,y))
 
 theorem subset_cor1 \forall z\forall x\forall y(in(z,x)\wedge subset(x,y)\to in(z,y)) {
   any x,y,z conclude in(z,x)\wedge subset(x,y)\to in(z,y) {
@@ -213,6 +260,7 @@ theorem subset_reflection \forall x(subset(x,x)) {
     any y conclude in(y,x)\to in(y,x) {
       assume in(y,x) conclude in(y,x) {}
     }
+    fold \forall y(in(y,x)\to in(y,x)) conclude subset(x,x)
   }
 }
 
@@ -234,6 +282,7 @@ theorem subset_antisymmetry \forall x\forall y(subset(x,y)\wedge subset(y,x)\to 
         }
         connect in(z,x)\leftrightarrow in(z,y)
       }
+      fold \forall z(in(z,x)\leftrightarrow in(z,y)) conclude equal(x,y)
     }
   }
 }
@@ -252,6 +301,7 @@ theorem subset_trans \forall x\forall y\forall z(subset(x,y)\wedge subset(y,z)\t
           invoke in(w,y)\wedge subset(y,z)\to in(w,z) conclude in(w,z)
         }
       }
+      fold \forall w(in(w,x)\to in(w,z)) conclude subset(x,z)
     }
   }
 }

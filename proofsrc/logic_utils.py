@@ -128,11 +128,13 @@ def to_core_logic_form(expr, context):
     if isinstance(expr, Symbol):
         if expr.name in context.atoms:
             return expr
-        if expr.name in context.definitions:
-            definition = context.definitions[expr.name].formula
-            vars, body = collect_quantifier_vars(definition, Forall)
-            expanded = substitute(body, dict(zip(vars, expr.args))).right
-            return to_core_logic_form(expanded, context)
+        if expr.name in context.defpres:
+            defpre = context.defpres[expr.name]
+            if defpre.autoexpand:
+                expanded = substitute(defpre.formula, dict(zip(defpre.args, expr.args)))
+                return to_core_logic_form(expanded, context)
+            else:
+                return expr
         else:
             raise Exception(f"Unexpected expr (Symbol): {pretty_expr(expr)}")
     elif isinstance(expr, Not):
@@ -409,10 +411,10 @@ def print_tree(expr, prefix="", is_root=True, is_last=True):
         raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
 
 if __name__ == "__main__":
-    from ast_types import Atom, Definition
-    context = Context([], False, {"in": Atom("PREDICATE", "in", 2)}, {}, {}, {"equal": Definition("PREDICATE", "equal", 2, Forall("x", Forall("y", Iff(Symbol("equal", ["x", "y"]), Forall("z", Iff(Symbol("in", ["z", "x"]), Symbol("in", ["z", "y"])))))))}, {})
+    from ast_types import Atom, DefPre
+    context = Context([], False, {"in": Atom("PREDICATE", "in", 2)}, {}, {}, {"equal": DefPre("equal", ["x", "y"], Forall("z", Iff(Symbol("in", ["z", "x"]), Symbol("in", ["z", "y"]))), False)}, {})
 
-    expr = Iff(Exists("x", Symbol("equal", ["x", "x"])), Exists("x", Symbol("equal", ["x", "x"])))
+    expr = Forall("x", Forall("y", ExistsUniq("z", Forall("w", Iff(Symbol("in", ["w", "z"]), Or(Symbol("in", ["w", "x"]), Symbol("in", ["w", "y"])))))))
     print("expr")
     print()
     print_tree(expr)
@@ -444,5 +446,5 @@ if __name__ == "__main__":
 
     print("simplify()")
     print()
-    print(simplify(expr_norm))
+    print_tree(expr_norm)
     print()

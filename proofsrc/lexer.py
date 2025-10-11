@@ -8,7 +8,7 @@ class Token:
     pos: int
     line: int
 
-KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "with", "check", "lift", "atom", "predicate", "arity", "axiom", "invoke", "expand", "constant", "by", "pad", "split", "connect", "existence", "uniqueness"}
+KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "with", "check", "lift", "atom", "predicate", "arity", "axiom", "invoke", "expand", "constant", "by", "pad", "split", "connect", "existence", "uniqueness", "fold", "autoexpand"}
 
 SYMBOLS = {
     "{": "LBRACE",
@@ -35,6 +35,8 @@ def lex(src: str) -> list[Token]:
         if src[i:i+2] == "/*":
             i += 2
             while i < len(src) and src[i:i+2] != "*/":
+                if src[i] == "\n":
+                    line += 1
                 i += 1
             if i >= len(src):
                 raise SyntaxError("Unterminated comment")

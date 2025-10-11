@@ -1,5 +1,5 @@
 from typing import List, Union
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, Fold, pretty, pretty_expr
 from lexer import Token, lex
 
 import logging
@@ -118,6 +118,8 @@ class Parser:
                 body.append(self.parse_split())
             elif tok.type == "CONNECT":
                 body.append(self.parse_connect())
+            elif tok.type == "FOLD":
+                body.append(self.parse_fold())
             else:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
@@ -285,20 +287,35 @@ class Parser:
         conclusion = self.parse_expr()
         return Connect(conclusion=conclusion)
 
+    def parse_fold(self):
+        self.consume("FOLD")
+        fact = self.parse_expr()
+        self.consume("CONCLUDE")
+        conclusion = self.parse_expr()
+        return Fold(fact=fact, conclusion=conclusion)
+
     def parse_definition(self):
         self.consume("DEFINITION")
         tok = self.peek()
         if tok.type == "PREDICATE":
             self.consume("PREDICATE")
+            if self.peek().type == "AUTOEXPAND":
+                self.consume("AUTOEXPAND")
+                autoexpand = True
+            else:
+                autoexpand =False
             name = self.consume("IDENT").value
-            self.consume("ARITY")
-            arity = int(self.consume("NUMBER").value)
-            self.context.definitions[name] = Definition(type=tok.type, name=name, arity=arity, formula=None)
+            self.consume("LPAREN")
+            args = [self.consume("IDENT").value]
+            while self.peek().type == "COMMA":
+                self.consume("COMMA")
+                args.append(self.consume("IDENT").value)
+            self.consume("RPAREN")
             formula = self.parse_expr()
-            definition = Definition(type=tok.type, name=name, arity=arity, formula=formula)
-            self.context.definitions[name] = definition
-            logger.debug(f"[definition] {name}")
-            return definition
+            defpre = DefPre(name=name, args=args, formula=formula, autoexpand=autoexpand)
+            self.context.defpres[name] = defpre
+            logger.debug(f"[defpre] {name}")
+            return defpre
         elif tok.type == "CONSTANT":
             self.consume("CONSTANT")
             name = self.consume("IDENT").value
@@ -325,10 +342,10 @@ class Parser:
             name = self.consume("IDENT").value
             if name in self.context.atoms:
                 arity = self.context.atoms[name].arity
-            elif name in self.context.definitions:
-                arity = self.context.definitions[name].arity
+            elif name in self.context.defpres:
+                arity = len(self.context.defpres[name].args)
             else:
-                raise SyntaxError(f"not found in atoms or definitions: {name}")
+                raise SyntaxError(f"not found in atoms or defpres: {name}")
             self.consume("LPAREN")
             args = [self.consume("IDENT").value]
             while self.peek().type == "COMMA":
