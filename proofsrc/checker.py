@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, pretty, pretty_expr
 from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var
 
 import logging
@@ -18,6 +18,10 @@ def goal_in_context(goal, context, indent):
         return context.has_defcon_existence(goal.name)
     elif isinstance(goal, DefConUniq):
         return context.has_defcon_uniqueness(goal.name)
+    elif isinstance(goal, DefFunExist):
+        return context.has_deffun_existence(goal.name)
+    elif isinstance(goal, DefFunUniq):
+        return context.has_deffun_uniqueness(goal.name)
     else:
         return expr_in_context(goal, context)
 
@@ -222,12 +226,16 @@ def check_proof(node, context: Context, indent=0):
             fact = node.fact.formula
         elif isinstance(node.fact, DefConUniq):
             fact = node.fact.formula
+        elif isinstance(node.fact, DefFunExist):
+            fact = node.fact.formula
+        elif isinstance(node.fact, DefFunUniq):
+            fact = node.fact.formula
         else:
             fact = node.fact
         if node.env is not None:
             vars, body = collect_quantifier_vars(fact, Forall)
             if set(vars) != set(node.env.keys()):
-                logger.error(f"{sp}❌ [Apply] matched: vars={vars}, env={node.env}")
+                logger.error(f"{sp}❌ [Apply] Not matched: vars={vars}, env={node.env}")
                 return False
             logger.debug(f"{sp}[Apply] Instantiable: vars={vars}, env={node.env}")
             instantiation = substitute(body, node.env)
@@ -272,9 +280,9 @@ def check_proof(node, context: Context, indent=0):
         logger.debug(f"{sp}[Lift] fact: {pretty_expr(node.fact)}")
         free_vars, _ = collect_vars(node.fact)
         if not set(node.env.values()).issubset(free_vars):
-            logger.error(f"{sp}❌ [Lift] Cannot be lifted: vars={sorted(free_vars)}, env={node.env}")
+            logger.error(f"{sp}❌ [Lift] Cannot be lifted: vars={sorted(free_vars, key=lambda v: v.name)}, env={node.env}")
             return False
-        logger.debug(f"{sp}[Lift] Can be lifted: vars={sorted(free_vars)}, env={node.env}")
+        logger.debug(f"{sp}[Lift] Can be lifted: vars={sorted(free_vars, key=lambda v: v.name)}, env={node.env}")
         lifted = substitute(node.fact, {v: k for k, v in node.env.items()})
         for k in reversed(list(node.env.keys())):
             lifted = Exists(k, lifted)
@@ -426,10 +434,8 @@ def check_proof(node, context: Context, indent=0):
         logger.debug(f"{sp}[Fold] Length matched: defpre.args={defpre.args}, node.conclusion.args={node.conclusion.args}")
         expanded = substitute(defpre.formula, dict(zip(defpre.args, node.conclusion.args)))
         logger.debug(f"{sp}[Fold] Expanded: {pretty_expr(expanded)}")
-        logger.debug(node.fact)
-        logger.debug(expanded)
         if not logic_equiv(node.fact, expanded, context):
-            logger.error(f"{sp}❌ [Fold] Not matched: node.fact={pretty_expr(node.fact)}, expanded={pretty_expr(folded)}")
+            logger.error(f"{sp}❌ [Fold] Not matched: node.fact={pretty_expr(node.fact)}, expanded={pretty_expr(expanded)}")
             return False
         logger.debug(f"{sp}[Fold] Matched: node.fact={pretty_expr(node.fact)}, expanded={pretty_expr(expanded)}")
         add_conclusion(context, node.conclusion)
@@ -448,19 +454,39 @@ def check_proof(node, context: Context, indent=0):
             logger.error(f"{sp}❌ [DefCon] Theorem conclusion is not ExistsUniq object: {pretty_expr(existsuniq)}")
             return False
         logger.debug(f"{sp}[DefCon] Theorem conclusion is ExistsUniq object: {pretty_expr(existsuniq)}")
-        existence_formula = substitute(existsuniq.body, {existsuniq.var: node.name})
+        existence_formula = substitute(existsuniq.body, {existsuniq.var: Con(node.name)})
         if not logic_equiv(node.existence.formula, existence_formula, context):
             logger.error(f"{sp}❌ [DefCon] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula)}")
             return False
         logger.debug(f"{sp}[DefCon] existence_formula is matched with theorem: {pretty_expr(node.existence.formula)}")
-        var = fresh_var(existsuniq.var, [node.name])
+        var = fresh_var(existsuniq.var, [Con(node.name)])
         body = substitute(existsuniq.body, {existsuniq.var: var})
-        uniqueness_formula = Forall(var, Implies(body, Symbol("equal", [var, node.name])))
+        uniqueness_formula = Forall(var, Implies(body, Symbol("equal", [var, Con(node.name)])))
         if not logic_equiv(node.uniqueness.formula, uniqueness_formula, context):
             logger.error(f"{sp}❌ [DefCon] uniqueness_formula is not matched with theorem: {pretty_expr(node.uniqueness.formula)}")
             return False
         logger.debug(f"{sp}[DefCon] uniqueness_formula is matched with theorem: {pretty_expr(node.uniqueness.formula)}")
         context.defcons[node.name] = node
+        return True
+
+    if isinstance(node, DefFun):
+        logger.debug(f"{sp}[DefFun] name: {node.name}, theorem: {node.theorem}")
+        args, existsuniq = collect_quantifier_vars(context.theorems[node.theorem].conclusion, Forall)
+        existence_formula = substitute(existsuniq.body, {existsuniq.var: Compound(Fun(node.name), args)})
+        for arg in reversed(args):
+            existence_formula = Forall(arg, existence_formula)
+        if not logic_equiv(node.existence.formula, existence_formula, context):
+            logger.error(f"{sp}❌ [DefFun] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula)}")
+            return False
+        logger.debug(f"{sp}[DefFun] existence_formula is matched with theorem: {pretty_expr(node.existence.formula)}")
+        uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol("equal", [existsuniq.var, Compound(Fun(node.name), args)])))
+        for arg in reversed(args):
+            uniqueness_formula = Forall(arg, uniqueness_formula)
+        if not logic_equiv(node.uniqueness.formula, uniqueness_formula, context):
+            logger.error(f"{sp}❌ [DefFun] uniqueness_formula is not matched with theorem: {pretty_expr(node.uniqueness.formula)}")
+            return False
+        logger.debug(f"{sp}[DefFun] uniqueness_formula is matched with theorem: {pretty_expr(node.uniqueness.formula)}")
+        context.deffuns[node.name] = node
         return True
 
     logger.error(f"{sp}❌ Unsupported node {node}")

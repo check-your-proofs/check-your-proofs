@@ -242,6 +242,20 @@ theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftri
   }
 }
 
+definition function pair by pair_exists_uniquely
+  existence pair_existence \forall x\forall y\forall w(in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y))
+  uniqueness pair_uniqueness \forall x\forall y\forall z(\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z,pair(x,y)))
+
+theorem pair_cor1 \forall x\forall y(in(x,pair(x,y))) {
+  any x,y conclude in(x,pair(x,y)) {
+    apply pair_existence for x:x,y:y,w:x conclude in(x,pair(x,y))\leftrightarrow equal(x,x)\vee equal(x,y)
+    split in(x,pair(x,y))\leftrightarrow equal(x,x)\vee equal(x,y)
+    apply equal_reflection for x:x conclude equal(x,x)
+    pad equal(x,x) conclude equal(x,x)\vee equal(x,y)
+    invoke equal(x,x)\vee equal(x,y)\to in(x,pair(x,y)) conclude in(x,pair(x,y))
+  }
+}
+
 definition predicate subset(x,y) \forall z(in(z,x)\to in(z,y))
 
 theorem subset_cor1 \forall z\forall x\forall y(in(z,x)\wedge subset(x,y)\to in(z,y)) {

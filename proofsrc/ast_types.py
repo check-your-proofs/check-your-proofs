@@ -13,13 +13,14 @@ class Context:
     theorems: dict
     defpres: Dict[str, "DefPre"]
     defcons: Dict[str, "DefCon"]
+    deffuns: Dict[str, "DefFun"]
 
     @staticmethod
     def init():
-        return Context(formulas=[], bot_derived=False, atoms={}, axioms={}, theorems={}, defpres={}, defcons={})
+        return Context(formulas=[], bot_derived=False, atoms={}, axioms={}, theorems={}, defpres={}, defcons={}, deffuns={})
 
     def copy(self, formulas, bot_derived):
-        return Context(formulas=formulas, bot_derived=bot_derived, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, defpres=self.defpres, defcons=self.defcons)
+        return Context(formulas=formulas, bot_derived=bot_derived, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, defpres=self.defpres, defcons=self.defcons, deffuns=self.deffuns)
 
     def has_defcon_existence(self, existence_name):
         for defcon in self.defcons.values():
@@ -43,6 +44,30 @@ class Context:
         for defcon in self.defcons.values():
             if defcon.uniqueness.name == uniqueness_name:
                 return defcon.uniqueness
+        raise KeyError(f"Unexpected uniqueness_name: {uniqueness_name}")
+
+    def has_deffun_existence(self, existence_name):
+        for deffun in self.deffuns.values():
+            if deffun.existence.name == existence_name:
+                return True
+        return False
+
+    def get_deffun_existence(self, existence_name):
+        for deffun in self.deffuns.values():
+            if deffun.existence.name == existence_name:
+                return deffun.existence
+        raise KeyError(f"Unexpected existence_name: {existence_name}")
+
+    def has_deffun_uniqueness(self, uniqueness_name):
+        for deffun in self.deffuns.values():
+            if deffun.uniqueness.name == uniqueness_name:
+                return True
+        return False
+
+    def get_deffun_uniqueness(self, uniqueness_name):
+        for deffun in self.deffuns.values():
+            if deffun.uniqueness.name == uniqueness_name:
+                return deffun.uniqueness
         raise KeyError(f"Unexpected uniqueness_name: {uniqueness_name}")
 
 # === DSL ノード定義 ===
@@ -177,23 +202,58 @@ class DefConUniq:
     formula: object
 
 @dataclass
+class DefFun:
+    name: str
+    arity: int
+    theorem: str
+    existence: "DefFunExist"
+    uniqueness: "DefFunUniq"
+
+@dataclass
+class DefFunExist:
+    name: str
+    formula: object
+
+@dataclass
+class DefFunUniq:
+    name: str
+    formula: object
+
+@dataclass
 class Symbol:
     name: str
-    args: list[str]
+    args: list["Compound | Con | Var"]
+
+@dataclass
+class Compound:
+    fun: "Fun"
+    args: list["Compound | Con | Var"]
+
+@dataclass
+class Fun:
+    name: str
+
+@dataclass
+class Con:
+    name: str
+
+@dataclass(frozen=True)
+class Var:
+    name: str
 
 @dataclass
 class Forall:
-    var: str
+    var: Var
     body: object
 
 @dataclass
 class Exists:
-    var: str
+    var: Var
     body: object
 
 @dataclass
 class ExistsUniq:
-    var: str
+    var: Var
     body: object
 
 @dataclass
@@ -310,8 +370,20 @@ def pretty_expr(expr):
         return expr.name
     if isinstance(expr, DefConUniq):
         return expr.name
+    if isinstance(expr, DefFunExist):
+        return expr.name
+    if isinstance(expr, DefFunUniq):
+        return expr.name
     if isinstance(expr, Symbol):
-        return f"{expr.name}({",".join(expr.args)})"
+        return f"{expr.name}({",".join([pretty_expr(arg) for arg in expr.args])})"
+    if isinstance(expr, Compound):
+        return f"{pretty_expr(expr.fun)}({','.join([pretty_expr(arg) for arg in expr.args])})"
+    if isinstance(expr, Fun):
+        return expr.name
+    if isinstance(expr, Con):
+        return expr.name
+    if isinstance(expr, Var):
+        return expr.name
     if isinstance(expr, Implies):
         return f"{pretty_expr(expr.left)} \\to {pretty_expr(expr.right)}"
     if isinstance(expr, Iff):
@@ -323,11 +395,11 @@ def pretty_expr(expr):
     if isinstance(expr, Not):
         return f"\\neg({pretty_expr(expr.body)})"
     if isinstance(expr, Forall):
-        return f"\\forall {expr.var}({pretty_expr(expr.body)})"
+        return f"\\forall {expr.var.name}({pretty_expr(expr.body)})"
     if isinstance(expr, Exists):
-        return f"\\exists {expr.var}({pretty_expr(expr.body)})"
+        return f"\\exists {expr.var.name}({pretty_expr(expr.body)})"
     if isinstance(expr, ExistsUniq):
-        return f"\\exists! {expr.var}({pretty_expr(expr.body)})"
+        return f"\\exists! {expr.var.name}({pretty_expr(expr.body)})"
     if isinstance(expr, Bottom):
         return "\\bot"
     raise TypeError(f"Unsupported node type: {type(expr)}")

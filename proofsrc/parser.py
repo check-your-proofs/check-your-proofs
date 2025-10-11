@@ -1,6 +1,7 @@
 from typing import List, Union
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, Fold, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, Fold, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, pretty, pretty_expr
 from lexer import Token, lex
+from logic_utils import collect_quantifier_vars
 
 import logging
 logger = logging.getLogger("proof")
@@ -129,7 +130,7 @@ class Parser:
         vars_ = []
         while True:
             tok = self.consume("IDENT")
-            vars_.append(tok.value)
+            vars_.append(Var(tok.value))
             if self.peek().type == "COMMA":
                 self.consume("COMMA")
                 continue
@@ -175,9 +176,9 @@ class Parser:
         self.consume("SOME")
         env = {}
         while True:
-            bound = self.consume("IDENT").value
+            bound = Var(self.consume("IDENT").value)
             self.consume("COLON")
-            free = self.consume("IDENT").value
+            free = Var(self.consume("IDENT").value)
             env[bound] = free
             if self.peek().type == "COMMA":
                 self.consume("COMMA")
@@ -217,9 +218,9 @@ class Parser:
             self.consume("FOR")
             env = {}
             while True:
-                bound = self.consume("IDENT").value
+                bound = Var(self.consume("IDENT").value)
                 self.consume("COLON")
-                free = self.consume("IDENT").value
+                free = Var(self.consume("IDENT").value)
                 env[bound] = free
                 if self.peek().type == "COMMA":
                     self.consume("COMMA")
@@ -244,9 +245,9 @@ class Parser:
         self.consume("FOR")
         env = {}
         while True:
-            bound = self.consume("IDENT").value
+            bound = Var(self.consume("IDENT").value)
             self.consume("COLON")
-            free = self.consume("IDENT").value
+            free = Var(self.consume("IDENT").value)
             env[bound] = free
             if self.peek().type == "COMMA":
                 self.consume("COMMA")
@@ -306,10 +307,10 @@ class Parser:
                 autoexpand =False
             name = self.consume("IDENT").value
             self.consume("LPAREN")
-            args = [self.consume("IDENT").value]
+            args = [Var(self.consume("IDENT").value)]
             while self.peek().type == "COMMA":
                 self.consume("COMMA")
-                args.append(self.consume("IDENT").value)
+                args.append(Var(self.consume("IDENT").value))
             self.consume("RPAREN")
             formula = self.parse_expr()
             defpre = DefPre(name=name, args=args, formula=formula, autoexpand=autoexpand)
@@ -321,10 +322,11 @@ class Parser:
             name = self.consume("IDENT").value
             self.consume("BY")
             theorem = self.consume("IDENT").value
+            self.context.defcons[name] = DefCon(name=name, theorem=theorem, existence=None, uniqueness=None)
             self.consume("EXISTENCE")
             existence_name = self.consume("IDENT").value
             existence_formula = self.parse_expr()
-            existence = DefConExist(existence_name, existence_formula)
+            existence = DefConExist(name=existence_name, formula=existence_formula)
             self.consume("UNIQUENESS")
             uniqueness_name = self.consume("IDENT").value
             uniqueness_formula = self.parse_expr()
@@ -333,8 +335,53 @@ class Parser:
             self.context.defcons[name] = defcon
             logger.debug(f"[defcon] {name}")
             return defcon
+        elif tok.type == "FUNCTION":
+            self.consume("FUNCTION")
+            name = self.consume("IDENT").value
+            self.consume("BY")
+            theorem = self.consume("IDENT").value
+            vars_, body = collect_quantifier_vars(self.context.theorems[theorem].conclusion, Forall)
+            if not (len(vars_) > 0 and isinstance(body, ExistsUniq)):
+                raise SyntaxError(f"theorem cannot be used for function definition: {pretty_expr(theorem)}")
+            arity = len(vars_)
+            self.context.deffuns[name] = DefFun(name=name, arity=arity, theorem=theorem, existence=None, uniqueness=None)
+            self.consume("EXISTENCE")
+            existence_name = self.consume("IDENT").value
+            existence_formula = self.parse_expr()
+            existence = DefFunExist(name=existence_name, formula=existence_formula)
+            self.consume("UNIQUENESS")
+            uniqueness_name = self.consume("IDENT").value
+            uniqueness_formula = self.parse_expr()
+            uniqueness = DefFunUniq(name=uniqueness_name, formula=uniqueness_formula)
+            deffun = DefFun(name=name, arity=arity, theorem=theorem, existence=existence, uniqueness=uniqueness)
+            self.context.deffuns[name] = deffun
+            logger.debug(f"[deffun] {name}")
+            return deffun
         else:
             raise SyntaxError(f"Unexpected token {tok}")
+
+    def parse_term(self):
+        tok = self.peek()
+        if tok.type == "IDENT":
+            name = self.consume("IDENT").value
+            if self.peek().type == "LPAREN":
+                if name not in self.context.deffuns:
+                    raise SyntaxError(f"Unexpected token (fun): {tok}")
+                self.consume("LPAREN")
+                args = [self.parse_term()]
+                while self.peek().type == "COMMA":
+                    self.consume("COMMA")
+                    args.append(self.parse_term())
+                self.consume("RPAREN")
+                if len(args) != self.context.deffuns[name].arity:
+                    raise SyntaxError("arity is different")
+                return Compound(Fun(name), args)
+            elif name in self.context.defcons:
+                return Con(name)
+            else:
+                return Var(name)
+        else:
+            raise SyntaxError(f"Unexpected token: {tok}")
 
     def parse_primary(self):
         tok = self.peek()
@@ -347,10 +394,10 @@ class Parser:
             else:
                 raise SyntaxError(f"not found in atoms or defpres: {name}")
             self.consume("LPAREN")
-            args = [self.consume("IDENT").value]
+            args = [self.parse_term()]
             while self.peek().type == "COMMA":
                 self.consume("COMMA")
-                args.append(self.consume("IDENT").value)
+                args.append(self.parse_term())
             if len(args) != arity:
                 raise SyntaxError("arity is different")
             self.consume("RPAREN")
@@ -374,7 +421,7 @@ class Parser:
             vars_ = []
             while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
                 quantifiers.append(self.consume(tok.type).type)
-                vars_.append(self.consume("IDENT").value)
+                vars_.append(Var(self.consume("IDENT").value))
                 tok = self.peek()
             self.consume("LPAREN")
             body = self.parse_recursion()
@@ -403,6 +450,10 @@ class Parser:
             return self.context.get_defcon_existence(self.consume("IDENT").value)
         elif self.peek().type == "IDENT" and self.context.has_defcon_uniqueness(self.peek().value):
             return self.context.get_defcon_uniqueness(self.consume("IDENT").value)
+        elif self.peek().type == "IDENT" and self.context.has_deffun_existence(self.peek().value):
+            return self.context.get_deffun_existence(self.consume("IDENT").value)
+        elif self.peek().type == "IDENT" and self.context.has_deffun_uniqueness(self.peek().value):
+            return self.context.get_deffun_uniqueness(self.consume("IDENT").value)
         else:
             return self.parse_recursion()
 

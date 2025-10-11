@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, pretty_expr
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, pretty_expr
 from itertools import permutations
 from typing import List
 from dataclasses import dataclass
@@ -70,10 +70,28 @@ def alpha_equiv(e1, e2, env=None):
         if e1.name != e2.name or len(e1.args) != len(e2.args):
             return False
         for a, b in zip(e1.args, e2.args):
-            mapped = env.get(a, a)
-            if mapped != b:
+            if not alpha_equiv(a, b, env):
                 return False
         return True
+
+    if isinstance(e1, Compound) and isinstance(e2, Compound):
+        if not alpha_equiv(e1.fun, e2.fun):
+            return False
+        if len(e1.args) != len(e2.args):
+            return False
+        for a, b in zip(e1.args, e2.args):
+            if not alpha_equiv(a, b, env):
+                return False
+        return True
+
+    if isinstance(e1, Fun) and isinstance(e2, Fun):
+        return e1.name == e2.name
+
+    if isinstance(e1, Con) and isinstance(e2, Con):
+        return e1.name == e2.name
+
+    if isinstance(e1, Var) and isinstance(e2, Var):
+        return env.get(e1, e1) == e2
 
     if isinstance(e1, BoolTrue) and isinstance(e2, BoolTrue):
         return True
@@ -99,8 +117,21 @@ def collect_vars(expr, bound=None):
     if bound is None:
         bound = set()
 
-    if isinstance(expr, Symbol):
-        return set(arg for arg in expr.args if arg not in bound), set()
+    if isinstance(expr, (Symbol, Compound)):
+        free = set()
+        for arg in expr.args:
+            f, _ = collect_vars(arg, bound)
+            free.update(f)
+        return free, set()
+
+    elif isinstance(expr, (Fun, Con)):
+        return set(), set()
+
+    elif isinstance(expr, Var):
+        if expr in bound:
+            return set(), set()
+        else:
+            return {expr}, set()
 
     elif isinstance(expr, Not):
         return collect_vars(expr.body, bound)
@@ -149,21 +180,23 @@ def to_core_logic_form(expr, context):
         return type(expr)(expr.var, to_core_logic_form(expr.body, context))
     elif isinstance(expr, ExistsUniq):
         used_vars = {expr.var} | collect_vars(expr.body)[0] | collect_vars(expr.body)[1]
-        vardash = fresh_var(expr.var + "'", used_vars)
+        vardash = fresh_var(Var(expr.var.name + "'"), used_vars)
         body_subst = substitute(expr.body, {expr.var: vardash})
-        expanded = And(Exists(expr.var, expr.body), Forall(vardash, Implies(body_subst, Symbol("equal", [vardash, expr.var]))))
+        expanded = Exists(expr.var, And(expr.body, Forall(vardash, Implies(body_subst, Symbol("equal", [vardash, expr.var])))))
         return to_core_logic_form(expanded, context)
     else:
         raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
 
 def fresh_var(var, used):
-    """used に含まれない新しい変数名を作る"""
-    i = 0
-    new_var = f"{var}_{i}"
-    while new_var in used:
-        i += 1
-        new_var = f"{var}_{i}"
-    return new_var
+    if var in used:
+        i = 0
+        new_name = f"{var.name}_{i}"
+        while any(new_name == u.name for u in used):
+            i += 1
+            new_name = f"{var.name}_{i}"
+        return Var(new_name)
+    else:
+        return var
 
 def substitute(expr, mapping, used_vars=None):
     """
@@ -171,11 +204,24 @@ def substitute(expr, mapping, used_vars=None):
     束縛変数は mapping に衝突しないよう自動リネーム
     """
     if used_vars is None:
-        used_vars = collect_vars(expr)[0] | set(mapping.values())
+        used_vars = collect_vars(expr)[0] | collect_vars(expr)[1] | {v for v in mapping.values() if isinstance(v, Var)}
 
     if isinstance(expr, Symbol):
-        new_args = [mapping.get(arg, arg) for arg in expr.args]
+        new_args = [substitute(arg, mapping, used_vars) for arg in expr.args]
         return Symbol(expr.name, new_args)
+
+    if isinstance(expr, Compound):
+        new_args = [substitute(arg, mapping, used_vars) for arg in expr.args]
+        return Compound(substitute(expr.fun, mapping), new_args)
+
+    if isinstance(expr, Fun):
+        return expr
+
+    if isinstance(expr, Con):
+        return expr
+
+    if isinstance(expr, Var):
+        return mapping.get(expr, expr)
 
     if isinstance(expr, Not):
         return Not(substitute(expr.body, mapping, used_vars))
@@ -189,26 +235,12 @@ def substitute(expr, mapping, used_vars=None):
         if var in mapping.values() or var in used_vars:
             new_var = fresh_var(var, used_vars)
             used_vars.add(new_var)
-            body = substitute(rename_var(expr.body, var, new_var), mapping, used_vars)
+            body = substitute(alpha_rename(expr.body, {var: new_var}), mapping, used_vars)
             return type(expr)(new_var, body)
         else:
             used_vars.add(var)
             return type(expr)(var, substitute(expr.body, mapping, used_vars))
 
-    return expr
-
-def rename_var(expr, old_var, new_var):
-    """式 expr 内の束縛変数 old_var を new_var にリネーム"""
-    if isinstance(expr, Symbol):
-        new_args = [new_var if a == old_var else a for a in expr.args]
-        return Symbol(expr.name, new_args)
-    elif isinstance(expr, Not):
-        return Not(rename_var(expr.body, old_var, new_var))
-    elif isinstance(expr, (And, Or, Implies, Iff)):
-        return type(expr)(rename_var(expr.left, old_var, new_var), rename_var(expr.right, old_var, new_var))
-    elif isinstance(expr, (Forall, Exists)):
-        v = new_var if expr.var == old_var else expr.var
-        return type(expr)(v, rename_var(expr.body, old_var, new_var))
     return expr
 
 def to_nnf(expr):
@@ -253,7 +285,17 @@ def make_quantifiers(qs, body):
 
 def alpha_rename(expr, rename_map):
     if isinstance(expr, Symbol):
-        return Symbol(expr.name, [rename_map.get(a, a) for a in expr.args])
+        new_args = [alpha_rename(a, rename_map) for a in expr.args]
+        return Symbol(expr.name, new_args)
+    elif isinstance(expr, Compound):
+        new_args = [alpha_rename(a, rename_map) for a in expr.args]
+        return Compound(alpha_rename(expr.fun, rename_map), new_args)
+    elif isinstance(expr, Fun):
+        return expr
+    elif isinstance(expr, Con):
+        return expr
+    elif isinstance(expr, Var):
+        return rename_map.get(expr, expr)
     elif isinstance(expr, Not):
         return Not(alpha_rename(expr.body, rename_map))
     elif isinstance(expr, (And, Or, Implies, Iff)):
@@ -393,58 +435,71 @@ def logic_equiv(expr1, expr2, context):
     expr2_norm = to_canonical_form(expr2, context)
     return alpha_equiv(expr1_norm, expr2_norm)
 
-def print_tree(expr, prefix="", is_root=True, is_last=True):
+def make_tree(expr, prefix="", is_root=True, is_last=True):
     print_prefix = prefix + ("" if is_root else ("└─" if is_last else "├─"))
+    child_pref = prefix + ("   " if is_last or is_root else "│  ")
     if isinstance(expr, Symbol):
-        print(f"{print_prefix}Symbol({expr.name}, [{", ".join(expr.args)}])")
+        args_str = ", ".join(make_tree(arg, "", True) for arg in expr.args)
+        return f"{print_prefix}Symbol({expr.name}, [{args_str}])"
+    elif isinstance(expr, Compound):
+        args_str = ", ".join(make_tree(arg, "", True) for arg in expr.args)
+        return f"{print_prefix}Compound({make_tree(expr.fun, "", True)}, [{args_str}])"
+    elif isinstance(expr, Fun):
+        return f"{print_prefix}{expr.name}"
+    elif isinstance(expr, Con):
+        return f"{print_prefix}{expr.name}"
+    elif isinstance(expr, Var):
+        return f"{print_prefix}{expr.name}"
     elif isinstance(expr, Not):
-        print(f"{print_prefix}Not")
-        print_tree(expr.body, prefix + ("" if is_root else ("   " if is_last else "│  ")), False, True)
+        body_str = make_tree(expr.body, child_pref, False, True)
+        return f"{print_prefix}Not\n{body_str}"
     elif isinstance(expr, (And, Or, Implies, Iff)):
-        print(f"{print_prefix}{type(expr).__name__}")
-        print_tree(expr.left, prefix + ("" if is_root else ("   " if is_last else "│  ")), False, False)
-        print_tree(expr.right, prefix + ("" if is_root else ("   " if is_last else "│  ")), False, True)
+        left_str = make_tree(expr.left, child_pref, False, False)
+        right_str = make_tree(expr.right, child_pref, False, True)
+        return f"{print_prefix}{type(expr).__name__}\n{left_str}\n{right_str}"
     elif isinstance(expr, (Exists, Forall, ExistsUniq)):
-        print(f"{print_prefix}{type(expr).__name__}({expr.var})")
-        print_tree(expr.body, prefix + ("" if is_root else ("   " if is_last else "│  ")), False, True)
+        body_str = make_tree(expr.body, child_pref, False, True)
+        return f"{print_prefix}{type(expr).__name__}({expr.var.name})\n{body_str}"
+    elif isinstance(expr, (BoolTrue, BoolFalse)):
+        return type(expr).__name__
     else:
-        raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
+        raise Exception(f"Unexpected expr: {expr}")
 
 if __name__ == "__main__":
     from ast_types import Atom, DefPre
-    context = Context([], False, {"in": Atom("PREDICATE", "in", 2)}, {}, {}, {"equal": DefPre("equal", ["x", "y"], Forall("z", Iff(Symbol("in", ["z", "x"]), Symbol("in", ["z", "y"]))), False)}, {})
+    context = Context([], False, {"in": Atom("PREDICATE", "in", 2)}, {}, {}, {"equal": DefPre("equal", [Var("x"), Var("y")], Forall(Var("z"), Iff(Symbol("in", [Var("z"), Var("x")]), Symbol("in", [Var("z"), Var("y")]))), False)}, {}, {})
 
-    expr = Forall("x", Forall("y", ExistsUniq("z", Forall("w", Iff(Symbol("in", ["w", "z"]), Or(Symbol("in", ["w", "x"]), Symbol("in", ["w", "y"])))))))
+    expr = Forall(Var("x"), Forall(Var("y"), ExistsUniq(Var("z"), Forall(Var("w"), Iff(Symbol("in", [Var("w"), Var("z")]), Or(Symbol("in", [Var("w"), Var("x")]), Symbol("in", [Var("w"), Var("y")])))))))
     print("expr")
     print()
-    print_tree(expr)
+    print(make_tree(expr))
     print()
 
     expr_norm = to_core_logic_form(expr, context)
     print("to_core_logic_form()")
     print()
-    print_tree(expr_norm)
+    print(make_tree(expr_norm))
     print()
 
     expr_norm = to_nnf(expr_norm)
     print("to_nnf()")
     print()
-    print_tree(expr_norm)
+    print(make_tree(expr_norm))
     print()
 
     expr_norm = to_pnf(expr_norm)
     print("to_pnf()")
     print()
-    print_tree(expr_norm)
+    print(make_tree(expr_norm))
     print()
 
     expr_norm = to_cnf(expr_norm)
     print("to_cnf()")
     print()
-    print_tree(expr_norm)
+    print(make_tree(expr_norm))
     print()
 
     print("simplify()")
     print()
-    print_tree(expr_norm)
+    print(make_tree(expr_norm))
     print()
