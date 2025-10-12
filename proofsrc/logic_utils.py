@@ -195,7 +195,7 @@ def to_core_logic_form(expr, context: Context, expand_all: bool = False):
         used_vars = {expr.var} | collect_vars(expr.body)[0] | collect_vars(expr.body)[1]
         vardash = fresh_var(Var(expr.var.name + "'"), used_vars)
         body_subst = substitute(expr.body, {expr.var: vardash})
-        expanded = Exists(expr.var, And(expr.body, Forall(vardash, Implies(body_subst, Symbol("equal", [vardash, expr.var])))))
+        expanded = Exists(expr.var, And(expr.body, Forall(vardash, Implies(body_subst, Symbol(context.equality.equal.name, [vardash, expr.var])))))
         return to_core_logic_form(expanded, context, expand_all)
     else:
         raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
@@ -480,9 +480,9 @@ def make_tree(expr, prefix: str = "", is_root: bool = True, is_last: bool = True
 
 if __name__ == "__main__":
     from ast_types import Atom, DefPre
-    context = Context([], False, {"in": Atom("PREDICATE", "in", 2)}, {}, {}, {"equal": DefPre("equal", [Var("x"), Var("y")], Forall(Var("z"), Iff(Symbol("in", [Var("z"), Var("x")]), Symbol("in", [Var("z"), Var("y")]))), False)}, {}, {}, {})
+    context = Context([], False, {"in": Atom("PREDICATE", "in", 2)}, {}, {}, {}, {}, {}, {}, None)
 
-    expr = Forall(Var("x"), Forall(Var("y"), ExistsUniq(Var("z"), Forall(Var("w"), Iff(Symbol("in", [Var("w"), Var("z")]), Or(Symbol("in", [Var("w"), Var("x")]), Symbol("in", [Var("w"), Var("y")])))))))
+    expr = Forall(Var("x"), Forall(Var("y"), Exists(Var("z"), Forall(Var("w"), Iff(Symbol("in", [Var("w"), Var("z")]), Or(Symbol("in", [Var("w"), Var("x")]), Symbol("in", [Var("w"), Var("y")])))))))
     print("expr")
     print()
     print(make_tree(expr))

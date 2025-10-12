@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, pretty, pretty_expr
 from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var
 
 import logging
@@ -443,7 +443,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         logger.debug(f"{sp}[DefCon] existence_formula is matched with theorem: {pretty_expr(node.existence.formula)}")
         var = fresh_var(existsuniq.var, [Con(node.name)])
         body = substitute(existsuniq.body, {existsuniq.var: var})
-        uniqueness_formula = Forall(var, Implies(body, Symbol("equal", [var, Con(node.name)])))
+        uniqueness_formula = Forall(var, Implies(body, Symbol(context.equality.equal.name, [var, Con(node.name)])))
         if not logic_equiv(node.uniqueness.formula, uniqueness_formula, context):
             logger.error(f"{sp}❌ [DefCon] uniqueness_formula is not matched with theorem: {pretty_expr(node.uniqueness.formula)}")
             return False
@@ -462,7 +462,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [DefFun] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula)}")
             return False
         logger.debug(f"{sp}[DefFun] existence_formula is matched with theorem: {pretty_expr(node.existence.formula)}")
-        uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol("equal", [existsuniq.var, Compound(Fun(node.name), args)])))
+        uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(context.equality.equal.name, [existsuniq.var, Compound(Fun(node.name), args)])))
         for arg in reversed(args):
             uniqueness_formula = Forall(arg, uniqueness_formula)
         if not logic_equiv(node.uniqueness.formula, uniqueness_formula, context):
@@ -480,6 +480,45 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             return False
         logger.debug(f"{sp}[DefFunTerm] args are mathced with free vars of term: {free}")
         context.deffunterms[node.name] = node
+        return True
+
+    if isinstance(node, Equality):
+        logger.debug(f"{sp}[Equality] name: {node.equal.name}")
+        logger.debug(f"{sp}[Equality] Checking {node.equal.name} reflection theorem: {pretty_expr(node.reflection.conclusion)}")
+        reflection = Forall(Var("x"), Symbol(node.equal.name, [Var("x"), Var("x")]))
+        if not logic_equiv(node.reflection.conclusion, reflection, context):
+            logger.error(f"{sp}❌ [Equality] Not matched with expected formula: {pretty_expr(reflection)}")
+            return False
+        logger.debug(f"{sp}[Equality] Matched with expected formula: {pretty_expr(reflection)}")
+        for predicate in node.replacement:
+            logger.debug(f"{sp}[Equality] Checking {predicate} replacement theorem: {pretty_expr(node.replacement[predicate].conclusion)}")
+            if predicate == node.equal.name:
+                if isinstance(node.equal, Atom):
+                    arity = node.equal.arity
+                elif isinstance(node.equal, DefPre):
+                    arity = len(node.equal.args)
+            else:
+                arity = context.atoms[predicate].arity
+            args_x = []
+            args_y = []
+            for i in range(arity):
+                args_x.append(Var(f"x_{i}"))
+                args_y.append(Var(f"y_{i}"))
+            premise = Symbol(node.equal.name, [args_x[0], args_y[0]])
+            for i in range(1, arity):
+                premise = And(premise, Symbol(node.equal.name, [args_x[i], args_y[i]]))
+            conclusion = Implies(Symbol(predicate, args_x), Symbol(predicate, args_y))
+            replacement = Implies(premise, conclusion)
+            for arg in reversed(args_y):
+                replacement = Forall(arg, replacement)
+            for arg in reversed(args_x):
+                replacement = Forall(arg, replacement)
+            if not logic_equiv(node.replacement[predicate].conclusion, replacement, context):
+                logger.error(f"{sp}❌ [Equality] Not matched with expected formula: {pretty_expr(replacement)}")
+                return False
+            logger.debug(f"{sp}[Equality] Matched with expected formula: {pretty_expr(replacement)}")
+        context.equality = node
+        logger.debug(f"{sp}[Equality] {node.equal.name} is registered as equality")
         return True
 
     logger.error(f"{sp}❌ Unsupported node {node}")

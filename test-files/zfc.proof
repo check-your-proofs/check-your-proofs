@@ -75,6 +75,10 @@ theorem in_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge equ
   }
 }
 
+equality equal
+  reflection equal_reflection
+  replacement equal: equal_replacement, in: in_replacement
+
 definition predicate autoexpand notin(x,y) \neg(in(x,y))
 
 definition predicate autoexpand neq(x,y) \neg(equal(x,y))
@@ -375,3 +379,5 @@ theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrig
     connect in(y,singleton(x))\leftrightarrow equal(y,x)
   }
 }
+
+definition function op(x,y) pair(singleton(x),pair(x,y))

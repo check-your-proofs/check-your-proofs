@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, Fold, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, Fold, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, pretty, pretty_expr
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -36,6 +36,8 @@ class Parser:
                 ast.append(self.parse_theorem())
             elif tok.type == "DEFINITION":
                 ast.append(self.parse_definition())
+            elif tok.type == "EQUALITY":
+                ast.append(self.parse_equality())
             else:
                 raise SyntaxError(f"Unexpected token {tok}")
         return ast
@@ -371,6 +373,51 @@ class Parser:
                 return deffunterm
         else:
             raise SyntaxError(f"Unexpected token {tok}")
+
+    def parse_equality(self) -> Equality:
+        self.consume("EQUALITY")
+        name = self.consume("IDENT").value
+        if name in self.context.atoms:
+            equal = self.context.atoms[name]
+            if equal.arity != 2:
+                raise Exception(f"arity of atom {name} is not 2")
+        elif name in self.context.defpres:
+            equal = self.context.defpres[name]
+            if len(equal.args) != 2:
+                raise Exception(f"arity of defpre {name} is not 2")
+        else:
+            raise Exception(f"{name} is not atom or defpre")
+        self.consume("REFLECTION")
+        name = self.consume("IDENT").value
+        if name in self.context.axioms:
+            reflection = self.context.axioms[name]
+        elif name in self.context.theorems:
+            reflection = self.context.theorems[name]
+        else:
+            raise Exception(f"{name} is not axiom or theorem")
+        self.consume("REPLACEMENT")
+        replacement = {}
+        while True:
+            predicate = self.consume("IDENT").value
+            if not (predicate == equal.name or predicate in self.context.atoms):
+                raise Exception(f"{predicate} is not {equal.name} or atom")
+            self.consume("COLON")
+            name = self.consume("IDENT").value
+            if name in self.context.axioms:
+                formula = self.context.axioms[name]
+            elif name in self.context.theorems:
+                formula = self.context.theorems[name]
+            else:
+                raise Exception(f"{name} is not axiom or theorem")
+            replacement[predicate] = formula
+            if self.peek().type == "COMMA":
+                self.consume("COMMA")
+            else:
+                break
+        equality = Equality(equal=equal, reflection=reflection, replacement=replacement)
+        self.context.equality = equality
+        logger.debug(f"[equality] {type(equal)}: {equal.name}")
+        return equality
 
     def parse_term(self) -> Compound | Con | Var:
         tok = self.peek()

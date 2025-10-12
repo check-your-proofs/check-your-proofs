@@ -14,13 +14,14 @@ class Context:
     defcons: dict[str, "DefCon"]
     deffuns: dict[str, "DefFun"]
     deffunterms: dict[str, "DefFunTerm"]
+    equality: "Equality | None"
 
     @staticmethod
     def init() -> "Context":
-        return Context(formulas=[], bot_derived=False, atoms={}, axioms={}, theorems={}, defpres={}, defcons={}, deffuns={}, deffunterms={})
+        return Context(formulas=[], bot_derived=False, atoms={}, axioms={}, theorems={}, defpres={}, defcons={}, deffuns={}, deffunterms={}, equality=None)
 
     def copy(self, formulas, bot_derived: bool) -> "Context":
-        return Context(formulas=formulas, bot_derived=bot_derived, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, defpres=self.defpres, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms)
+        return Context(formulas=formulas, bot_derived=bot_derived, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, defpres=self.defpres, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms, equality=self.equality)
 
     def has_defcon_existence(self, existence_name: str) -> bool:
         for defcon in self.defcons.values():
@@ -224,6 +225,12 @@ class DefFunTerm:
     name: str
     args: list["Var"]
     term: object
+
+@dataclass
+class Equality:
+    equal: Atom | DefPre
+    reflection: Axiom | Theorem
+    replacement: dict[str, Axiom | Theorem]
 
 @dataclass
 class Symbol:
