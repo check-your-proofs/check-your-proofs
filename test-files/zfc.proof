@@ -393,6 +393,31 @@ theorem pair_cor6 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equa
   }
 }
 
+theorem pair_cor7 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equal(x,z)) {
+  any x,y,z conclude equal(pair(x,x),pair(y,z))\to equal(x,z) {
+    assume equal(pair(x,x),pair(y,z)) conclude equal(x,z) {
+      apply pair_cor5 for x:y,y:z,z:x,w:x conclude equal(pair(y,z),pair(x,x))\to equal(z,x)\vee equal(z,x)
+      invoke equal(pair(y,z),pair(x,x))\to equal(z,x)\vee equal(z,x) conclude equal(z,x)
+    }
+  }
+}
+
+theorem pair_cor8 \forall x\forall y\forall z(equal(pair(x,y),pair(x,z))\to equal(y,z)) {
+  any x,y,z conclude equal(pair(x,y),pair(x,z))\to equal(y,z) {
+    assume equal(pair(x,y),pair(x,z)) conclude equal(y,z) {
+      apply pair_cor5 for x:x,y:y,z:x,w:z conclude equal(pair(x,y),pair(x,z))\to equal(y,x)\vee equal(y,z)
+      invoke equal(pair(x,y),pair(x,z))\to equal(y,x)\vee equal(y,z) conclude equal(y,x)\vee equal(y,z)
+      divide equal(y,x)\vee equal(y,z) conclude equal(y,z)
+        case equal(y,x) {
+          substitute equal(pair(x,y),pair(x,z)) conclude equal(pair(x,x),pair(x,z))
+          apply pair_cor7 for x:x,y:x,z:z conclude equal(pair(x,x),pair(x,z))\to equal(x,z)
+          invoke equal(pair(x,x),pair(x,z))\to equal(x,z) conclude equal(x,z)
+        }
+        case equal(y,z) {}
+    }
+  }
+}
+
 definition function singleton(x) pair(x,x)
 
 theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrightarrow equal(y,x)) {
@@ -413,4 +438,69 @@ theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrig
   }
 }
 
+theorem singleton_cor1 \forall x(in(x,singleton(x))) {
+  any x conclude in(x,singleton(x)) {
+    apply singleton_characterization for x:x,y:x conclude in(x,singleton(x))\leftrightarrow equal(x,x)
+    split in(x,singleton(x))\leftrightarrow equal(x,x)
+    invoke equal(x,x)\to in(x,singleton(x)) conclude in(x,singleton(x))
+  }
+}
+
+theorem singleton_cor2 \forall x\forall y(equal(singleton(x),singleton(y))\to equal(x,y)) {
+  any x,y conclude equal(singleton(x),singleton(y))\to equal(x,y) {
+    assume equal(singleton(x),singleton(y)) conclude equal(x,y) {
+      apply singleton_cor1 for x:x conclude in(x,singleton(x))
+      substitute in(x,singleton(x)) conclude in(x,singleton(y))
+      apply singleton_characterization for x:y,y:x conclude in(x,singleton(y))\leftrightarrow equal(x,y)
+      split in(x,singleton(y))\leftrightarrow equal(x,y)
+      invoke in(x,singleton(y))\to equal(x,y) conclude equal(x,y)
+    }
+  }
+}
+
+theorem pair_singleton_cor1 \forall x\forall y\forall z(equal(singleton(x),pair(y,z))\to equal(x,y)) {
+  any x,y,z conclude equal(singleton(x),pair(y,z))\to equal(x,y) {
+    assume equal(singleton(x),pair(y,z)) conclude equal(x,y) {
+      expand equal(singleton(x),pair(y,z)) conclude equal(pair(x,x),pair(y,z))
+      apply pair_cor6 for x:x,y:y,z:z conclude equal(pair(x,x),pair(y,z))\to equal(x,y)
+      invoke equal(pair(x,x),pair(y,z))\to equal(x,y) conclude equal(x,y)
+    }
+  }
+}
+
+theorem pair_singleton_cor2 \forall x\forall y\forall z(equal(singleton(x),pair(y,z))\to equal(x,z)) {
+  any x,y,z conclude equal(singleton(x),pair(y,z))\to equal(x,z) {
+    assume equal(singleton(x),pair(y,z)) conclude equal(x,z) {
+      expand equal(singleton(x),pair(y,z)) conclude equal(pair(x,x),pair(y,z))
+      apply pair_cor7 for x:x,y:y,z:z conclude equal(pair(x,x),pair(y,z))\to equal(x,z)
+      invoke equal(pair(x,x),pair(y,z))\to equal(x,z) conclude equal(x,z)
+    }
+  }
+}
+
 definition function op(x,y) pair(singleton(x),pair(x,y))
+
+theorem op_characterization \forall x\forall y\forall x'\forall y'(equal(op(x,y),op(x',y'))\to equal(x,x')\wedge equal(y,y')) {
+  any x,y,x',y' conclude equal(op(x,y),op(x',y'))\to equal(x,x')\wedge equal(y,y') {
+    assume equal(op(x,y),op(x',y')) conclude equal(x,x')\wedge equal(y,y') {
+      expand equal(op(x,y),op(x',y')) conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y')))
+      apply pair_cor4 for x:singleton(x),y:pair(x,y),z:singleton(x'),w:pair(x',y') conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y')))\to equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y'))
+      invoke equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y')))\to equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y')) conclude equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y'))
+      divide equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y')) conclude equal(x,x')
+        case equal(singleton(x),singleton(x')) {
+          apply singleton_cor2 for x:x,y:x' conclude equal(singleton(x),singleton(x'))\to equal(x,x')
+          invoke equal(singleton(x),singleton(x'))\to equal(x,x') conclude equal(x,x')
+        }
+        case equal(singleton(x),pair(x',y')) {
+          apply pair_singleton_cor1 for x:x,y:x',z:y' conclude equal(singleton(x),pair(x',y'))\to equal(x,x')
+          invoke equal(singleton(x),pair(x',y'))\to equal(x,x') conclude equal(x,x')
+        }
+      substitute equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y'))) conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x),pair(x,y')))
+      apply pair_cor8 for x:singleton(x),y:pair(x,y),z:pair(x,y') conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x),pair(x,y')))\to equal(pair(x,y),pair(x,y'))
+      invoke equal(pair(singleton(x),pair(x,y)),pair(singleton(x),pair(x,y')))\to equal(pair(x,y),pair(x,y')) conclude equal(pair(x,y),pair(x,y'))
+      apply pair_cor8 for x:x,y:y,z:y' conclude equal(pair(x,y),pair(x,y'))\to equal(y,y')
+      invoke equal(pair(x,y),pair(x,y'))\to equal(y,y') conclude equal(y,y')
+      connect equal(x,x')\wedge equal(y,y')
+    }
+  }
+}
