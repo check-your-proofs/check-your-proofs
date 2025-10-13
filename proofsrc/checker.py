@@ -1,5 +1,6 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, pretty, pretty_expr
 from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var
+from equal_utils import equal_norm
 
 import logging
 logger = logging.getLogger("proof")
@@ -422,6 +423,22 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         logger.debug(f"{sp}[Fold] Matched: node.fact={pretty_expr(node.fact)}, expanded={pretty_expr(expanded)}")
         add_conclusion(context, node.conclusion)
         logger.debug(f"{sp}[Fold] Added: {pretty_expr(node.conclusion)}")
+        return True
+
+    if isinstance(node, Substitute):
+        if not goal_in_context(node.fact, context):
+            logger.error(f"{sp}❌ [Substitute] Not fact: {pretty_expr(node.fact)}")
+            return False
+        logger.debug(f"{sp}[Substitute] Fact: {pretty_expr(node.fact)}")
+        logger.debug(f"{sp}[Substitute] Target conclusion: {pretty_expr(node.conclusion)}")
+        fact_norm, conclusion_norm = equal_norm(node.fact, node.conclusion, context)
+        logger.debug(f"{sp}[Substitute] fact_norm: {pretty_expr(fact_norm)}")
+        logger.debug(f"{sp}[Substitute] conclusion_norm: {pretty_expr(conclusion_norm)}")
+        if not logic_equiv(fact_norm, conclusion_norm, context):
+            logger.error(f"{sp}❌ [Substitute] Not matched")
+            return False
+        add_conclusion(context, node.conclusion)
+        logger.debug(f"{sp}[Substitute] Matched, added conclusion")
         return True
 
     if isinstance(node, DefPre):

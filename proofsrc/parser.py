@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, Fold, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, Fold, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, pretty, pretty_expr
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -122,6 +122,8 @@ class Parser:
                 body.append(self.parse_connect())
             elif tok.type == "FOLD":
                 body.append(self.parse_fold())
+            elif tok.type == "SUBSTITUTE":
+                body.append(self.parse_substitute())
             else:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
@@ -296,6 +298,13 @@ class Parser:
         conclusion = self.parse_expr()
         return Fold(fact=fact, conclusion=conclusion)
 
+    def parse_substitute(self) -> Substitute:
+        self.consume("SUBSTITUTE")
+        fact = self.parse_expr()
+        self.consume("CONCLUDE")
+        conclusion = self.parse_expr()
+        return Substitute(fact=fact, conclusion=conclusion)
+
     def parse_definition(self) -> DefPre | DefCon | DefFun | DefFunTerm:
         self.consume("DEFINITION")
         tok = self.peek()
@@ -432,6 +441,7 @@ class Parser:
                     self.consume("COMMA")
                     args.append(self.parse_term())
                 self.consume("RPAREN")
+                args = tuple(args)
                 if name in self.context.deffuns and len(args) != self.context.deffuns[name].arity:
                     raise SyntaxError("arity is different (deffun)")
                 if name in self.context.deffunterms and len(args) != len(self.context.deffunterms[name].args):

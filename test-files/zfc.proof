@@ -360,6 +360,18 @@ theorem pair_commutativity \forall x\forall y(equal(pair(x,y),pair(y,x))) {
   }
 }
 
+theorem pair_cor4 \forall x\forall y\forall z\forall w(equal(pair(x,y),pair(z,w))\to equal(x,z)\vee equal(x,w)) {
+  any x,y,z,w conclude equal(pair(x,y),pair(z,w))\to equal(x,z)\vee equal(x,w) {
+    assume equal(pair(x,y),pair(z,w)) conclude equal(x,z)\vee equal(x,w) {
+      apply pair_cor1 for x:x,y:y conclude in(x,pair(x,y))
+      substitute in(x,pair(x,y)) conclude in(x,pair(z,w))
+      apply pair_existence for x:z,y:w,w:x conclude in(x,pair(z,w))\leftrightarrow equal(x,z)\vee equal(x,w)
+      split in(x,pair(z,w))\leftrightarrow equal(x,z)\vee equal(x,w)
+      invoke in(x,pair(z,w))\to equal(x,z)\vee equal(x,w) conclude equal(x,z)\vee equal(x,w)
+    }
+  }
+}
+
 definition function singleton(x) pair(x,x)
 
 theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrightarrow equal(y,x)) {

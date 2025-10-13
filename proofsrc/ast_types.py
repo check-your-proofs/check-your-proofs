@@ -179,6 +179,11 @@ class Fold:
     conclusion: object
 
 @dataclass
+class Substitute:
+    fact: object
+    conclusion: object
+
+@dataclass
 class DefPre:
     name: str
     args: list["Var"]
@@ -232,64 +237,72 @@ class Equality:
     reflection: Axiom | Theorem
     replacement: dict[str, Axiom | Theorem]
 
+@dataclass(frozen=True)
+class Term():
+    pass
+
 @dataclass
-class Symbol:
+class Formula:
+    pass
+
+@dataclass
+class Symbol(Formula):
     name: str
-    args: list["Compound | Con | Var"]
+    args: list[Term]
 
-@dataclass
-class Compound:
+@dataclass(frozen=True)
+class Compound(Term):
     fun: "Fun"
-    args: list["Compound | Con | Var"]
+    args: tuple[Term, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class Fun:
     name: str
 
-@dataclass
-class Con:
+@dataclass(frozen=True)
+class Con(Term):
     name: str
 
 @dataclass(frozen=True)
-class Var:
+class Var(Term):
     name: str
 
 @dataclass
-class Forall:
+class Forall(Formula):
     var: Var
     body: object
 
 @dataclass
-class Exists:
+class Exists(Formula):
     var: Var
     body: object
 
 @dataclass
-class ExistsUniq:
+class ExistsUniq(Formula):
     var: Var
     body: object
 
 @dataclass
-class Implies:
+class Implies(Formula):
     left: object
     right: object
 
 @dataclass
-class And:
+class And(Formula):
     left: object
     right: object
 
 @dataclass
-class Or:
+class Or(Formula):
     left: object
     right: object
 
 @dataclass
-class Not:
+class Not(Formula):
     body: object
 
 @dataclass
-class Iff:
+class Iff(Formula):
     left: object
     right: object
 
