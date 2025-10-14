@@ -164,8 +164,11 @@ class Parser:
     def parse_divide(self) -> Divide:
         self.consume("DIVIDE")
         fact = self.parse_expr()
-        self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
+        if self.peek().type == "CONCLUDE":
+            self.consume("CONCLUDE")
+            conclusion = self.parse_expr()
+        else:
+            conclusion = None
         cases = []
         while self.peek().type == "CASE":
             cases.append(self.parse_case(conclusion))

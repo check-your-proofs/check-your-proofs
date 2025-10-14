@@ -6,9 +6,7 @@ import logging
 logger = logging.getLogger("proof")
 
 def goal_in_context(goal, context: Context) -> bool:
-    if isinstance(goal, Bottom):
-        return context.bot_derived
-    elif isinstance(goal, Axiom):
+    if isinstance(goal, Axiom):
         return goal.name in context.axioms
     elif isinstance(goal, Theorem):
         return goal.name in context.theorems
@@ -32,10 +30,7 @@ def goal_in_context(goal, context: Context) -> bool:
         return expr_in_context(goal, context)
 
 def add_conclusion(context: Context, conclusion) -> None:
-    if isinstance(conclusion, Bottom):
-        context.bot_derived = True
-    else:
-        context.formulas.append(conclusion)
+    context.formulas.append(conclusion)
 
 def check_ast(ast: list) -> bool:
     context = Context.init()
@@ -58,7 +53,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
     # --- Theorem ---
     if isinstance(node, Theorem):
         logger.debug(f"{sp}[Theorem] {node.name}: {pretty_expr(node.conclusion)}")
-        local_ctx = context.copy([], False)
+        local_ctx = context.copy([])
         for stmt in node.proof:
             if not check_proof(stmt, local_ctx, indent+1):
                 logger.error(f"{sp}❌ [Theorem] {node.name} not proved: {pretty_expr(node.conclusion)}")
@@ -84,7 +79,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
     # --- Assume ---
     if isinstance(node, Assume):
         logger.debug(f"{sp}[Assume] premise={pretty_expr(node.premise)}")
-        local_ctx = context.copy(list(context.formulas + [node.premise]), False)
+        local_ctx = context.copy(list(context.formulas + [node.premise]))
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -107,7 +102,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
     # --- Any ---
     if isinstance(node, Any):
         logger.debug(f"{sp}[Any] Taking {node.vars}")
-        local_ctx = context.copy(list(context.formulas), False)
+        local_ctx = context.copy(list(context.formulas))
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -142,27 +137,46 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         else:
             logger.error(f"{sp}❌ [Divide] not matched: fact={pretty_expr(node.fact)}, conected_premise={pretty_expr(connected_premise)}")
             return False
-        logger.debug(f"{sp}[Divide] fact={pretty_expr(node.fact)}, goal={pretty_expr(node.conclusion)}")
-        local_ctx = context.copy(list(context.formulas), False)
+        logger.debug(f"{sp}[Divide] fact={pretty_expr(node.fact)}")
+        local_ctx = context.copy(list(context.formulas))
+        goals = []
         for stmt in node.cases:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        add_conclusion(context, node.conclusion)
-        logger.debug(f"{sp}[Divide] derived in all cases: {pretty_expr(node.conclusion)}")
+            if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
+                logger.error(f"{sp}❌ [Divide] Local context must extend the parent context")
+                return False
+            goal = local_ctx.formulas[-1]
+            logger.debug(f"{sp}[Divide] derived goal: {pretty_expr(goal)}")
+            goals.append(goal)
+        if node.conclusion is None:
+            for i in range(len(goals) - 1):
+                if not alpha_equiv_with_defs(goals[i], goals[i + 1], context):
+                    logger.error(f"{sp}❌ [Divide] Not matched: goals[{i}]={pretty_expr(goals[i])}, goals[{i + 1}]={pretty_expr(goals[i + 1])}")
+                    return False
+        add_conclusion(context, goals[0])
+        logger.debug(f"{sp}[Divide] derived in all cases: {pretty_expr(goals[0])}")
         return True
 
     if isinstance(node, Case):
         logger.debug(f"{sp}[Case] premise={pretty_expr(node.premise)}")
-        local_ctx = context.copy(list(context.formulas + [node.premise]), False)
+        local_ctx = context.copy(list(context.formulas + [node.premise]))
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        if goal_in_context(node.conclusion, local_ctx):
-            logger.debug(f"{sp}[Case] derived conclusion {pretty_expr(node.conclusion)}")
-            return True
-        else:
-            logger.error(f"{sp}❌ [Case] Cannot derive {pretty_expr(node.conclusion)}")
+        if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
+            logger.error(f"{sp}❌ [Case] Local context must extend the parent context")
             return False
+        goal = local_ctx.formulas[-1]
+        logger.debug(f"{sp}[Case] derived goal: {pretty_expr(goal)}")
+        if node.conclusion is not None:
+            if not alpha_equiv_with_defs(node.conclusion, goal, context):
+                logger.error(f"{sp}❌ [Case] Not matched with conclusion: {pretty_expr(node.conclusion)}")
+                return False
+            logger.debug(f"{sp}[Case] Mathched with conclusion: {pretty_expr(node.conclusion)}")
+        add_conclusion(context, goal)
+        logger.debug(f"{sp}[Case] Added goal {pretty_expr(goal)}")
+        return True
 
     if isinstance(node, Some):
         if not goal_in_context(node.fact, context):
@@ -184,7 +198,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             return False
         premise = substitute(body, node.env)
         logger.debug(f"{sp}[Some] Taking {node.env.values()}, premise={pretty_expr(premise)}")
-        local_ctx = context.copy(list(context.formulas + [premise]), False)
+        local_ctx = context.copy(list(context.formulas + [premise]))
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -198,11 +212,16 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
     
     if isinstance(node, Deny):
         logger.debug(f"{sp}[Deny] premise={pretty_expr(node.premise)}")
-        local_ctx = context.copy(list(context.formulas + [node.premise]), False)
+        local_ctx = context.copy(list(context.formulas + [node.premise]))
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        if local_ctx.bot_derived:
+        if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
+            logger.error(f"{sp}❌ [Deny] Local context must extend the parent context")
+            return False
+        goal = local_ctx.formulas[-1]
+        logger.debug(f"{sp}[Deny] derived goal: {pretty_expr(goal)}")
+        if isinstance(goal, Bottom):
             if isinstance(node.premise, Not):
                 add_conclusion(context, node.premise.body)
                 logger.debug(f"{sp}[Deny] contradiction is derived; added {pretty_expr(node.premise.body)}")
@@ -222,11 +241,11 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Contradict] Cannot derive {pretty_expr(Not(node.contradiction))}")
             return False
         logger.debug(f"{sp}[Contradict] Derived contradiction: {pretty_expr(node.contradiction)}, {pretty_expr(Not(node.contradiction))}")
-        context.bot_derived = True
+        add_conclusion(context, Bottom())
         return True
     
     if isinstance(node, Explode):
-        if context.bot_derived:
+        if len(context.formulas) > 0 and isinstance(context.formulas[-1], Bottom):
             add_conclusion(context, node.conclusion)
             logger.debug(f"{sp}[Explode] added {pretty_expr(node.conclusion)}")
             return True

@@ -115,9 +115,15 @@ theorem test14 \forall x\forall y(in(x,x)\vee in(x,y)\vee in(y,x)\to in(x,x)\vee
   any x, y conclude in(x,x)\vee in(x,y)\vee in(y,x)\to in(x,x)\vee in(x,y)\vee in(y,x) {
     assume in(x,x)\vee in(x,y)\vee in(y,x) conclude in(x,x)\vee in(x,y)\vee in(y,x) {
       divide in(x,x)\vee in(x,y)\vee in(y,x) conclude in(x,x)\vee in(x,y)\vee in(y,x)
-        case in(x,x) {}
-        case in(y,x) {}
-        case in(x,y) {}
+        case in(x,x) {
+          pad in(x,x) conclude in(x,x)\vee in(x,y)\vee in(y,x)
+        }
+        case in(y,x) {
+          pad in(y,x) conclude in(x,x)\vee in(x,y)\vee in(y,x)
+        }
+        case in(x,y) {
+          pad in(x,y) conclude in(x,x)\vee in(x,y)\vee in(y,x)
+        }
     }
   }
 }

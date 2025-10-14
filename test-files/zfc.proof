@@ -123,6 +123,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
               }
               contradict in(z,x)\to in(z,y)
             }
+            pad in(z,x)\wedge notin(z,y) conclude (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
           }
           case \neg(in(z,y)\to in(z,x)) {
             deny \neg(notin(z,x)\wedge in(z,y)) {
@@ -134,6 +135,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
               }
               contradict in(z,y)\to in(z,x)
             }
+            pad notin(z,x)\wedge in(z,y) conclude (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
           }
         lift (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)) for z:z conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))
       }
@@ -420,6 +422,7 @@ theorem pair_cor8 \forall x\forall y\forall z(equal(pair(x,y),pair(x,z))\to equa
           substitute equal(pair(x,y),pair(x,z)) conclude equal(pair(x,x),pair(x,z))
           apply pair_cor7 for x:x,y:x,z:z conclude equal(pair(x,x),pair(x,z))\to equal(x,z)
           invoke equal(pair(x,x),pair(x,z))\to equal(x,z) conclude equal(x,z)
+          substitute equal(y,x) conclude equal(y,z)
         }
         case equal(y,z) {}
     }
@@ -497,7 +500,7 @@ theorem op_characterization \forall x\forall y\forall x'\forall y'(equal(op(x,y)
       expand equal(op(x,y),op(x',y')) conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y')))
       apply pair_cor4 for x:singleton(x),y:pair(x,y),z:singleton(x'),w:pair(x',y')
       invoke equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y')))\to equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y'))
-      divide equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y')) conclude equal(x,x')
+      divide equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y'))
         case equal(singleton(x),singleton(x')) {
           apply singleton_cor2 for x:x,y:x'
           invoke equal(singleton(x),singleton(x'))\to equal(x,x')

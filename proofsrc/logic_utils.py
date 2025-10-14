@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, pretty_expr
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, pretty_expr
 from itertools import permutations
 from dataclasses import dataclass
 
@@ -161,9 +161,16 @@ def expr_in_context(expr, context: Context) -> bool:
     return any(logic_equiv(expr, f, context) for f in context.formulas)
 
 def alpha_equiv_with_defs(e1, e2, context: Context) -> bool:
-    e1_exp = normalize_neg(expand_basic_defs(e1, context))
-    e2_exp = normalize_neg(expand_basic_defs(e2, context))
-    return alpha_equiv(e1_exp, e2_exp)
+    if isinstance(e1, Bottom) and isinstance(e2, Bottom):
+        return True
+    elif isinstance(e1, Bottom) and not isinstance(e2, Bottom):
+        return False
+    elif not isinstance(e1, Bottom) and isinstance(e2, Bottom):
+        return False
+    else:
+        e1_exp = normalize_neg(expand_basic_defs(e1, context))
+        e2_exp = normalize_neg(expand_basic_defs(e2, context))
+        return alpha_equiv(e1_exp, e2_exp)
 
 def expand_basic_defs(expr, context: Context):
     if isinstance(expr, Symbol):
@@ -486,9 +493,16 @@ def to_canonical_form(expr, context: Context, expand_all: bool = False):
     return expr_norm
 
 def logic_equiv(expr1, expr2, context: Context, expand_all: bool = False) -> bool:
-    expr1_norm = to_canonical_form(expr1, context, expand_all)
-    expr2_norm = to_canonical_form(expr2, context, expand_all)
-    return alpha_equiv(expr1_norm, expr2_norm)
+    if isinstance(expr1, Bottom) and isinstance(expr2, Bottom):
+        return True
+    elif isinstance(expr1, Bottom) and not isinstance(expr2, Bottom):
+        return False
+    elif not isinstance(expr1, Bottom) and isinstance(expr2, Bottom):
+        return False
+    else:
+        expr1_norm = to_canonical_form(expr1, context, expand_all)
+        expr2_norm = to_canonical_form(expr2, context, expand_all)
+        return alpha_equiv(expr1_norm, expr2_norm)
 
 def make_tree(expr, prefix: str = "", is_root: bool = True, is_last: bool = True) -> str:
     print_prefix = prefix + ("" if is_root else ("└─" if is_last else "├─"))

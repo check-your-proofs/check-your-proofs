@@ -6,7 +6,6 @@ logger = logging.getLogger("proof")
 @dataclass
 class Context:
     formulas: list        # 通常の論理式
-    bot_derived: bool  # 矛盾導出フラグ
     atoms: dict[str, "Atom"]
     axioms: dict[str, "Axiom"]
     theorems: dict[str, "Theorem"]
@@ -18,10 +17,10 @@ class Context:
 
     @staticmethod
     def init() -> "Context":
-        return Context(formulas=[], bot_derived=False, atoms={}, axioms={}, theorems={}, defpres={}, defcons={}, deffuns={}, deffunterms={}, equality=None)
+        return Context(formulas=[], atoms={}, axioms={}, theorems={}, defpres={}, defcons={}, deffuns={}, deffunterms={}, equality=None)
 
-    def copy(self, formulas, bot_derived: bool) -> "Context":
-        return Context(formulas=formulas, bot_derived=bot_derived, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, defpres=self.defpres, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms, equality=self.equality)
+    def copy(self, formulas) -> "Context":
+        return Context(formulas=formulas, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, defpres=self.defpres, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms, equality=self.equality)
 
     def has_defcon_existence(self, existence_name: str) -> bool:
         for defcon in self.defcons.values():
@@ -108,13 +107,13 @@ class Any:
 @dataclass
 class Divide:
     fact: object
-    conclusion: object
+    conclusion: object | None
     cases: list
 
 @dataclass
 class Case:
     premise: object
-    conclusion: object
+    conclusion: object | None
     body: list
 
 @dataclass
