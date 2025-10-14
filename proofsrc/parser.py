@@ -269,8 +269,11 @@ class Parser:
     def parse_invoke(self) -> Invoke:
         self.consume("INVOKE")
         fact = self.parse_expr()
-        self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
+        if self.peek().type == "CONCLUDE":
+            self.consume("CONCLUDE")
+            conclusion = self.parse_expr()
+        else:
+            conclusion = None
         return Invoke(fact=fact, conclusion=conclusion)
 
     def parse_expand(self) -> Expand:

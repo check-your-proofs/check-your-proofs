@@ -153,7 +153,7 @@ class Lift:
 @dataclass
 class Invoke:
     fact: object
-    conclusion: object
+    conclusion: object | None
 
 @dataclass
 class Expand:

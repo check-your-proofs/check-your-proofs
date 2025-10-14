@@ -65,6 +65,12 @@ def alpha_equiv(e1, e2, env: dict[Var, Var] | None = None) -> bool:
     if isinstance(e1, Or) and isinstance(e2, Or):
         return op_equiv(e1, e2, env, Or)
 
+    if isinstance(e1, Implies) and isinstance(e2, Implies):
+        return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
+
+    if isinstance(e1, Iff) and isinstance(e2, Iff):
+        return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
+
     if isinstance(e1, Symbol) and isinstance(e2, Symbol):
         if e1.name != e2.name or len(e1.args) != len(e2.args):
             return False

@@ -1,5 +1,5 @@
 from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, pretty, pretty_expr
-from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var
+from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv
 from equal_utils import EGraph, equal_norm, recurse_term
 
 import logging
@@ -319,12 +319,13 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Invoke] Left of Implies object not derived: {pretty_expr(node.fact.left)}")
             return False
         logger.debug(f"{sp}[Invoke] Left of Implies object derived: {pretty_expr(node.fact.left)}")
-        if not logic_equiv(node.conclusion, node.fact.right, context):
-            logger.error(f"{sp}❌ [Invoke] Not matched: node.conclusion={pretty_expr(node.conclusion)}, node.fact.right={pretty_expr(node.fact.right)}")
-            return False
-        logger.debug(f"{sp}[Invoke] Matched: node.conclusion={pretty_expr(node.conclusion)}, node.fact.right={pretty_expr(node.fact.right)}")
-        add_conclusion(context, node.conclusion)
-        logger.debug(f"{sp}[Invoke] conclusion added: {pretty_expr(node.conclusion)}")
+        if node.conclusion is not None:
+            if not alpha_equiv(node.conclusion, node.fact.right):
+                logger.error(f"{sp}❌ [Invoke] Not matched: node.conclusion={pretty_expr(node.conclusion)}, node.fact.right={pretty_expr(node.fact.right)}")
+                return False
+            logger.debug(f"{sp}[Invoke] Matched: node.conclusion={pretty_expr(node.conclusion)}, node.fact.right={pretty_expr(node.fact.right)}")
+        add_conclusion(context, node.fact.right)
+        logger.debug(f"{sp}[Invoke] Right of Implies object added: {pretty_expr(node.fact.right)}")
         return True
 
     if isinstance(node, Expand):
