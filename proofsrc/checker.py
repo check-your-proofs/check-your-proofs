@@ -83,17 +83,23 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
 
     # --- Assume ---
     if isinstance(node, Assume):
-        logger.debug(f"{sp}[Assume] premise={pretty_expr(node.premise)}, conclusion={pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}[Assume] premise={pretty_expr(node.premise)}")
         local_ctx = context.copy(list(context.formulas + [node.premise]), False)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        if goal_in_context(node.conclusion, local_ctx):
-            logger.debug(f"{sp}[Assume] Derived conclusion {pretty_expr(node.conclusion)}")
-        else:
-            logger.error(f"{sp}❌ [Assume] Cannot derive {pretty_expr(node.conclusion)}")
+        if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
+            logger.error(f"{sp}❌ [Assume] Local context must extend the parent context")
             return False
-        implication = Implies(node.premise, node.conclusion)
+        goal = local_ctx.formulas[-1]
+        logger.debug(f"{sp}[Assume] derived goal: {pretty_expr(goal)}")
+        if node.conclusion is not None:
+            if alpha_equiv_with_defs(node.conclusion, goal, context):
+                logger.debug(f"{sp}[Assume] Matched with conclusion: {pretty_expr(node.conclusion)}")
+            else:
+                logger.error(f"{sp}❌ [Assume] Not matched with conclusion: {pretty_expr(node.conclusion)}")
+                return False
+        implication = Implies(node.premise, goal)
         add_conclusion(context, implication)
         logger.debug(f"{sp}[Assume] Added implication {pretty_expr(implication)}")
         return True

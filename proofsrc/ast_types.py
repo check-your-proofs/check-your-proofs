@@ -96,7 +96,7 @@ class Check:
 @dataclass
 class Assume:
     premise: object      # Expr AST
-    conclusion: object   # Expr AST
+    conclusion: object | None  # Expr AST
     body: list
 
 @dataclass

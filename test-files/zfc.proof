@@ -392,6 +392,7 @@ theorem pair_cor6 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equa
       divide equal(y,x)\vee equal(y,x) conclude equal(y,x)
         case equal(y,x) {}
         case equal(y,x) {}
+      substitute equal(y,x) conclude equal(x,y)
     }
   }
 }
@@ -404,6 +405,7 @@ theorem pair_cor7 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equa
       divide equal(z,x)\vee equal(z,x) conclude equal(z,x)
         case equal(z,x) {}
         case equal(z,x) {}
+      substitute equal(z,x) conclude equal(x,z)
     }
   }
 }
@@ -491,7 +493,7 @@ definition function op(x,y) pair(singleton(x),pair(x,y))
 
 theorem op_characterization \forall x\forall y\forall x'\forall y'(equal(op(x,y),op(x',y'))\to equal(x,x')\wedge equal(y,y')) {
   any x,y,x',y' {
-    assume equal(op(x,y),op(x',y')) conclude equal(x,x')\wedge equal(y,y') {
+    assume equal(op(x,y),op(x',y')) {
       expand equal(op(x,y),op(x',y')) conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y')))
       apply pair_cor4 for x:singleton(x),y:pair(x,y),z:singleton(x'),w:pair(x',y')
       invoke equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y')))\to equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y'))

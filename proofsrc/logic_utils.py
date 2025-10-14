@@ -161,8 +161,8 @@ def expr_in_context(expr, context: Context) -> bool:
     return any(logic_equiv(expr, f, context) for f in context.formulas)
 
 def alpha_equiv_with_defs(e1, e2, context: Context) -> bool:
-    e1_exp = expand_basic_defs(e1, context)
-    e2_exp = expand_basic_defs(e2, context)
+    e1_exp = normalize_neg(expand_basic_defs(e1, context))
+    e2_exp = normalize_neg(expand_basic_defs(e2, context))
     return alpha_equiv(e1_exp, e2_exp)
 
 def expand_basic_defs(expr, context: Context):
@@ -178,6 +178,21 @@ def expand_basic_defs(expr, context: Context):
         return type(expr)(expand_basic_defs(expr.left, context), expand_basic_defs(expr.right, context))
     elif isinstance(expr, (Exists, Forall, ExistsUniq)):
         return type(expr)(expr.var, expand_basic_defs(expr.body, context))
+    else:
+        raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
+
+def normalize_neg(expr):
+    if isinstance(expr, Symbol):
+        return expr
+    elif isinstance(expr, Not):
+        if isinstance(expr.body, Not):
+            return expr.body.body
+        else:
+            return expr
+    elif isinstance(expr, (And, Or, Implies, Iff)):
+        return type(expr)(normalize_neg(expr.left), normalize_neg(expr.right))
+    elif isinstance(expr, (Exists, Forall, ExistsUniq)):
+        return type(expr)(expr.var, normalize_neg(expr.body))
     else:
         raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
 

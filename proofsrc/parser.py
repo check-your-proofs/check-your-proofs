@@ -151,8 +151,11 @@ class Parser:
     def parse_assume(self) -> Assume:
         self.consume("ASSUME")
         premise = self.parse_expr()
-        self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
+        if self.peek().type == "CONCLUDE":
+            self.consume("CONCLUDE")
+            conclusion = self.parse_expr()
+        else:
+            conclusion = None
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
