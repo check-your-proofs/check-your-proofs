@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, pretty, pretty_expr
 from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
 from equal_utils import EGraph, equal_norm, recurse_term
 
@@ -445,34 +445,6 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         else:
             logger.error(f"{sp}❌ [Connect] Not And or Iff object: {pretty_expr(node.conclusion)}")
             return False
-
-    if isinstance(node, Fold):
-        if not goal_in_context(node.fact, context):
-            logger.error(f"{sp}❌ [Fold] Not fact: {pretty_expr(node.fact)}")
-            return False
-        logger.debug(f"{sp}[Fold] fact: {pretty_expr(node.fact)}")
-        if not isinstance(node.conclusion, Symbol):
-            logger.error(f"{sp}❌ [Fold] Not Symbol object: {pretty_expr(node.conclusion)}")
-            return False
-        logger.debug(f"{sp}[Fold] Symbol object: {pretty_expr(node.conclusion)}")
-        if node.conclusion.name not in context.defpres:
-            logger.error(f"{sp}❌ [Fold] Not defined: {node.conclusion.name}")
-            return False
-        logger.debug(f"{sp}[Fold] Defined: {node.conclusion.name}")
-        defpre = context.defpres[node.conclusion.name]
-        if len(defpre.args) != len(node.conclusion.args):
-            logger.error(f"{sp}❌ [DefPre] Length not matched: defpre.args={defpre.args}, node.conclusion.args={node.conclusion.args}")
-            return False
-        logger.debug(f"{sp}[Fold] Length matched: defpre.args={defpre.args}, node.conclusion.args={node.conclusion.args}")
-        expanded = substitute(defpre.formula, dict(zip(defpre.args, node.conclusion.args)))
-        logger.debug(f"{sp}[Fold] Expanded: {pretty_expr(expanded)}")
-        if not logic_equiv(node.fact, expanded, context):
-            logger.error(f"{sp}❌ [Fold] Not matched: node.fact={pretty_expr(node.fact)}, expanded={pretty_expr(expanded)}")
-            return False
-        logger.debug(f"{sp}[Fold] Matched: node.fact={pretty_expr(node.fact)}, expanded={pretty_expr(expanded)}")
-        add_conclusion(context, node.conclusion)
-        logger.debug(f"{sp}[Fold] Added: {pretty_expr(node.conclusion)}")
-        return True
 
     if isinstance(node, Substitute):
         if not goal_in_context(node.fact, context):

@@ -178,11 +178,6 @@ class Connect:
     conclusion: object
 
 @dataclass
-class Fold:
-    fact: object
-    conclusion: object
-
-@dataclass
 class Substitute:
     fact: object
     conclusion: object

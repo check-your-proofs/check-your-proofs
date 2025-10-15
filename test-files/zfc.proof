@@ -8,7 +8,7 @@ theorem equal_reflection \forall x(equal(x,x)) {
       assume in(y,x) conclude in(y,x) {}
       connect in(y,x)\leftrightarrow in(y,x)
     }
-    fold \forall y(in(y,x)\leftrightarrow in(y,x)) conclude equal(x,x)
+    expand \forall y(in(y,x)\leftrightarrow in(y,x)) conclude equal(x,x)
   }
 }
 
@@ -49,7 +49,7 @@ theorem equal_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge 
           }
           connect in(p,y)\leftrightarrow in(p,v)
         }
-        fold \forall p(in(p,y)\leftrightarrow in(p,v)) conclude equal(y,v)
+        expand \forall p(in(p,y)\leftrightarrow in(p,v)) conclude equal(y,v)
       }
     }
   }
@@ -87,7 +87,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
   any x, y conclude neq(x,y)\leftrightarrow\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
     assume neq(x,y) conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
       deny \forall z(in(z,x)\leftrightarrow in(z,y)) {
-        fold \forall z(in(z,x)\leftrightarrow in(z,y)) conclude equal(x,y)
+        expand \forall z(in(z,x)\leftrightarrow in(z,y)) conclude equal(x,y)
         contradict equal(x,y)
       }
       deny \neg(\exists z(\neg(in(z,x)\leftrightarrow in(z,y)))) {
@@ -183,7 +183,7 @@ theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {
           }
           connect in(y,x')\leftrightarrow in(y,x)
         }
-        fold \forall y(in(y,x')\leftrightarrow in(y,x)) conclude equal(x',x)
+        expand \forall y(in(y,x')\leftrightarrow in(y,x)) conclude equal(x',x)
       }
     }
     connect \forall y(notin(y,x))\wedge\forall x'(\forall y(notin(y,x'))\to equal(x',x))
@@ -231,7 +231,7 @@ theorem subset_reflection \forall x(subset(x,x)) {
     any y conclude in(y,x)\to in(y,x) {
       assume in(y,x) conclude in(y,x) {}
     }
-    fold \forall y(in(y,x)\to in(y,x)) conclude subset(x,x)
+    expand \forall y(in(y,x)\to in(y,x)) conclude subset(x,x)
   }
 }
 
@@ -253,7 +253,7 @@ theorem subset_antisymmetry \forall x\forall y(subset(x,y)\wedge subset(y,x)\to 
         }
         connect in(z,x)\leftrightarrow in(z,y)
       }
-      fold \forall z(in(z,x)\leftrightarrow in(z,y)) conclude equal(x,y)
+      expand \forall z(in(z,x)\leftrightarrow in(z,y)) conclude equal(x,y)
     }
   }
 }
@@ -272,7 +272,7 @@ theorem subset_trans \forall x\forall y\forall z(subset(x,y)\wedge subset(y,z)\t
           invoke in(w,y)\wedge subset(y,z)\to in(w,z) conclude in(w,z)
         }
       }
-      fold \forall w(in(w,x)\to in(w,z)) conclude subset(x,z)
+      expand \forall w(in(w,x)\to in(w,z)) conclude subset(x,z)
     }
   }
 }
@@ -304,7 +304,7 @@ theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftri
             }
             connect in(w,z')\leftrightarrow in(w,z)
           }
-          fold \forall w(in(w,z')\leftrightarrow in(w,z)) conclude equal(z',z)
+          expand \forall w(in(w,z')\leftrightarrow in(w,z)) conclude equal(z',z)
         }
       }
       connect \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z))
@@ -349,7 +349,7 @@ theorem pair_cor3 \forall x\forall y(subset(pair(x,y),pair(y,x))) {
         invoke equal(z,y)\vee equal(z,x)\to in(z,pair(y,x)) conclude in(z,pair(y,x))
       }
     }
-    fold \forall z(in(z,pair(x,y))\to in(z,pair(y,x))) conclude subset(pair(x,y),pair(y,x))
+    expand \forall z(in(z,pair(x,y))\to in(z,pair(y,x))) conclude subset(pair(x,y),pair(y,x))
   }
 }
 

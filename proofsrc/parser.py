@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, Fold, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, pretty, pretty_expr
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -122,8 +122,6 @@ class Parser:
                 body.append(self.parse_split())
             elif tok.type == "CONNECT":
                 body.append(self.parse_connect())
-            elif tok.type == "FOLD":
-                body.append(self.parse_fold())
             elif tok.type == "SUBSTITUTE":
                 body.append(self.parse_substitute())
             else:
@@ -315,13 +313,6 @@ class Parser:
         self.consume("CONNECT")
         conclusion = self.parse_expr()
         return Connect(conclusion=conclusion)
-
-    def parse_fold(self) -> Fold:
-        self.consume("FOLD")
-        fact = self.parse_expr()
-        self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
-        return Fold(fact=fact, conclusion=conclusion)
 
     def parse_substitute(self) -> Substitute:
         self.consume("SUBSTITUTE")
