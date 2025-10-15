@@ -278,46 +278,20 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             fact = node.fact.formula
         else:
             fact = node.fact
-        if node.env is not None:
-            vars, body = collect_quantifier_vars(fact, Forall)
-            if set(vars) != set(node.env.keys()):
-                logger.error(f"{sp}❌ [Apply] Not matched: vars={vars}, env={node.env}")
+        vars, body = collect_quantifier_vars(fact, Forall)
+        if set(vars) != set(node.env.keys()):
+            logger.error(f"{sp}❌ [Apply] Not matched: vars={vars}, env={node.env}")
+            return False
+        logger.debug(f"{sp}[Apply] Instantiable: vars={vars}, env={node.env}")
+        instantiation = substitute(body, node.env)
+        logger.debug(f"{sp}[Apply] \\forall-elimination is done: instantiation={pretty_expr(instantiation)}")
+        if node.conclusion is not None:
+            if not alpha_equiv_with_defs(node.conclusion, instantiation, context):
+                logger.error(f"{sp}❌ [Apply] Not matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
                 return False
-            logger.debug(f"{sp}[Apply] Instantiable: vars={vars}, env={node.env}")
-            instantiation = substitute(body, node.env)
-            logger.debug(f"{sp}[Apply] \\forall-elimination is done: instantiation={pretty_expr(instantiation)}")
-            if node.premise is None:
-                if node.conclusion is not None:
-                    if not alpha_equiv_with_defs(node.conclusion, instantiation, context):
-                        logger.error(f"{sp}❌ [Apply] Not matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
-                        return False
-                    logger.debug(f"{sp}[Apply] Matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
-                logger.debug(f"{sp}[Apply] Added {pretty_expr(instantiation)}")
-                add_conclusion(context, instantiation)
-                return True
-            else:
-                implication = instantiation
-        else:
-            implication = fact
-        if not isinstance(implication, Implies):
-            logger.error(f"{sp}❌ [Apply] Not Implies object: {pretty_expr(implication)}")
-            return False
-        logger.debug(f"{sp}[Apply] Implies object: {pretty_expr(implication)}")
-        if not goal_in_context(node.premise, context):
-            logger.error(f"{sp}❌ [Apply] Cannot derive premise: {pretty_expr(node.premise)}")
-            return False
-        logger.debug(f"{sp}[Apply] Derivable premise: {pretty_expr(node.premise)}")
-        if not logic_equiv(implication.left, node.premise, context):
-            logger.error(f"{sp}❌ [Apply] Not matched: implication.left={pretty_expr(implication.left)}, node.premise={pretty_expr(node.premise)}")
-            return False
-        logger.debug(f"{sp}[Apply] Matched: implication.left={pretty_expr(implication.left)}, node.premise={pretty_expr(node.premise)}")
-        logger.debug(f"{sp}[Apply] \\to-elimination is done: {pretty_expr(implication.right)}")
-        if not logic_equiv(node.conclusion, implication.right, context):
-            logger.error(f"{sp}❌ [Apply] Not matched: node.conclusion={pretty_expr(node.conclusion)}, implication.right={pretty_expr(implication.right)}")
-            return False
-        logger.debug(f"{sp}[Apply] Matched: node.conclusion={pretty_expr(node.conclusion)}, implication.right={pretty_expr(implication.right)}")
-        logger.debug(f"{sp}[Apply] Added node.conclusion={pretty_expr(node.conclusion)}")
-        add_conclusion(context, node.conclusion)
+            logger.debug(f"{sp}[Apply] Matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
+        logger.debug(f"{sp}[Apply] Added {pretty_expr(instantiation)}")
+        add_conclusion(context, instantiation)
         return True
     
     if isinstance(node, Lift):

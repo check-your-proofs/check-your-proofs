@@ -140,7 +140,6 @@ class Explode:
 class Apply:
     fact: object
     env: dict["Var", "Compound | Con | Var"]
-    premise: object
     conclusion: object | None
 
 @dataclass

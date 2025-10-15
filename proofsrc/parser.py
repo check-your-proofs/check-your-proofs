@@ -231,33 +231,23 @@ class Parser:
     def parse_apply(self) -> Apply:
         self.consume("APPLY")
         fact = self.parse_expr()
-        if self.peek().type == "FOR":
-            self.consume("FOR")
-            env = {}
-            while True:
-                bound = Var(self.consume("IDENT").value)
-                self.consume("COLON")
-                term = self.parse_term()
-                env[bound] = term
-                if self.peek().type == "COMMA":
-                    self.consume("COMMA")
-                    continue
-                break
-        else:
-            env = None
-        if self.peek().type == "WITH":
-            self.consume("WITH")
-            premise = self.parse_expr()
-        else:
-            premise = None
-        if env is None and premise is None:
-            raise SyntaxError("APPLY needs FOR or WITH")
+        self.consume("FOR")
+        env = {}
+        while True:
+            bound = Var(self.consume("IDENT").value)
+            self.consume("COLON")
+            term = self.parse_term()
+            env[bound] = term
+            if self.peek().type == "COMMA":
+                self.consume("COMMA")
+                continue
+            break
         if self.peek().type == "CONCLUDE":
             self.consume("CONCLUDE")
             conclusion = self.parse_expr()
         else:
             conclusion = None
-        return Apply(fact=fact, env=env, premise=premise, conclusion=conclusion)
+        return Apply(fact=fact, env=env, conclusion=conclusion)
     
     def parse_lift(self) -> Lift:
         self.consume("LIFT")

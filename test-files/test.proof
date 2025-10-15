@@ -189,7 +189,8 @@ theorem test20 \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\e
   assume \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(y,x)) {
     split \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\exists y(in(x,y))
     some x:x, y:y such \exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(y,x)) {
-      apply \forall x\forall y(in(x,y)\to\forall z(in(z,x))) for x: x, y: y with in(x,y) conclude \forall z(in(z,x))
+      apply \forall x\forall y(in(x,y)\to\forall z(in(z,x))) for x: x, y: y conclude in(x,y)\to\forall z(in(z,x))
+      invoke in(x,y)\to\forall z(in(z,x)) conclude \forall z(in(z,x))
       apply \forall z(in(z,x)) for z: y conclude in(y,x)
       connect in(x,y)\wedge in(y,x)
       lift in(x,y)\wedge in(y,x) for x: x, y: y conclude \exists x\exists y(in(x,y)\wedge in(y,x))
@@ -225,7 +226,7 @@ theorem test23 \forall x(in(x,x)\to\neg(in(x,x)))\to(\forall x(in(x,x))\to\foral
       any x conclude \neg(in(x,x)) {
         apply \forall x(in(x,x)\to\neg(in(x,x))) for x: x conclude in(x,x)\to\neg(in(x,x))
         apply \forall x(in(x,x)) for x: x conclude in(x,x)
-        apply in(x,x)\to\neg(in(x,x)) with in(x,x) conclude \neg(in(x,x))
+        invoke in(x,x)\to\neg(in(x,x)) conclude \neg(in(x,x))
       }
     }
   }
