@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, pretty, pretty_expr
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -124,6 +124,8 @@ class Parser:
                 body.append(self.parse_connect())
             elif tok.type == "SUBSTITUTE":
                 body.append(self.parse_substitute())
+            elif tok.type == "SHOW":
+                body.append(self.parse_show())
             else:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
@@ -337,6 +339,14 @@ class Parser:
         else:
             conclusion = None
         return Substitute(fact=fact, env=env, conclusion=conclusion)
+
+    def parse_show(self) -> Show:
+        self.consume("SHOW")
+        conclusion = self.parse_expr()
+        self.consume("LBRACE")
+        body = self.parse_block()
+        self.consume("RBRACE")
+        return Show(conclusion=conclusion, body=body)
 
     def parse_definition(self) -> DefPre | DefCon | DefFun | DefFunTerm:
         self.consume("DEFINITION")

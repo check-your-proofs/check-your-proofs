@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, pretty, pretty_expr
 from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
 from equal_utils import EGraph, equal_norm, recurse_term
 
@@ -460,6 +460,25 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.debug(f"{sp}[Substitute] Matched with conclusion: {pretty_expr(node.conclusion)}")
         add_conclusion(context, goal)
         logger.debug(f"{sp}[Substitute] Added {pretty_expr(goal)}")
+        return True
+
+    if isinstance(node, Show):
+        logger.debug(f"{sp}[Show] Target conclusion: {pretty_expr(node.conclusion)}")
+        local_ctx = context.copy(list(context.formulas))
+        for stmt in node.body:
+            if not check_proof(stmt, local_ctx, indent+1):
+                return False
+        if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
+            logger.error(f"{sp}❌ [Show] Local context must extend the parent context")
+            return False
+        goal = local_ctx.formulas[-1]
+        logger.debug(f"{sp}[Show] derived goal: {pretty_expr(goal)}")
+        if not alpha_equiv_with_defs(node.conclusion, goal, context):
+            logger.error(f"{sp}❌ [Show] Not matched with target conclusion: {pretty_expr(node.conclusion)}")
+            return False
+        logger.debug(f"{sp}[Show] Matched with target conclusion: {pretty_expr(node.conclusion)}")
+        add_conclusion(context, goal)
+        logger.debug(f"{sp}[Show] Added {pretty_expr(goal)}")
         return True
 
     if isinstance(node, DefPre):

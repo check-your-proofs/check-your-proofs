@@ -184,6 +184,11 @@ class Substitute:
     conclusion: object | None
 
 @dataclass
+class Show:
+    conclusion: object
+    body: list
+
+@dataclass
 class DefPre:
     name: str
     args: list["Var"]
