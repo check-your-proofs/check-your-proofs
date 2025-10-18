@@ -8,7 +8,7 @@ class Token:
     pos: int
     line: int
 
-KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "check", "lift", "primitive", "predicate", "arity", "axiom", "invoke", "expand", "constant", "by", "pad", "split", "connect", "existence", "uniqueness", "autoexpand", "function", "equality", "reflection", "replacement", "substitute", "characterize", "show"}
+KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "check", "lift", "primitive", "predicate", "arity", "axiom", "invoke", "expand", "constant", "by", "pad", "split", "connect", "existence", "uniqueness", "autoexpand", "function", "equality", "reflection", "replacement", "substitute", "characterize", "show", "tex"}
 
 SYMBOLS = {
     "{": "LBRACE",
@@ -72,6 +72,16 @@ def lex(src: str) -> list[Token]:
         elif src[i:].startswith("\\bot"):
             tokens.append(Token("BOT", "\\bot", i, line))
             i += len("\\bot")
+        elif src[i] == '"':
+            i += 1
+            start = i
+            while i < len(src) and src[i] != '"':
+                i += 1
+            if i >= len(src):
+                raise SyntaxError(f"Unterminated string starting at pos {start}")
+            text = src[start:i]
+            tokens.append(Token("STRING", text, start, line))
+            i += 1
         else:
             m = re.match(r"(\\[A-Za-z][A-Za-z0-9_]*)|([A-Za-z_][A-Za-z0-9_]*'*)", src[i:])
             if m:

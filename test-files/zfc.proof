@@ -1,6 +1,6 @@
-primitive predicate in arity 2
+primitive predicate in arity 2 tex "","\in",""
 
-definition predicate equal(x,y) \forall z(in(z,x)\leftrightarrow in(z,y))
+definition predicate equal(x,y) \forall z(in(z,x)\leftrightarrow in(z,y)) tex "","=",""
 
 theorem equal_reflection \forall x(equal(x,x)) {
   any x conclude equal(x,x) {
@@ -79,9 +79,9 @@ equality equal
   reflection equal_reflection
   replacement equal: equal_replacement, in: in_replacement
 
-definition predicate autoexpand notin(x,y) \neg(in(x,y))
+definition predicate autoexpand notin(x,y) \neg(in(x,y)) tex "","\notin",""
 
-definition predicate autoexpand neq(x,y) \neg(equal(x,y))
+definition predicate autoexpand neq(x,y) \neg(equal(x,y)) tex "","\neq",""
 
 theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))) {
   any x, y conclude neq(x,y)\leftrightarrow\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
@@ -196,7 +196,7 @@ theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {
   }
 }
 
-definition constant emptyset by emptyset_exists_uniquely
+definition constant emptyset by emptyset_exists_uniquely tex "\emptyset"
   existence emptyset_existence \forall y(notin(y,emptyset))
   uniqueness emptyset_uniqueness \forall x(\forall y(notin(y,x))\to equal(x,emptyset))
 
@@ -218,7 +218,7 @@ theorem not_emptyset_has_a_member \forall x(\neg(equal(x, emptyset))\to\exists y
     }
 }
 
-definition predicate subset(x,y) \forall z(in(z,x)\to in(z,y))
+definition predicate subset(x,y) \forall z(in(z,x)\to in(z,y)) tex "","\subset",""
 
 theorem subset_cor1 \forall z\forall x\forall y(in(z,x)\wedge subset(x,y)\to in(z,y)) {
   any x,y,z conclude in(z,x)\wedge subset(x,y)\to in(z,y) {
@@ -318,7 +318,7 @@ theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftri
   }
 }
 
-definition function pair by pair_exists_uniquely
+definition function pair by pair_exists_uniquely tex "\{",",","\}"
   existence pair_existence \forall x\forall y\forall w(in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y))
   uniqueness pair_uniqueness \forall x\forall y\forall z(\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z,pair(x,y)))
 
@@ -431,7 +431,7 @@ theorem pair_cor8 \forall x\forall y\forall z(equal(pair(x,y),pair(x,z))\to equa
   }
 }
 
-definition function singleton(x) pair(x,x)
+definition function singleton(x) pair(x,x) tex "\{","\}"
 
 theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrightarrow equal(y,x)) {
   any x,y conclude in(y,singleton(x))\leftrightarrow equal(y,x) {
@@ -495,7 +495,7 @@ theorem pair_singleton_cor2 \forall x\forall y\forall z(equal(singleton(x),pair(
   }
 }
 
-definition function op(x,y) pair(singleton(x),pair(x,y))
+definition function op(x,y) pair(singleton(x),pair(x,y)) tex "(",",",")"
 
 theorem op_characterization \forall x\forall y\forall x'\forall y'(equal(op(x,y),op(x',y'))\to equal(x,x')\wedge equal(y,y')) {
   any x,y,x',y' {
@@ -558,7 +558,7 @@ theorem union_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightarrow
   }
 }
 
-definition function bigcup by union_exists_uniquely
+definition function bigcup by union_exists_uniquely tex "\bigcup",""
   existence bigcup_existence \forall x\forall z(in(z,bigcup(x))\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))
   uniqueness bigcup_uniqueness \forall x(\forall y(\forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\to equal(y,bigcup(x))))
 
@@ -596,7 +596,7 @@ theorem bigcup_cor2 equal(bigcup(emptyset),emptyset) {
   invoke \forall y(notin(y,bigcup(emptyset)))\to equal(bigcup(emptyset),emptyset)
 }
 
-definition function cup(x,y) bigcup(pair(x,y))
+definition function cup(x,y) bigcup(pair(x,y)) tex "","\cup",""
 
 theorem cup_cor1 \forall x\forall y\forall z(in(z,cup(x,y))\leftrightarrow in(z,x)\vee in(z,y)) {
   any x,y,z {

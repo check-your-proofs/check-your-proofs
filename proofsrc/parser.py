@@ -52,12 +52,26 @@ class Parser:
             name = self.consume("IDENT").value
             self.consume("ARITY")
             arity = int(self.consume("NUMBER").value)
-            primpred = PrimPred(type=tok.type, name=name, arity=arity)
+            tex = self.parse_tex()
+            if len(tex) != arity + 1:
+                raise SyntaxError("arity is different")
+            primpred = PrimPred(type=tok.type, name=name, arity=arity, tex=tex)
             self.context.primpreds[name] = primpred
             logger.debug(f"[primpred] {name}")
             return primpred
         else:
             raise SyntaxError(f"Unexpected token {tok}")
+
+    def parse_tex(self) -> list[str]:
+        self.consume("TEX")
+        tex = []
+        while True:
+            tex.append(self.consume("STRING").value)
+            if self.peek().type == "COMMA":
+                self.consume("COMMA")
+            else:
+                break
+        return tex
 
     def parse_axiom(self) -> Axiom:
         self.consume("AXIOM")
@@ -368,7 +382,10 @@ class Parser:
                 args.append(Var(self.consume("IDENT").value))
             self.consume("RPAREN")
             formula = self.parse_expr()
-            defpred = DefPred(name=name, args=args, formula=formula, autoexpand=autoexpand)
+            tex = self.parse_tex()
+            if len(tex) != len(args) + 1:
+                raise SyntaxError("arity is different")
+            defpred = DefPred(name=name, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
             self.context.defpreds[name] = defpred
             logger.debug(f"[defpred] {name}")
             return defpred
@@ -377,7 +394,10 @@ class Parser:
             name = self.consume("IDENT").value
             self.consume("BY")
             theorem = self.consume("IDENT").value
-            self.context.defcons[name] = DefCon(name=name, theorem=theorem, existence=None, uniqueness=None)
+            tex = self.parse_tex()
+            if len(tex) != 1:
+                raise SyntaxError("arity is different")
+            self.context.defcons[name] = DefCon(name=name, theorem=theorem, tex=tex, existence=None, uniqueness=None)
             self.consume("EXISTENCE")
             existence_name = self.consume("IDENT").value
             existence_formula = self.parse_expr()
@@ -386,7 +406,7 @@ class Parser:
             uniqueness_name = self.consume("IDENT").value
             uniqueness_formula = self.parse_expr()
             uniqueness = DefConUniq(name=uniqueness_name, formula=uniqueness_formula)
-            defcon = DefCon(name=name, theorem=theorem, existence=existence, uniqueness=uniqueness)
+            defcon = DefCon(name=name, theorem=theorem, tex=tex, existence=existence, uniqueness=uniqueness)
             self.context.defcons[name] = defcon
             logger.debug(f"[defcon] {name}")
             return defcon
@@ -400,7 +420,10 @@ class Parser:
                 if not (len(vars_) > 0 and isinstance(body, ExistsUniq)):
                     raise SyntaxError(f"theorem cannot be used for function definition: {theorem}")
                 arity = len(vars_)
-                self.context.deffuns[name] = DefFun(name=name, arity=arity, theorem=theorem, existence=None, uniqueness=None)
+                tex = self.parse_tex()
+                if len(tex) != arity + 1:
+                    raise SyntaxError("arity is different")
+                self.context.deffuns[name] = DefFun(name=name, arity=arity, theorem=theorem, tex=tex, existence=None, uniqueness=None)
                 self.consume("EXISTENCE")
                 existence_name = self.consume("IDENT").value
                 existence_formula = self.parse_expr()
@@ -409,7 +432,7 @@ class Parser:
                 uniqueness_name = self.consume("IDENT").value
                 uniqueness_formula = self.parse_expr()
                 uniqueness = DefFunUniq(name=uniqueness_name, formula=uniqueness_formula)
-                deffun = DefFun(name=name, arity=arity, theorem=theorem, existence=existence, uniqueness=uniqueness)
+                deffun = DefFun(name=name, arity=arity, theorem=theorem, tex=tex, existence=existence, uniqueness=uniqueness)
                 self.context.deffuns[name] = deffun
                 logger.debug(f"[deffun] {name}")
                 return deffun
@@ -421,7 +444,10 @@ class Parser:
                     args.append(Var(self.consume("IDENT").value))
                 self.consume("RPAREN")
                 term = self.parse_term()
-                deffunterm = DefFunTerm(name=name, args=args, term=term)
+                tex = self.parse_tex()
+                if len(tex) != len(args) + 1:
+                    raise SyntaxError("arity is different")
+                deffunterm = DefFunTerm(name=name, args=args, term=term, tex=tex)
                 self.context.deffunterms[name] = deffunterm
                 logger.debug(f"[deffunterm] {name}")
                 return deffunterm

@@ -76,6 +76,7 @@ class PrimPred:
     type: str
     name: str
     arity: int
+    tex: list[str]
 
 @dataclass
 class Axiom:
@@ -194,11 +195,13 @@ class DefPred:
     args: list["Var"]
     formula: object
     autoexpand: bool
+    tex: list[str]
 
 @dataclass
 class DefCon:
     name: str
     theorem: str
+    tex: list[str]
     existence: "DefConExist"
     uniqueness: "DefConUniq"
 
@@ -217,6 +220,7 @@ class DefFun:
     name: str
     arity: int
     theorem: str
+    tex: list[str]
     existence: "DefFunExist"
     uniqueness: "DefFunUniq"
 
@@ -235,6 +239,7 @@ class DefFunTerm:
     name: str
     args: list["Var"]
     term: object
+    tex: list[str]
 
 @dataclass
 class Equality:
@@ -319,7 +324,7 @@ class Iff(Formula):
 class Bottom:
     pass
 
-def pretty_expr(expr, context):
+def pretty_expr(expr, context: Context):
     if isinstance(expr, Axiom):
         return expr.name
     if isinstance(expr, Theorem):
@@ -333,15 +338,53 @@ def pretty_expr(expr, context):
     if isinstance(expr, DefFunUniq):
         return expr.name
     if isinstance(expr, Symbol):
-        return f"{pretty_expr(expr.pred, context)}({",".join([pretty_expr(arg, context) for arg in expr.args])})"
+        tex = pretty_expr(expr.pred, context)
+        if len(tex) != len(expr.args) + 1:
+            raise Exception("arity is different")
+        text = ""
+        for i in range(len(expr.args)):
+            text += tex[i]
+            text += " "
+            text += pretty_expr(expr.args[i], context)
+            text += " "
+        text += tex[-1]
+        return text
     if isinstance(expr, Pred):
-        return expr.name
+        if expr.name in context.primpreds:
+            tex = context.primpreds[expr.name].tex
+        elif expr.name in context.defpreds:
+            tex = context.defpreds[expr.name].tex
+        else:
+            raise Exception(f"{expr.name} is not in primpreds or defpreds")
+        return tex
     if isinstance(expr, Compound):
-        return f"{pretty_expr(expr.fun, context)}({','.join([pretty_expr(arg, context) for arg in expr.args])})"
+        tex = pretty_expr(expr.fun, context)
+        if len(tex) != len(expr.args) + 1:
+            raise Exception("arity is different")
+        text = ""
+        for i in range(len(expr.args)):
+            text += tex[i]
+            text += " "
+            text += pretty_expr(expr.args[i], context)
+            text += " "
+        text += tex[-1]
+        return text
     if isinstance(expr, Fun):
-        return expr.name
+        if expr.name in context.deffuns:
+            tex = context.deffuns[expr.name].tex
+        elif expr.name in context.deffunterms:
+            tex = context.deffunterms[expr.name].tex
+        else:
+            raise Exception(f"{expr.name} is not in deffuns or deffunterms")
+        return tex
     if isinstance(expr, Con):
-        return expr.name
+        if expr.name in context.defcons:
+            tex = context.defcons[expr.name].tex
+        else:
+            raise Exception(f"{expr.name} is not in context.defcons")
+        if len(tex) != 1:
+            raise Exception("arity is different")
+        return tex[0]
     if isinstance(expr, Var):
         return expr.name
     if isinstance(expr, Implies):

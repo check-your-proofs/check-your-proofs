@@ -486,6 +486,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
 
     if isinstance(node, DefCon):
         logger.debug(f"{sp}[DefCon] name: {node.name}, theorem: {node.theorem}")
+        context.defcons[node.name] = DefCon(node.name, node.theorem, node.tex, None, None)
         existsuniq = context.theorems[node.theorem].conclusion
         if not isinstance(existsuniq, ExistsUniq):
             logger.error(f"{sp}❌ [DefCon] Theorem conclusion is not ExistsUniq object: {pretty_expr(existsuniq, context)}")
@@ -508,7 +509,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
 
     if isinstance(node, DefFun):
         logger.debug(f"{sp}[DefFun] name: {node.name}, theorem: {node.theorem}")
-        context.deffuns[node.name] = None
+        context.deffuns[node.name] = DefFun(node.name, node.arity, node.theorem, node.tex, None, None)
         args, existsuniq = collect_quantifier_vars(context.theorems[node.theorem].conclusion, Forall)
         existence_formula = substitute(existsuniq.body, {existsuniq.var: Compound(Fun(node.name), args)})
         for arg in reversed(args):
