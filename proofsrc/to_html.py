@@ -1,5 +1,5 @@
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, pretty_expr
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, Context, pretty_expr
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -66,17 +66,17 @@ def render_keyword(keyword: str) -> str:
 def render_identifier(name: str) -> str:
     return f"<span class='identifier'>{escape(name)}</span>"
 
-def render_expr(expr) -> str:
-    return f"\\({pretty_expr(expr)}\\)"
+def render_expr(expr, context: Context) -> str:
+    return f"\\({pretty_expr(expr, context)}\\)"
 
-def render_expr_list(expr_list: list) -> str:
-    return f"\\({",".join(pretty_expr(expr) for expr in expr_list)}\\)"
+def render_expr_list(expr_list: list, context: Context) -> str:
+    return f"\\({",".join(pretty_expr(expr, context) for expr in expr_list)}\\)"
 
-def render_expr_dict(expr_dict: dict) -> str:
-    parts = [f"{pretty_expr(k)}:{pretty_expr(v)}" for k, v in expr_dict.items()]
+def render_expr_dict(expr_dict: dict, context: Context) -> str:
+    parts = [f"{pretty_expr(k, context)}:{pretty_expr(v, context)}" for k, v in expr_dict.items()]
     return f"\\({",".join(parts)}\\)"
 
-def render_node(node) -> str:
+def render_node(node, context: Context) -> str:
     header_parts = []
     body_html = ""
     bullet = "<button class='bullet'>•</button>"
@@ -90,42 +90,42 @@ def render_node(node) -> str:
         header_parts = [bullet,
                         render_keyword("axiom"),
                         render_identifier(node.name),
-                        render_expr(node.conclusion)]
+                        render_expr(node.conclusion, context)]
     elif isinstance(node, Theorem):
         header_parts = [toggle,
                         render_keyword("theorem"),
                         render_identifier(node.name),
-                        render_expr(node.conclusion)]
-        body_html = "".join(render_node(s) for s in node.proof)
+                        render_expr(node.conclusion, context)]
+        body_html = "".join(render_node(s, context) for s in node.proof)
     elif isinstance(node, DefPred):
         header_parts = [bullet,
                         render_keyword("definition predicate"),
                         render_keyword("autoexpand") if node.autoexpand else "",
                         render_identifier(node.name),
-                        render_expr(node.formula)]
+                        render_expr(node.formula, context)]
     elif isinstance(node, DefCon):
         header_parts = [bullet,
                         render_keyword("definition constant"),
                         render_identifier(node.name),
                         render_keyword("existence"),
                         render_identifier(node.existence.name),
-                        render_expr(node.existence.formula),
+                        render_expr(node.existence.formula, context),
                         render_identifier(node.uniqueness.name),
-                        render_expr(node.uniqueness.formula)]
+                        render_expr(node.uniqueness.formula, context)]
     elif isinstance(node, DefFun):
         header_parts = [bullet,
                         render_keyword("definition function"),
                         render_identifier(node.name),
                         render_keyword("existence"),
                         render_identifier(node.existence.name),
-                        render_expr(node.existence.formula),
+                        render_expr(node.existence.formula, context),
                         render_identifier(node.uniqueness.name),
-                        render_expr(node.uniqueness.formula)]
+                        render_expr(node.uniqueness.formula, context)]
     elif isinstance(node, DefFunTerm):
         header_parts = [bullet,
                         render_keyword("definition function"),
                         render_identifier(node.name) + "(" + ",".join(arg.name for arg in node.args) + ")",
-                        render_expr(node.term)]
+                        render_expr(node.term, context)]
     elif isinstance(node, Equality):
         header_parts = [bullet,
                         render_keyword("equality"),
@@ -136,127 +136,127 @@ def render_node(node) -> str:
     elif isinstance(node, Any):
         header_parts = [toggle,
                         render_keyword("any"),
-                        render_expr_list(node.vars)]
+                        render_expr_list(node.vars, context)]
         if node.conclusion is not None:
             header_parts.extend([render_keyword("show"),
-                                 render_expr(node.conclusion)])
-        body_html = "".join(render_node(s) for s in node.body)
+                                 render_expr(node.conclusion, context)])
+        body_html = "".join(render_node(s, context) for s in node.body)
     elif isinstance(node, Assume):
         header_parts = [toggle,
                         render_keyword("assume"),
-                        render_expr(node.premise)]
+                        render_expr(node.premise, context)]
         if node.conclusion is not None:
             header_parts.extend([render_keyword("show"),
-                                 render_expr(node.conclusion)])
-        body_html = "".join(render_node(s) for s in node.body)
+                                 render_expr(node.conclusion, context)])
+        body_html = "".join(render_node(s, context) for s in node.body)
     elif isinstance(node, Connect):
         header_parts = [bullet,
                         render_keyword("connect"),
-                        render_expr(node.conclusion)]
+                        render_expr(node.conclusion, context)]
     elif isinstance(node, Expand):
         header_parts = [bullet,
                         render_keyword("expand"),
-                        render_expr(node.fact),
+                        render_expr(node.fact, context),
                         render_keyword("conclude"),
-                        render_expr(node.conclusion)]        
+                        render_expr(node.conclusion, context)]
     elif isinstance(node, Split):
         header_parts = [bullet,
                         render_keyword("split"),
-                        render_expr(node.fact)]
+                        render_expr(node.fact, context)]
     elif isinstance(node, Apply):
         if isinstance(node.fact, Axiom):
             fact = render_identifier(node.fact.name)
         else:
-            fact = render_expr(node.fact)
+            fact = render_expr(node.fact, context)
         header_parts = [bullet,
                         render_keyword("apply"),
                         fact,
                         render_keyword("for"),
-                        render_expr_dict(node.env)]
+                        render_expr_dict(node.env, context)]
         if node.conclusion is not None:
-            header_parts.append(f"<span class='keyword'>conclude</span> {render_expr(node.conclusion)}")
+            header_parts.append(f"<span class='keyword'>conclude</span> {render_expr(node.conclusion, context)}")
     elif isinstance(node, Invoke):
         header_parts = [bullet,
                         render_keyword("invoke"),
-                        render_expr(node.fact)]
+                        render_expr(node.fact, context)]
         if node.conclusion is not None:
-            header_parts.append(f"<span class='keyword'>conclude</span> {render_expr(node.conclusion)}")
+            header_parts.append(f"<span class='keyword'>conclude</span> {render_expr(node.conclusion, context)}")
     elif isinstance(node, Deny):
         header_parts = [toggle,
                         render_keyword("deny"),
-                        render_expr(node.premise)]
-        body_html = "".join(render_node(s) for s in node.body)
+                        render_expr(node.premise, context)]
+        body_html = "".join(render_node(s, context) for s in node.body)
     elif isinstance(node, Some):
         header_parts = [toggle,
                         render_keyword("some"),
-                        render_expr_dict(node.env),
+                        render_expr_dict(node.env, context),
                         render_keyword("such"),
-                        render_expr(node.fact)]
+                        render_expr(node.fact, context)]
         if node.conclusion is not None:
-            header_parts.append(f"<span class='keyword'>show</span> {render_expr(node.conclusion)}")
-        body_html = "".join(render_node(s) for s in node.body)
+            header_parts.append(f"<span class='keyword'>show</span> {render_expr(node.conclusion, context)}")
+        body_html = "".join(render_node(s, context) for s in node.body)
     elif isinstance(node, Contradict):
         header_parts = [bullet,
                         render_keyword("contradict"),
-                        render_expr(node.contradiction)]
+                        render_expr(node.contradiction, context)]
     elif isinstance(node, Lift):
         header_parts = [bullet,
                         render_keyword("lift")]
         if node.fact is not None:
-            header_parts.append(render_expr(node.fact))
+            header_parts.append(render_expr(node.fact, context))
         header_parts.extend([render_keyword("for"),
-                             render_expr_dict(node.env),
+                             render_expr_dict(node.env, context),
                              render_keyword("conclude"),
-                             render_expr(node.conclusion)])
+                             render_expr(node.conclusion, context)])
     elif isinstance(node, Pad):
         header_parts = [bullet,
                         render_keyword("pad"),
-                        render_expr(node.fact),
+                        render_expr(node.fact, context),
                         render_keyword("conclude"),
-                        render_expr(node.conclusion)]
+                        render_expr(node.conclusion, context)]
     elif isinstance(node, Divide):
         header_parts = [toggle,
                         render_keyword("divide"),
-                        render_expr(node.fact)]
+                        render_expr(node.fact, context)]
         if node.conclusion is not None:
             header_parts.extend([render_keyword("show"),
-                                 render_expr(node.conclusion)])
-        body_html = "".join(render_node(s) for s in node.cases)        
+                                 render_expr(node.conclusion, context)])
+        body_html = "".join(render_node(s, context) for s in node.cases)
     elif isinstance(node, Case):
         header_parts = [toggle,
                         render_keyword("case"),
-                        render_expr(node.premise)]
-        body_html = "".join(render_node(s) for s in node.body)
+                        render_expr(node.premise, context)]
+        body_html = "".join(render_node(s, context) for s in node.body)
     elif isinstance(node, Explode):
         header_parts = [bullet,
                         render_keyword("explode"),
-                        render_expr(node.conclusion)]
+                        render_expr(node.conclusion, context)]
     elif isinstance(node, Characterize):
         header_parts = [bullet,
                         render_keyword("characterize"),
-                        render_expr(node.fact),
+                        render_expr(node.fact, context),
                         render_keyword("for"),
-                        render_expr_dict(node.env)]
+                        render_expr_dict(node.env, context)]
         if node.conclusion is not None:
             header_parts.extend([render_keyword("conclude"),
-                                 render_expr(node.conclusion)])
+                                 render_expr(node.conclusion, context)])
     elif isinstance(node, Substitute):
         header_parts = [bullet,
                         render_keyword("substitute"),
-                        render_expr(node.fact),
-                        render_expr_dict(node.env)]
+                        render_expr(node.fact, context),
+                        render_expr_dict(node.env, context)]
         if node.conclusion is not None:
             header_parts.extend([render_keyword("conclude"),
-                                 render_expr(node.conclusion)])
+                                 render_expr(node.conclusion, context)])
     elif isinstance(node, Show):
         header_parts = [toggle,
                         render_keyword("show"),
-                        render_expr(node.conclusion)]
-        body_html = "".join(render_node(s) for s in node.body)
+                        render_expr(node.conclusion, context)]
+        body_html = "".join(render_node(s, context) for s in node.body)
     elif isinstance(node, Check):
         header_parts = [bullet,
                         render_keyword("check"),
-                        render_expr(node.conclusion)]
+                        render_expr(node.conclusion, context)]
     else:
         raise Exception(f"Unexpected node: {type(node)}")
 
@@ -264,8 +264,8 @@ def render_node(node) -> str:
     content_html = f"<div class='block-content'>{body_html}</div>"
     return f"  <div class='block'>{header_html}{content_html}</div>"
 
-def to_html(ast: list, title: str):
-    body_html = "\n".join(render_node(node) for node in ast)
+def to_html(ast: list, context: Context, title: str):
+    body_html = "\n".join(render_node(node, context) for node in ast)
     return HTML_TEMPLATE.format(title=escape(title), body=body_html)
 
 if __name__ == "__main__":
@@ -278,10 +278,10 @@ if __name__ == "__main__":
     tokens = lex(src)
     from parser import Parser
     parser = Parser(tokens)
-    ast = parser.parse_file()
+    ast, context = parser.parse_file()
     import os
     title = os.path.splitext(os.path.basename(path))[0]
-    html = to_html(ast, title)
+    html = to_html(ast, context, title)
     f = open(os.path.join("html", title + ".html"), 'w', encoding='utf-8')
     f.write(html)
     f.close()

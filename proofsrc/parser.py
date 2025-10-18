@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -42,7 +42,7 @@ class Parser:
                 break
             else:
                 raise SyntaxError(f"Unexpected token {tok}")
-        return ast
+        return ast, self.context
 
     def parse_primitive(self) -> PrimPred:
         self.consume("PRIMITIVE")
@@ -398,7 +398,7 @@ class Parser:
                 theorem = self.consume("IDENT").value
                 vars_, body = collect_quantifier_vars(self.context.theorems[theorem].conclusion, Forall)
                 if not (len(vars_) > 0 and isinstance(body, ExistsUniq)):
-                    raise SyntaxError(f"theorem cannot be used for function definition: {pretty_expr(theorem)}")
+                    raise SyntaxError(f"theorem cannot be used for function definition: {theorem}")
                 arity = len(vars_)
                 self.context.deffuns[name] = DefFun(name=name, arity=arity, theorem=theorem, existence=None, uniqueness=None)
                 self.consume("EXISTENCE")

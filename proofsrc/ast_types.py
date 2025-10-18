@@ -319,7 +319,7 @@ class Iff(Formula):
 class Bottom:
     pass
 
-def pretty_expr(expr):
+def pretty_expr(expr, context):
     if isinstance(expr, Axiom):
         return expr.name
     if isinstance(expr, Theorem):
@@ -333,11 +333,11 @@ def pretty_expr(expr):
     if isinstance(expr, DefFunUniq):
         return expr.name
     if isinstance(expr, Symbol):
-        return f"{pretty_expr(expr.pred)}({",".join([pretty_expr(arg) for arg in expr.args])})"
+        return f"{pretty_expr(expr.pred, context)}({",".join([pretty_expr(arg, context) for arg in expr.args])})"
     if isinstance(expr, Pred):
         return expr.name
     if isinstance(expr, Compound):
-        return f"{pretty_expr(expr.fun)}({','.join([pretty_expr(arg) for arg in expr.args])})"
+        return f"{pretty_expr(expr.fun, context)}({','.join([pretty_expr(arg, context) for arg in expr.args])})"
     if isinstance(expr, Fun):
         return expr.name
     if isinstance(expr, Con):
@@ -345,21 +345,21 @@ def pretty_expr(expr):
     if isinstance(expr, Var):
         return expr.name
     if isinstance(expr, Implies):
-        return f"{pretty_expr(expr.left)} \\to {pretty_expr(expr.right)}"
+        return f"{pretty_expr(expr.left, context)} \\to {pretty_expr(expr.right, context)}"
     if isinstance(expr, Iff):
-        return f"{pretty_expr(expr.left)} \\leftrightarrow {pretty_expr(expr.right)}"
+        return f"{pretty_expr(expr.left, context)} \\leftrightarrow {pretty_expr(expr.right, context)}"
     if isinstance(expr, And):
-        return f"{pretty_expr(expr.left)} \\wedge {pretty_expr(expr.right)}"
+        return f"{pretty_expr(expr.left, context)} \\wedge {pretty_expr(expr.right, context)}"
     if isinstance(expr, Or):
-        return f"{pretty_expr(expr.left)} \\vee {pretty_expr(expr.right)}"
+        return f"{pretty_expr(expr.left, context)} \\vee {pretty_expr(expr.right, context)}"
     if isinstance(expr, Not):
-        return f"\\neg({pretty_expr(expr.body)})"
+        return f"\\neg({pretty_expr(expr.body, context)})"
     if isinstance(expr, Forall):
-        return f"\\forall {expr.var.name}({pretty_expr(expr.body)})"
+        return f"\\forall {expr.var.name}({pretty_expr(expr.body, context)})"
     if isinstance(expr, Exists):
-        return f"\\exists {expr.var.name}({pretty_expr(expr.body)})"
+        return f"\\exists {expr.var.name}({pretty_expr(expr.body, context)})"
     if isinstance(expr, ExistsUniq):
-        return f"\\exists! {expr.var.name}({pretty_expr(expr.body)})"
+        return f"\\exists! {expr.var.name}({pretty_expr(expr.body, context)})"
     if isinstance(expr, Bottom):
         return "\\bot"
     raise TypeError(f"Unsupported node type: {type(expr)}")

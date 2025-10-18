@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, pretty_expr
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred
 from itertools import permutations
 from copy import deepcopy
 
@@ -156,7 +156,7 @@ def collect_vars(expr, bound: set[Var] | None = None) -> tuple[set[Var], set[Var
         return f_body, b_body | {expr.var}
 
     else:
-        raise Exception(f"Unexpected expr {pretty_expr(expr)}")
+        raise Exception(f"Unexpected type {type(expr)}")
 
 # === コンテキスト中の式検索 ===
 def expr_in_context(expr, context: Context) -> bool:
@@ -186,7 +186,7 @@ def expand_basic_defs(expr, context: Context, expand_all: bool):
             else:
                 return Symbol(expand_basic_defs(expr.pred, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
         else:
-            raise Exception(f"Unexpected expr (Symbol): {pretty_expr(expr)}")
+            raise Exception(f"Unexpected predicate name: {expr.pred.name}")
     elif isinstance(expr, Compound):
         if expr.fun.name in context.deffuns:
             return Compound(expand_basic_defs(expr.fun, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
@@ -198,7 +198,7 @@ def expand_basic_defs(expr, context: Context, expand_all: bool):
             else:
                 return Compound(expand_basic_defs(expr.fun, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
         else:
-            raise Exception(f"Unexpected expr (Compound): {pretty_expr(expr)}")
+            raise Exception(f"Unexpected function name: {expr.fun.name}")
     elif isinstance(expr, (Pred, Fun, Con, Var)):
         return expr
     elif isinstance(expr, Not):
@@ -208,7 +208,7 @@ def expand_basic_defs(expr, context: Context, expand_all: bool):
     elif isinstance(expr, (Exists, Forall, ExistsUniq)):
         return type(expr)(expr.var, expand_basic_defs(expr.body, context, expand_all))
     else:
-        raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
+        raise Exception(f"Unexpected type: {type(expr)}")
 
 def normalize_neg(expr):
     if isinstance(expr, Symbol):
@@ -223,7 +223,7 @@ def normalize_neg(expr):
     elif isinstance(expr, (Exists, Forall, ExistsUniq)):
         return type(expr)(expr.var, normalize_neg(expr.body))
     else:
-        raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
+        raise Exception(f"Unexpected type: {type(expr)}")
 
 def fresh_var(var: Var, used: set[Var]) -> Var:
     if var in used:
@@ -301,6 +301,15 @@ def alpha_rename(expr, rename_map: dict[Var, Var]):
         return expr
 
 if __name__ == "__main__":
+    path = r"test-files\zfc.proof"
+    f = open(path)
+    src = f.read()
+    f.close()
+    from lexer import lex
+    tokens = lex(src)
+    from parser import Parser
+    parser = Parser(tokens)
+    _, context = parser.parse_file()
     x = Var("x")
     y = Var("y")
     z = Var("z")
@@ -309,7 +318,8 @@ if __name__ == "__main__":
     predin = Pred("in")
     e1 = Exists(w, And(Symbol(predin, [z, w]), Symbol(predin, [w, Compound(pair, [x, y])])))
     e2 = Exists(x, And(Symbol(predin, [z, x]), Symbol(predin, [x, Compound(pair, [x, y])])))
-    print(f"e1: {pretty_expr(e1)}")
-    print(f"e2: {pretty_expr(e2)}")
+    from ast_types import pretty_expr
+    print(f"e1: {pretty_expr(e1, context)}")
+    print(f"e2: {pretty_expr(e2, context)}")
     print(f"alpha_equiv(e1, e2, Context.init()): {alpha_equiv(e1, e2, Context.init())}")
     print(f"alpha_equiv(e2, e1, Context.init()): {alpha_equiv(e2, e1, Context.init())}")

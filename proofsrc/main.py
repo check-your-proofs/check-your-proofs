@@ -31,7 +31,7 @@ from lexer import lex
 tokens = lex(src)
 from parser import Parser
 parser = Parser(tokens)
-ast = parser.parse_file()
+ast, _ = parser.parse_file()
 from checker import check_ast
 if check_ast(ast):
     print("All theorems proved")
