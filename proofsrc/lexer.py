@@ -88,6 +88,7 @@ def lex(src: str) -> list[Token]:
                 i += len(text)
             else:
                 raise SyntaxError(f"Unexpected character {c} at pos {i}, line {line}")
+    tokens.append(Token("EOF", "", i, line))
     return tokens
 
 if __name__ == "__main__":

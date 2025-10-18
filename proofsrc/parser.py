@@ -26,7 +26,7 @@ class Parser:
     def parse_file(self) -> list:
         ast = []
         self.context = Context.init()
-        while self.peek():
+        while True:
             tok = self.peek()
             if tok.type == "ATOM":
                 ast.append(self.parse_atom())
@@ -38,6 +38,8 @@ class Parser:
                 ast.append(self.parse_definition())
             elif tok.type == "EQUALITY":
                 ast.append(self.parse_equality())
+            elif tok.type == "EOF":
+                break
             else:
                 raise SyntaxError(f"Unexpected token {tok}")
         return ast
