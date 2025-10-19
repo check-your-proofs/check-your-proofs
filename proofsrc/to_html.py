@@ -109,21 +109,32 @@ def render_node(node, context: Context) -> str:
     elif isinstance(node, DefCon):
         header_parts = [bullet,
                         render_keyword("definition constant"),
-                        render_identifier(node.name),
+                        render_identifier(node.name)]
+        body_html = render_node(node.existence, context) + render_node(node.uniqueness, context)
+    elif isinstance(node, DefConExist):
+        header_parts = [bullet,
                         render_keyword("existence"),
-                        render_identifier(node.existence.name),
-                        render_expr(node.existence.formula, context),
-                        render_identifier(node.uniqueness.name),
-                        render_expr(node.uniqueness.formula, context)]
+                        render_identifier(node.name),
+                        render_expr(node.formula, context)]
+    elif isinstance(node, DefConUniq):
+        header_parts = [bullet,
+                        render_keyword("uniqueness"),
+                        render_identifier(node.name),
+                        render_expr(node.formula, context)]
     elif isinstance(node, DefFun):
         header_parts = [bullet,
                         render_keyword("definition function"),
-                        render_identifier(node.name),
+                        render_identifier(node.name)]
+        body_html = render_node(node.existence, context) + render_node(node.uniqueness, context)
+    elif isinstance(node, DefFunExist):
+        header_parts = [bullet,
                         render_keyword("existence"),
-                        render_identifier(node.existence.name),
-                        render_expr(node.existence.formula, context),
-                        render_identifier(node.uniqueness.name),
-                        render_expr(node.uniqueness.formula, context)]
+                        render_identifier(node.name),
+                        render_expr(node.formula, context)]
+    elif isinstance(node, DefFunUniq):
+        header_parts = [bullet,
+                        render_identifier(node.name),
+                        render_expr(node.formula, context)]
     elif isinstance(node, DefFunTerm):
         header_parts = [bullet,
                         render_keyword("definition function"),
