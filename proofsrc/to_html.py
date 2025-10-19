@@ -1,5 +1,5 @@
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, Context, pretty_expr
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, pretty_expr
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -164,7 +164,7 @@ def render_node(node, context: Context) -> str:
                         render_keyword("split"),
                         render_expr(node.fact, context)]
     elif isinstance(node, Apply):
-        if isinstance(node.fact, Axiom):
+        if isinstance(node.fact, (Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq)):
             fact = render_identifier(node.fact.name)
         else:
             fact = render_expr(node.fact, context)
@@ -244,6 +244,7 @@ def render_node(node, context: Context) -> str:
         header_parts = [bullet,
                         render_keyword("substitute"),
                         render_expr(node.fact, context),
+                        render_keyword("for"),
                         render_expr_dict(node.env, context)]
         if node.conclusion is not None:
             header_parts.extend([render_keyword("conclude"),

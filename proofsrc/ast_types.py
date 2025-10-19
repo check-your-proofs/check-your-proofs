@@ -397,12 +397,25 @@ def pretty_expr(expr, context: Context):
         return f"{pretty_expr(expr.left, context)} \\vee {pretty_expr(expr.right, context)}"
     if isinstance(expr, Not):
         return f"\\neg({pretty_expr(expr.body, context)})"
-    if isinstance(expr, Forall):
-        return f"\\forall {expr.var.name}({pretty_expr(expr.body, context)})"
-    if isinstance(expr, Exists):
-        return f"\\exists {expr.var.name}({pretty_expr(expr.body, context)})"
-    if isinstance(expr, ExistsUniq):
-        return f"\\exists! {expr.var.name}({pretty_expr(expr.body, context)})"
+    if isinstance(expr, (Forall, Exists, ExistsUniq)):
+        body = expr
+        qvars = []
+        while True:
+            if isinstance(body, (Forall, Exists, ExistsUniq)):
+                qvars.append(type(body)(body.var, None))
+                body = body.body
+            else:
+                break
+        qvars_text = ""
+        for qvar in qvars:
+            if isinstance(qvar, Forall):
+                q_text = "\\forall "
+            elif isinstance(qvar, Exists):
+                q_text = "\\exists "
+            elif isinstance(qvar, ExistsUniq):
+                q_text = "\\exists! "
+            qvars_text += q_text + qvar.var.name
+        return f"{qvars_text}({pretty_expr(body, context)})"
     if isinstance(expr, Bottom):
         return "\\bot"
     raise TypeError(f"Unsupported node type: {type(expr)}")
