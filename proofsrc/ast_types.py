@@ -324,7 +324,18 @@ class Iff(Formula):
 class Bottom:
     pass
 
-def pretty_expr(expr, context: Context):
+OP_PRECEDENCE = {
+    "Lowest": 0,
+    "Iff": 1,
+    "Implies": 1,
+    "Or": 2,
+    "And": 2,
+    "Symbol": 3,
+    "Not": 4,
+    "Quantifier": 5,
+}
+
+def pretty_expr(expr, context: Context, parent_prec: int = OP_PRECEDENCE["Lowest"]):
     if isinstance(expr, Axiom):
         return expr.name
     if isinstance(expr, Theorem):
@@ -348,7 +359,7 @@ def pretty_expr(expr, context: Context):
             text += pretty_expr(expr.args[i], context)
             text += " "
         text += tex[-1]
-        return text
+        return text if OP_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
     if isinstance(expr, Pred):
         if expr.name in context.primpreds:
             tex = context.primpreds[expr.name].tex
@@ -388,15 +399,20 @@ def pretty_expr(expr, context: Context):
     if isinstance(expr, Var):
         return expr.name
     if isinstance(expr, Implies):
-        return f"{pretty_expr(expr.left, context)} \\to {pretty_expr(expr.right, context)}"
+        text = f"{pretty_expr(expr.left, context, OP_PRECEDENCE["Implies"])} \\to {pretty_expr(expr.right, context, OP_PRECEDENCE["Implies"])}"
+        return text if OP_PRECEDENCE["Implies"] > parent_prec else f"({text})"
     if isinstance(expr, Iff):
-        return f"{pretty_expr(expr.left, context)} \\leftrightarrow {pretty_expr(expr.right, context)}"
+        text = f"{pretty_expr(expr.left, context, OP_PRECEDENCE["Iff"])} \\leftrightarrow {pretty_expr(expr.right, context, OP_PRECEDENCE["Iff"])}"
+        return text if OP_PRECEDENCE["Iff"] > parent_prec else f"({text})"
     if isinstance(expr, And):
-        return f"{pretty_expr(expr.left, context)} \\wedge {pretty_expr(expr.right, context)}"
+        text = f"{pretty_expr(expr.left, context, OP_PRECEDENCE["And"])} \\wedge {pretty_expr(expr.right, context, OP_PRECEDENCE["And"])}"
+        return text if OP_PRECEDENCE["And"] > parent_prec else f"({text})"
     if isinstance(expr, Or):
-        return f"{pretty_expr(expr.left, context)} \\vee {pretty_expr(expr.right, context)}"
+        text = f"{pretty_expr(expr.left, context, OP_PRECEDENCE["Or"])} \\vee {pretty_expr(expr.right, context, OP_PRECEDENCE["Or"])}"
+        return text if OP_PRECEDENCE["Or"] > parent_prec else f"({text})"
     if isinstance(expr, Not):
-        return f"\\neg({pretty_expr(expr.body, context)})"
+        text = f"\\neg {pretty_expr(expr.body, context, OP_PRECEDENCE["Not"])}"
+        return text if OP_PRECEDENCE["Not"] > parent_prec else f"({text})"
     if isinstance(expr, (Forall, Exists, ExistsUniq)):
         body = expr
         qvars = []
@@ -415,7 +431,8 @@ def pretty_expr(expr, context: Context):
             elif isinstance(qvar, ExistsUniq):
                 q_text = "\\exists! "
             qvars_text += q_text + qvar.var.name
-        return f"{qvars_text}({pretty_expr(body, context)})"
+        text = f"{qvars_text} {pretty_expr(body, context, OP_PRECEDENCE["Quantifier"])}"
+        return text if OP_PRECEDENCE["Quantifier"] > parent_prec else f"({text})"
     if isinstance(expr, Bottom):
         return "\\bot"
     raise TypeError(f"Unsupported node type: {type(expr)}")
