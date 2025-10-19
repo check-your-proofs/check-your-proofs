@@ -598,7 +598,7 @@ theorem bigcup_cor2 equal(bigcup(emptyset),emptyset) {
 
 definition function cup(x,y) bigcup(pair(x,y)) tex "","\cup",""
 
-theorem cup_cor1 \forall x\forall y\forall z(in(z,cup(x,y))\leftrightarrow in(z,x)\vee in(z,y)) {
+theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrightarrow in(z,x)\vee in(z,y)) {
   any x,y,z {
     assume in(z,cup(x,y)) {
       show \exists w(in(z,w)\wedge in(w,pair(x,y))) {
@@ -664,5 +664,62 @@ theorem cup_commutativity \forall x\forall y(equal(cup(x,y),cup(y,x))) {
     apply pair_commutativity for x:x,y:y
     substitute equal(cup(x,y),bigcup(pair(x,y))) for pair(x,y):pair(y,x)
     expand equal(cup(x,y),bigcup(pair(y,x))) conclude equal(cup(x,y),cup(y,x))
+  }
+}
+
+theorem cup_cor1 \forall x(equal(cup(x,emptyset),x)) {
+  any x {
+    any y {
+      assume in(y,cup(x,emptyset)) {
+        apply cup_characterization for x:x,y:emptyset,z:y
+        split in(y,cup(x,emptyset))\leftrightarrow in(y,x)\vee in(y,emptyset)
+        invoke in(y,cup(x,emptyset))\to in(y,x)\vee in(y,emptyset)
+        divide in(y,x)\vee in(y,emptyset)
+          case in(y,x) {}
+          case in(y,emptyset) {
+            apply emptyset_existence for y:y
+            contradict in(y,emptyset)
+            explode in(y,x)
+          }
+      }
+      assume in(y,x) {
+        pad in(y,x) conclude in(y,x)\vee in(y,emptyset)
+        apply cup_characterization for x:x,y:emptyset,z:y
+        split in(y,cup(x,emptyset))\leftrightarrow in(y,x)\vee in(y,emptyset)
+        invoke in(y,x)\vee in(y,emptyset)\to in(y,cup(x,emptyset))
+      }
+      connect in(y,cup(x,emptyset))\leftrightarrow in(y,x)
+    }
+    expand \forall y(in(y,cup(x,emptyset))\leftrightarrow in(y,x)) conclude equal(cup(x,emptyset),x)
+  }
+}
+
+theorem cup_cor2 \forall x(equal(cup(emptyset,x),x)) {
+  any x {
+    apply cup_commutativity for x:x,y:emptyset
+    apply cup_cor1 for x:x
+    substitute equal(cup(x,emptyset),x) for cup(x,emptyset):cup(emptyset,x)
+  }
+}
+
+theorem cup_cor3 \forall x\forall y(subset(x,cup(x,y))) {
+  any x,y {
+    any z {
+      assume in(z,x) {
+        pad in(z,x) conclude in(z,x)\vee in(z,y)
+        apply cup_characterization for x:x,y:y,z:z
+        split in(z,cup(x,y))\leftrightarrow in(z,x)\vee in(z,y)
+        invoke in(z,x)\vee in(z,y)\to in(z,cup(x,y))
+      }
+    }
+    expand \forall z(in(z,x)\to in(z,cup(x,y))) conclude subset(x,cup(x,y))
+  }
+}
+
+theorem cup_cor4 \forall x\forall y(subset(y,cup(x,y))) {
+  any x,y {
+    apply cup_commutativity for x:x,y:y
+    apply cup_cor3 for x:y,y:x
+    substitute subset(y,cup(y,x)) for cup(y,x):cup(x,y)
   }
 }
