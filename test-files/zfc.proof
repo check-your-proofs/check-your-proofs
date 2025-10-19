@@ -449,7 +449,7 @@ theorem pair_cor8 \forall x\forall y\forall z(equal(pair(x,y),pair(x,z))\to equa
   }
 }
 
-definition function singleton(x) pair(x,x) tex "\{","\}"
+definition function singleton(x) as pair(x,x) tex "\{","\}"
 
 theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrightarrow equal(y,x)) {
   any x,y conclude in(y,singleton(x))\leftrightarrow equal(y,x) {
@@ -513,7 +513,7 @@ theorem pair_singleton_cor2 \forall x\forall y\forall z(equal(singleton(x),pair(
   }
 }
 
-definition function op(x,y) pair(singleton(x),pair(x,y)) tex "(",",",")"
+definition function op(x,y) as pair(singleton(x),pair(x,y)) tex "(",",",")"
 
 theorem op_characterization \forall x\forall y\forall x'\forall y'(equal(op(x,y),op(x',y'))\to equal(x,x')\wedge equal(y,y')) {
   any x,y,x',y' {
@@ -614,7 +614,7 @@ theorem bigcup_cor2 equal(bigcup(emptyset),emptyset) {
   invoke \forall y(notin(y,bigcup(emptyset)))\to equal(bigcup(emptyset),emptyset)
 }
 
-definition function cup(x,y) bigcup(pair(x,y)) tex "","\cup",""
+definition function cup(x,y) as bigcup(pair(x,y)) tex "","\cup",""
 
 theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrightarrow in(z,x)\vee in(z,y)) {
   any x,y,z {

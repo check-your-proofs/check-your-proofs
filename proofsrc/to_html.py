@@ -1,5 +1,5 @@
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, pretty_expr
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, pretty_expr
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -79,6 +79,9 @@ def render_expr_dict(expr_dict: dict, context: Context) -> str:
     parts = [f"{pretty_expr(k, context)}:{pretty_expr(v, context)}" for k, v in expr_dict.items()]
     return f"\\({",".join(parts)}\\)"
 
+def render_tex(tex: list[str]):
+    return f"\\({"".join(tex)}\\)"
+
 def render_node(node, context: Context) -> str:
     header_parts = []
     body_html = ""
@@ -88,7 +91,10 @@ def render_node(node, context: Context) -> str:
     if isinstance(node, PrimPred):
         header_parts = [bullet,
                         render_keyword("primitive predicate"),
-                        render_identifier(node.name)]
+                        render_identifier(node.name),
+                        render_tex(node.tex),
+                        render_keyword("arity"),
+                        f"{str(node.arity)}"]
     elif isinstance(node, Axiom):
         header_parts = [bullet,
                         render_keyword("axiom"),
@@ -105,11 +111,15 @@ def render_node(node, context: Context) -> str:
                         render_keyword("definition predicate"),
                         render_keyword("autoexpand") if node.autoexpand else "",
                         render_identifier(node.name),
+                        render_expr(Symbol(Pred(node.name), node.args), context),
                         render_expr(node.formula, context)]
     elif isinstance(node, DefCon):
-        header_parts = [bullet,
+        header_parts = [toggle,
                         render_keyword("definition constant"),
-                        render_identifier(node.name)]
+                        render_identifier(node.name),
+                        render_tex(node.tex),
+                        render_keyword("by"),
+                        render_identifier(node.theorem)]
         body_html = render_node(node.existence, context) + render_node(node.uniqueness, context)
     elif isinstance(node, DefConExist):
         header_parts = [bullet,
@@ -122,9 +132,12 @@ def render_node(node, context: Context) -> str:
                         render_identifier(node.name),
                         render_expr(node.formula, context)]
     elif isinstance(node, DefFun):
-        header_parts = [bullet,
+        header_parts = [toggle,
                         render_keyword("definition function"),
-                        render_identifier(node.name)]
+                        render_identifier(node.name),
+                        render_tex(node.tex),
+                        render_keyword("by"),
+                        render_identifier(node.theorem)]
         body_html = render_node(node.existence, context) + render_node(node.uniqueness, context)
     elif isinstance(node, DefFunExist):
         header_parts = [bullet,
@@ -133,12 +146,15 @@ def render_node(node, context: Context) -> str:
                         render_expr(node.formula, context)]
     elif isinstance(node, DefFunUniq):
         header_parts = [bullet,
+                        render_keyword("uniqueness"),
                         render_identifier(node.name),
                         render_expr(node.formula, context)]
     elif isinstance(node, DefFunTerm):
         header_parts = [bullet,
                         render_keyword("definition function"),
-                        render_identifier(node.name) + "(" + ",".join(arg.name for arg in node.args) + ")",
+                        render_identifier(node.name),
+                        render_expr(Compound(Fun(node.name), node.args), context),
+                        render_keyword("as"),
                         render_expr(node.term, context)]
     elif isinstance(node, Equality):
         header_parts = [toggle,
