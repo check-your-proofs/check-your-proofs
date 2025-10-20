@@ -83,17 +83,17 @@ def render_expr(node, context: Context) -> str:
     if isinstance(node, (Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq)):
         return render_identifier(node.name)
     else:
-        return f"\\({pretty_expr(node, context)}\\)"
+        return escape(f"\\({pretty_expr(node, context)}\\)")
 
 def render_expr_list(expr_list: list, context: Context) -> str:
-    return f"\\({",".join(pretty_expr(expr, context) for expr in expr_list)}\\)"
+    return escape(f"\\({",".join(pretty_expr(expr, context) for expr in expr_list)}\\)")
 
 def render_expr_dict(expr_dict: dict, context: Context) -> str:
     parts = [f"{pretty_expr(k, context)}:{pretty_expr(v, context)}" for k, v in expr_dict.items()]
-    return f"\\({",".join(parts)}\\)"
+    return escape(f"\\({",".join(parts)}\\)")
 
 def render_tex(tex: list[str]):
-    return f"\\({"".join(tex)}\\)"
+    return escape(f"\\({"".join(tex)}\\)")
 
 def render_node(node, context: Context) -> str:
     header_parts = []
