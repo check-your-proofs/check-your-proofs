@@ -55,7 +55,7 @@ document.addEventListener('click', (e) => {{
   }}
   const header = e.target.closest('.block-header');
   if (header) {{
-    infoContent.innerHTML = header.innerHTML;
+    infoContent.innerHTML = `[${{header.dataset.info}}] ${{header.innerHTML}}`;
     MathJax.typesetPromise();
   }}
 }});
@@ -306,7 +306,7 @@ def render_node(node, context: Context) -> str:
     else:
         raise Exception(f"Unexpected node: {type(node)}")
 
-    header_html = "<div class='block-header'>" + " ".join(header_parts) + "</div>"
+    header_html = f"<div class='block-header' data-info='{type(node).__name__}'>" + " ".join(header_parts) + "</div>"
     content_html = f"<div class='block-content'>{body_html}</div>"
     return f"  <div class='block'>{header_html}{content_html}</div>"
 
