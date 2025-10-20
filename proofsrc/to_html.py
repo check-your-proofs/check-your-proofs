@@ -9,11 +9,14 @@ HTML_TEMPLATE = """<!doctype html>
 <script id="MathJax-script" async
   src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
-  body {{ font-family: "Noto Sans JP", sans-serif; background:#fff; color:#111; padding:1rem; }}
-  .proof {{ max-width: 1000px; margin: 0 auto; }}
+  html, body {{ height: 100%; margin: 0; display: flex; flex-direction: column; }}
+  .proof {{ flex: 1; overflow-y: auto; padding: 1rem; border: 1px solid #ccc; }}
+  .info-panel {{ height: 120px; border-top: 1px solid #aaa; padding: 0.5rem; }}
+  footer {{ height: 40px; border-top: 1px solid #888; text-align: center; }}
   .controls {{ margin-bottom:0.5rem; }}
   .block {{ margin-left: 1rem; padding-left: 0.8rem; margin-top:0.4rem; }}
-  .block-header {{ display:flex; align-items:center; gap:0.5rem; }}
+  .block-header {{ display:flex; align-items:center; gap:0.5rem; cursor:pointer; }}
+  .block-header:hover {{ background:#f7f7f7; }}
   .block-content {{ margin-top:0.25rem; }}
   .toggle {{ all: unset; width:1.2em; display:inline-block; background:none; border:none; cursor:pointer; color:#446; font-size:0.9em; text-align:center; }}
   .bullet {{ all: unset; display:inline-block; width:1.2em; text-align:center; color:#888; }}
@@ -30,21 +33,31 @@ HTML_TEMPLATE = """<!doctype html>
   </div>
 {body}
 </div>
+<div class="info-panel" id="infoPanel">
+  <h3>Information</h3>
+  <div id="infoContent">Please click a line to show its information.</div>
+</div>
 <footer style="font-size:0.8em; color:#666; margin-top:2rem;">
   MathJax is used for rendering LaTeX math. Licensed under 
   <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License 2.0</a>.
 </footer>
 <script>
 document.addEventListener('click', (e) => {{
-  if (!e.target.matches('.toggle')) return;
-  const btn = e.target;
-  const header = btn.closest('.block-header');
-  if (!header) return;
-  const content = header.nextElementSibling;
-  if (!content || !content.classList.contains('block-content')) return;
-  content.classList.toggle('collapsed');
-  btn.textContent = content.classList.contains('collapsed') ? '▶' : '▼';
-  MathJax.typesetPromise();
+  if (e.target.matches('.toggle')) {{
+    const btn = e.target;
+    const header = btn.closest('.block-header');
+    if (!header) return;
+    const content = header.nextElementSibling;
+    if (!content || !content.classList.contains('block-content')) return;
+    content.classList.toggle('collapsed');
+    btn.textContent = content.classList.contains('collapsed') ? '▶' : '▼';
+    MathJax.typesetPromise();
+  }}
+  const header = e.target.closest('.block-header');
+  if (header) {{
+    infoContent.innerHTML = header.innerHTML;
+    MathJax.typesetPromise();
+  }}
 }});
 document.getElementById('expandAll').addEventListener('click', () => {{
   document.querySelectorAll('.block-content').forEach(c => c.classList.remove('collapsed'));
