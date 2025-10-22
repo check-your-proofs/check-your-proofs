@@ -1,31 +1,14 @@
 from datetime import datetime
 from html import escape
 from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, pretty_expr
+from svg import output_svg
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <title>{title}</title>
-<script id="MathJax-script" async
-  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<style>
-  html, body {{ height: 100%; margin: 0; display: flex; flex-direction: column; }}
-  header {{ font-size: 0.9em; color: gray; margin-left: 1em; }}
-  .proof {{ flex: 1; overflow-y: auto; padding: 1rem; border: 1px solid #ccc; }}
-  .info-panel {{ height: 120px; border-top: 1px solid #aaa; padding: 0.5rem; }}
-  footer {{ height: 40px; border-top: 1px solid #888; text-align: center; }}
-  .controls {{ margin-bottom:0.5rem; }}
-  .block {{ margin-left: 1rem; padding-left: 0.8rem; margin-top:0.4rem; }}
-  .block-header {{ display:flex; align-items:center; gap:0.5rem; cursor:pointer; }}
-  .block-header:hover {{ background:#f7f7f7; }}
-  .block-content {{ margin-top:0.25rem; }}
-  .toggle {{ all: unset; width:1.2em; display:inline-block; background:none; border:none; cursor:pointer; color:#446; font-size:0.9em; text-align:center; }}
-  .bullet {{ all: unset; display:inline-block; width:1.2em; text-align:center; color:#888; }}
-  .keyword {{ font-weight:600; color:#064; margin-right:0.3rem; }}
-  .identifier {{ color:#094; font-weight:600; margin-right:0.4rem; }}
-  .collapsed {{ display:none; }}
-</style>
+{extra_head}
 </head>
 <body>
 <header>
@@ -42,10 +25,7 @@ HTML_TEMPLATE = """<!doctype html>
   <h3>Information</h3>
   <div id="infoContent">Please click a line to show its information.</div>
 </div>
-<footer style="font-size:0.8em; color:#666; margin-top:2rem;">
-  MathJax is used for rendering LaTeX math. Licensed under 
-  <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License 2.0</a>.
-</footer>
+{footer}
 <script>
 document.addEventListener('click', (e) => {{
   if (e.target.matches('.toggle')) {{
@@ -80,29 +60,112 @@ document.getElementById('collapseAll').addEventListener('click', () => {{
 </html>
 """
 
+MATHJAX_HEAD = """
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  html, body {{ height: 100%; margin: 0; display: flex; flex-direction: column; }}
+  header {{ font-size: 0.9em; color: gray; margin-left: 1em; }}
+  .proof {{ flex: 1; overflow-y: auto; padding: 1rem; border: 1px solid #ccc; }}
+  .info-panel {{ height: 120px; border-top: 1px solid #aaa; padding: 0.5rem; }}
+  footer {{ height: 40px; border-top: 1px solid #888; text-align: center; }}
+  .controls {{ margin-bottom:0.5rem; }}
+  .block {{ margin-left: 1rem; padding-left: 0.8rem; margin-top:0.4rem; }}
+  .block-header {{ display:flex; align-items:center; gap:0.5rem; cursor:pointer; }}
+  .block-header:hover {{ background:#f7f7f7; }}
+  .block-content {{ margin-top:0.25rem; }}
+  .toggle {{ all: unset; width:1.2em; display:inline-block; background:none; border:none; cursor:pointer; color:#446; font-size:0.9em; text-align:center; }}
+  .bullet {{ all: unset; display:inline-block; width:1.2em; text-align:center; color:#888; }}
+  .keyword {{ font-weight:600; color:#064; margin-right:0.3rem; }}
+  .identifier {{ color:#094; font-weight:600; margin-right:0.4rem; }}
+  .collapsed {{ display:none; }}
+</style>
+"""
+
+MATHJAX_FOOTER = """
+<footer style="font-size:0.8em; color:#666; margin-top:2rem;">
+  MathJax is used for rendering LaTeX math. Licensed under 
+  <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License 2.0</a>.
+</footer>
+"""
+
+SVG_HEAD = """
+<style>
+  html, body {{ font-family: "Ratin Modern Roman"; height: 100%; margin: 0; display: flex; flex-direction: column; }}
+  header {{ font-size: 0.9em; color: gray; margin-left: 1em; }}
+  .proof {{ flex: 1; overflow-y: auto; padding: 1rem; border: 1px solid #ccc; }}
+  .info-panel {{ height: 200px; border-top: 1px solid #aaa; padding: 0.5rem; }}
+  .controls {{  }}
+  .block {{ margin-left: 1rem; padding-left: 0.8rem; }}
+  .block-header {{ display:flex; align-items:center; gap:0.5rem; cursor:pointer; }}
+  .block-header:hover {{ background:#f7f7f7; }}
+  .block-content {{  }}
+  .toggle {{ all: unset; width:1.2em; display:inline-block; background:none; border:none; cursor:pointer; color:#446; font-size:0.9em; text-align:center; }}
+  .bullet {{ all: unset; display:inline-block; width:1.2em; text-align:center; color:#888; }}
+  .keyword {{ color:#c41a16; margin-right:0.3rem; font-size: 0.8em; line-height: 2.0em; }}
+  .identifier {{ color:#1e7f68; margin-right:0.4rem; font-size: 0.8em; line-height: 2.0em; }}
+  .math {{ display: inline-block; height: 2.0em; vertical-align: middle; }}
+  .math svg {{ display: inline; vertical-align: middle; height: 2.0em; }}
+  .collapsed {{ display:none; }}
+</style>
+"""
+
 def render_keyword(keyword: str) -> str:
     return f"<span class='keyword'>{keyword}</span>"
 
 def render_identifier(name: str) -> str:
     return f"<span class='identifier'>{escape(name)}</span>"
 
-def render_expr(node, context: Context) -> str:
+def render_expr_mathjax(node, context: Context) -> str:
     if isinstance(node, (Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq)):
         return render_identifier(node.name)
     else:
         return escape(f"\\({pretty_expr(node, context)}\\)")
 
-def render_expr_list(expr_list: list, context: Context) -> str:
+def render_expr_list_mathjax(expr_list: list, context: Context) -> str:
     return escape(f"\\({",".join(pretty_expr(expr, context) for expr in expr_list)}\\)")
 
-def render_expr_dict(expr_dict: dict, context: Context) -> str:
+def render_expr_dict_mathjax(expr_dict: dict, context: Context) -> str:
     parts = [f"{pretty_expr(k, context)}:{pretty_expr(v, context)}" for k, v in expr_dict.items()]
     return escape(f"\\({",".join(parts)}\\)")
 
-def render_tex(tex: list[str]):
+def render_tex_mathjax(tex: list[str]):
     return escape(f"\\({"".join(tex)}\\)")
 
-def render_node(node, context: Context) -> str:
+def div_math(svg_code: str) -> str:
+    return f"<div class='math'>{svg_code}</div>"
+
+def render_expr_svg(node, context: Context) -> str:
+    if isinstance(node, (Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq)):
+        return render_identifier(node.name)
+    else:
+        return div_math(output_svg(f"{pretty_expr(node, context)}"))
+
+def render_expr_list_svg(expr_list: list, context: Context) -> str:
+    return div_math(",".join((output_svg(pretty_expr(expr, context))) for expr in expr_list))
+
+def render_expr_dict_svg(expr_dict: dict, context: Context) -> str:
+    parts = [f"{(output_svg(pretty_expr(k, context)))}:{(output_svg(pretty_expr(v, context)))}" for k, v in expr_dict.items()]
+    return div_math(f"{",".join(parts)}")
+
+
+def render_tex_svg(tex: list[str]):
+    return div_math(output_svg(f"{"".join(tex)}"))
+
+def render_node(node, context: Context, mode: bool) -> str:
+    if mode == "mathjax":
+        render_expr = render_expr_mathjax
+        render_expr_list = render_expr_list_mathjax
+        render_expr_dict = render_expr_dict_mathjax
+        render_tex = render_tex_mathjax
+    elif mode == "svg":
+        render_expr = render_expr_svg
+        render_expr_list = render_expr_list_svg
+        render_expr_dict = render_expr_dict_svg
+        render_tex = render_tex_svg
+    else:
+        raise Exception(f"Unexpected mode: {mode}")
+
     header_parts = []
     body_html = ""
     bullet = "<button class='bullet'>•</button>"
@@ -125,7 +188,7 @@ def render_node(node, context: Context) -> str:
                         render_keyword("theorem"),
                         render_identifier(node.name),
                         render_expr(node.conclusion, context)]
-        body_html = "".join(render_node(s, context) for s in node.proof)
+        body_html = "".join(render_node(s, context, mode) for s in node.proof)
     elif isinstance(node, DefPred):
         header_parts = [bullet,
                         render_keyword("definition predicate"),
@@ -140,7 +203,7 @@ def render_node(node, context: Context) -> str:
                         render_tex(node.tex),
                         render_keyword("by"),
                         render_identifier(node.theorem)]
-        body_html = render_node(node.existence, context) + render_node(node.uniqueness, context)
+        body_html = render_node(node.existence, context, mode) + render_node(node.uniqueness, context, mode)
     elif isinstance(node, DefConExist):
         header_parts = [bullet,
                         render_keyword("existence"),
@@ -158,7 +221,7 @@ def render_node(node, context: Context) -> str:
                         render_tex(node.tex),
                         render_keyword("by"),
                         render_identifier(node.theorem)]
-        body_html = render_node(node.existence, context) + render_node(node.uniqueness, context)
+        body_html = render_node(node.existence, context, mode) + render_node(node.uniqueness, context, mode)
     elif isinstance(node, DefFunExist):
         header_parts = [bullet,
                         render_keyword("existence"),
@@ -180,7 +243,7 @@ def render_node(node, context: Context) -> str:
         header_parts = [toggle,
                         render_keyword("equality"),
                         render_identifier(node.equal.name)]
-        body_html = render_node(node.reflection, context) + render_node(node.replacement, context)
+        body_html = render_node(node.reflection, context, mode) + render_node(node.replacement, context, mode)
     elif isinstance(node, EqualityReflection):
         header_parts = [bullet,
                         render_keyword("reflection"),
@@ -196,7 +259,7 @@ def render_node(node, context: Context) -> str:
         if node.conclusion is not None:
             header_parts.extend([render_keyword("show"),
                                  render_expr(node.conclusion, context)])
-        body_html = "".join(render_node(s, context) for s in node.body)
+        body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Assume):
         header_parts = [toggle,
                         render_keyword("assume"),
@@ -204,7 +267,7 @@ def render_node(node, context: Context) -> str:
         if node.conclusion is not None:
             header_parts.extend([render_keyword("show"),
                                  render_expr(node.conclusion, context)])
-        body_html = "".join(render_node(s, context) for s in node.body)
+        body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Connect):
         header_parts = [bullet,
                         render_keyword("connect"),
@@ -238,7 +301,7 @@ def render_node(node, context: Context) -> str:
         header_parts = [toggle,
                         render_keyword("deny"),
                         render_expr(node.premise, context)]
-        body_html = "".join(render_node(s, context) for s in node.body)
+        body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Some):
         header_parts = [toggle,
                         render_keyword("some"),
@@ -247,7 +310,7 @@ def render_node(node, context: Context) -> str:
                         render_expr(node.fact, context)]
         if node.conclusion is not None:
             header_parts.append(f"<span class='keyword'>show</span> {render_expr(node.conclusion, context)}")
-        body_html = "".join(render_node(s, context) for s in node.body)
+        body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Contradict):
         header_parts = [bullet,
                         render_keyword("contradict"),
@@ -274,12 +337,12 @@ def render_node(node, context: Context) -> str:
         if node.conclusion is not None:
             header_parts.extend([render_keyword("show"),
                                  render_expr(node.conclusion, context)])
-        body_html = "".join(render_node(s, context) for s in node.cases)
+        body_html = "".join(render_node(s, context, mode) for s in node.cases)
     elif isinstance(node, Case):
         header_parts = [toggle,
                         render_keyword("case"),
                         render_expr(node.premise, context)]
-        body_html = "".join(render_node(s, context) for s in node.body)
+        body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Explode):
         header_parts = [bullet,
                         render_keyword("explode"),
@@ -305,7 +368,7 @@ def render_node(node, context: Context) -> str:
         header_parts = [toggle,
                         render_keyword("show"),
                         render_expr(node.conclusion, context)]
-        body_html = "".join(render_node(s, context) for s in node.body)
+        body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Check):
         header_parts = [bullet,
                         render_keyword("check"),
@@ -321,14 +384,27 @@ def render_node(node, context: Context) -> str:
     content_html = f"<div class='block-content'>{body_html}</div>"
     return f"  <div class='block'>{header_html}{context_vars_html}{context_formulas_html}{content_html}</div>"
 
-def to_html(ast: list, context: Context, title: str):
+def to_html(ast: list, context: Context, title: str, mode: str):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    body_html = "\n".join(render_node(node, context) for node in ast)
-    return HTML_TEMPLATE.format(title=escape(title), now_str=now_str, body=body_html)
+    parts = []
+    for i, node in enumerate(ast):
+        print(f"Rendering node {i + 1} / {len(ast)} finished")
+        parts.append(render_node(node, context, mode))
+    body_html = "\n".join(parts)
+    if mode == "mathjax":
+        extra_head = MATHJAX_HEAD.format()
+        footer = MATHJAX_FOOTER
+    elif mode == "svg":
+        extra_head = SVG_HEAD.format()
+        footer = ""
+    else:
+        raise Exception(f"Unexpected mode: {mode}")
+    return HTML_TEMPLATE.format(title=escape(title), now_str=now_str, extra_head=extra_head, body=body_html, footer=footer)
 
 if __name__ == "__main__":
     import sys
     path = sys.argv[1]
+    mode = sys.argv[2]
     f = open(path)
     src = f.read()
     f.close()
@@ -345,7 +421,7 @@ if __name__ == "__main__":
         print("❌ Not all theorems proved")
     import os
     title = os.path.splitext(os.path.basename(path))[0]
-    html = to_html(ast, context, title)
-    f = open(os.path.join("html", title + ".html"), 'w', encoding='utf-8')
+    html = to_html(ast, context, title, mode)
+    f = open(os.path.join("html", f"{title}_{mode}.html"), 'w', encoding='utf-8')
     f.write(html)
     f.close()

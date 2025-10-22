@@ -38,9 +38,3 @@ if result:
     print("All theorems proved")
 else:
     print("❌ Not all theorems proved")
-from to_html import to_html
-title = os.path.splitext(os.path.basename(path))[0]
-html = to_html(ast, context, title)
-f = open(os.path.join("html", title + ".html"), 'w', encoding='utf-8')
-f.write(html)
-f.close()
