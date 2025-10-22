@@ -6,6 +6,7 @@ header { font-size: 0.9em; color: gray; margin-left: 1em; }
 .block { margin-left: 1rem; padding-left: 0.8rem; }
 .block-header { display:flex; align-items:center; gap:0.5rem; cursor:pointer; }
 .block-header:hover { background:#f7f7f7; }
+.block-header.selected { background-color: #def !important; }
 .block-content {}
 .toggle { all: unset; width:1.2em; display:inline-block; background:none; border:none; cursor:pointer; color:#446; font-size:0.9em; text-align:center; }
 .bullet { all: unset; display:inline-block; width:1.2em; text-align:center; color:#888; }
@@ -14,4 +15,3 @@ header { font-size: 0.9em; color: gray; margin-left: 1em; }
 .math { display: inline-block; height: 2.0em; vertical-align: middle; }
 .math svg { display: inline; vertical-align: middle; height: 2.0em; }
 .collapsed { display:none; }
-.selected { background-color: #def; }
