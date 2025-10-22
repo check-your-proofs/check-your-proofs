@@ -1,3 +1,13 @@
+function scrollIfNeeded(element, container) {
+  const elRect = element.getBoundingClientRect();
+  const contRect = container.getBoundingClientRect();
+
+  // element が container の表示範囲内に完全に収まっているか
+  if (elRect.top < contRect.top || elRect.bottom > contRect.bottom) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
 // ページ上の全ての block-header をフラット配列にする
 const allHeaders = Array.from(document.querySelectorAll('.block-header'));
 let selectedIndex = 0;
@@ -52,7 +62,8 @@ document.addEventListener('keydown', (e) => {
 
   const header = allHeaders[selectedIndex];
   header.classList.add('selected');
-  header.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const proofContainer = document.querySelector('.proof'); // スクロールコンテナ
+  scrollIfNeeded(header, proofContainer);
 
   // infoPanel 更新
   const context_vars = header.nextElementSibling.innerHTML;
