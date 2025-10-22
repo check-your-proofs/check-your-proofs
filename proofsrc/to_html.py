@@ -34,24 +34,7 @@ HTML_TEMPLATE = """<!doctype html>
 MATHJAX_HEAD = """
 <script id="MathJax-script" async
   src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<style>
-  html, body {{ height: 100%; margin: 0; display: flex; flex-direction: column; }}
-  header {{ font-size: 0.9em; color: gray; margin-left: 1em; }}
-  .proof {{ flex: 1; overflow-y: auto; padding: 1rem; border: 1px solid #ccc; }}
-  .info-panel {{ height: 120px; border-top: 1px solid #aaa; padding: 0.5rem; }}
-  footer {{ height: 40px; border-top: 1px solid #888; text-align: center; }}
-  .controls {{ margin-bottom:0.5rem; }}
-  .block {{ margin-left: 1rem; padding-left: 0.8rem; margin-top:0.4rem; }}
-  .block-header {{ display:flex; align-items:center; gap:0.5rem; cursor:pointer; }}
-  .block-header:hover {{ background:#f7f7f7; }}
-  .block-content {{ margin-top:0.25rem; }}
-  .toggle {{ all: unset; width:1.2em; display:inline-block; background:none; border:none; cursor:pointer; color:#446; font-size:0.9em; text-align:center; }}
-  .bullet {{ all: unset; display:inline-block; width:1.2em; text-align:center; color:#888; }}
-  .keyword {{ font-weight:600; color:#064; margin-right:0.3rem; }}
-  .identifier {{ color:#094; font-weight:600; margin-right:0.4rem; }}
-  .collapsed {{ display:none; }}
-  .selected {{ background-color: #def; }}
-</style>
+<link rel="stylesheet" href="style_mathjax.css">
 """
 
 MATHJAX_FOOTER = """
@@ -62,25 +45,7 @@ MATHJAX_FOOTER = """
 """
 
 SVG_HEAD = """
-<style>
-  html, body {{ font-family: "Ratin Modern Roman"; height: 100%; margin: 0; display: flex; flex-direction: column; }}
-  header {{ font-size: 0.9em; color: gray; margin-left: 1em; }}
-  .proof {{ flex: 1; overflow-y: auto; padding: 1rem; border: 1px solid #ccc; }}
-  .info-panel {{ height: 200px; border-top: 1px solid #aaa; padding: 0.5rem; }}
-  .controls {{  }}
-  .block {{ margin-left: 1rem; padding-left: 0.8rem; }}
-  .block-header {{ display:flex; align-items:center; gap:0.5rem; cursor:pointer; }}
-  .block-header:hover {{ background:#f7f7f7; }}
-  .block-content {{  }}
-  .toggle {{ all: unset; width:1.2em; display:inline-block; background:none; border:none; cursor:pointer; color:#446; font-size:0.9em; text-align:center; }}
-  .bullet {{ all: unset; display:inline-block; width:1.2em; text-align:center; color:#888; }}
-  .keyword {{ color:#c41a16; margin-right:0.3rem; font-size: 0.8em; line-height: 2.0em; }}
-  .identifier {{ color:#1e7f68; margin-right:0.4rem; font-size: 0.8em; line-height: 2.0em; }}
-  .math {{ display: inline-block; height: 2.0em; vertical-align: middle; }}
-  .math svg {{ display: inline; vertical-align: middle; height: 2.0em; }}
-  .collapsed {{ display:none; }}
-  .selected {{ background-color: #def; }}
-</style>
+<link rel="stylesheet" href="style_svg.css">
 """
 
 def render_keyword(keyword: str) -> str:
