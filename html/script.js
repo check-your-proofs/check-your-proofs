@@ -1,13 +1,19 @@
+let isScrolling = false;
+
 function scrollIfNeeded(element, container, ctrl) {
+  if (isScrolling) return;
+
   const elRect = element.getBoundingClientRect();
   const contRect = container.getBoundingClientRect();
 
   // element が container の表示範囲内に完全に収まっているか
   if (elRect.top < contRect.top || elRect.bottom > contRect.bottom) {
+    isScrolling = true;
     element.scrollIntoView({
       behavior: 'smooth',
       block: ctrl ? 'start' : 'center'  // Ctrlなら一番上、それ以外は中央
     });
+    setTimeout(() => isScrolling = false, 500); // アニメーション時間に合わせる
   }
 }
 
@@ -48,9 +54,14 @@ document.addEventListener('click', (e) => {
   }
 });
 
+let keyLocked = false;
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
   e.preventDefault(); // スクロールを止める
+
+  if (keyLocked) return;
+  keyLocked = true;
+  setTimeout(() => keyLocked = false, 50); // 50ms後に再度処理可能に
 
   if (allHeaders.length === 0) return;
 
