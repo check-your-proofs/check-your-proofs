@@ -10,7 +10,6 @@ def output_svg(latex_code: str) -> str:
     dvi_file = tex_dir / f"math_{hash_value}.dvi"
     svg_file = html_dir / "svg" / f"math_{hash_value}.svg"
     if not svg_file.exists():
-        latex_code = latex_code.replace(r"\notin", r"\mathrel{\not\in}")
         tex_file.write_text(
             f"\\documentclass{{standalone}}\n"
             f"\\usepackage{{amsmath, amssymb}}\n"
