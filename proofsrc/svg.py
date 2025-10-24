@@ -14,7 +14,7 @@ def output_svg(latex_code: str) -> str:
             f"\\documentclass{{standalone}}\n"
             f"\\usepackage{{amsmath, amssymb}}\n"
             f"\\begin{{document}}\n"
-            f"${latex_code}$\n"
+            f"\\Large ${latex_code}$\n"
             f"\\end{{document}}",
             encoding="utf-8"
         )
