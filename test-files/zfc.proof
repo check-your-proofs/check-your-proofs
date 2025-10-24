@@ -1,6 +1,6 @@
 primitive predicate in arity 2 tex "","\in",""
 
-definition predicate equal(x,y) \forall z(in(z,x)\leftrightarrow in(z,y)) tex "","=",""
+definition predicate equal(x,y) as \forall z(in(z,x)\leftrightarrow in(z,y)) tex "","=",""
 
 theorem equal_reflection \forall x(equal(x,x)) {
   any x conclude equal(x,x) {
@@ -79,9 +79,9 @@ equality equal
   reflection equal_reflection
   replacement equal: equal_replacement, in: in_replacement
 
-definition predicate autoexpand notin(x,y) \neg(in(x,y)) tex "","\notin",""
+definition predicate autoexpand notin(x,y) as \neg(in(x,y)) tex "","\notin",""
 
-definition predicate autoexpand neq(x,y) \neg(equal(x,y)) tex "","\neq",""
+definition predicate autoexpand neq(x,y) as \neg(equal(x,y)) tex "","\neq",""
 
 theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))) {
   any x, y conclude neq(x,y)\leftrightarrow\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
@@ -169,7 +169,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
   }
 }
 
-definition predicate subset(x,y) \forall z(in(z,x)\to in(z,y)) tex "","\subset",""
+definition predicate subset(x,y) as \forall z(in(z,x)\to in(z,y)) tex "","\subset",""
 
 theorem subset_cor1 \forall z\forall x\forall y(in(z,x)\wedge subset(x,y)\to in(z,y)) {
   any x,y,z conclude in(z,x)\wedge subset(x,y)\to in(z,y) {

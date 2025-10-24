@@ -378,6 +378,7 @@ class Parser:
                 self.consume("COMMA")
                 args.append(Var(self.consume("IDENT").value))
             self.consume("RPAREN")
+            self.consume("AS")
             formula = self.parse_expr()
             tex = self.parse_tex()
             if len(tex) != len(args) + 1:

@@ -136,6 +136,7 @@ def render_node(node, context: Context, mode: bool) -> str:
                         render_keyword("autoexpand") if node.autoexpand else "",
                         render_identifier(node.name),
                         render_expr(Symbol(Pred(node.name), node.args), context),
+                        render_keyword("as"),
                         render_expr(node.formula, context)]
     elif isinstance(node, DefCon):
         header_parts = [toggle,
