@@ -96,10 +96,6 @@ class Control:
     context_formulas: list = field(init=False)
 
 @dataclass
-class Check(Control):
-    conclusion: object   # Expr AST
-
-@dataclass
 class Assume(Control):
     premise: object      # Expr AST
     conclusion: object | None  # Expr AST

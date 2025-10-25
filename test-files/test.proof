@@ -70,7 +70,6 @@ theorem test08 \forall v\forall u(in(u,v)\to in(u,v)) {
 theorem test09 \forall v\forall u(in(u,v)\to in(u,v)) {
   any x, y conclude in(x,y)\to in(x,y) {
     assume in(x,y) conclude in(x,y) {}
-    check in(x,y)\to in(x,y)
   }
 }
 
@@ -78,7 +77,6 @@ theorem test10 \forall v\forall u(in(u,v)\to in(u,v)) {
   any x, y conclude in(x,y)\to in(x,y) {
     assume in(x,y) conclude in(x,y) {}
   }
-  check \forall x\forall y(in(x,y)\to in(x,y))
 }
 
 theorem test11 \forall u\forall v(in(u,v)\to in(u,v)\vee in(v,u)) {

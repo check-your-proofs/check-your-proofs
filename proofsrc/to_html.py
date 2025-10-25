@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, pretty_expr
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, pretty_expr
 from svg import output_svg
 
 HTML_TEMPLATE = """<!doctype html>
@@ -300,10 +300,6 @@ def render_node(node, context: Context, mode: bool) -> str:
                         render_keyword("show"),
                         render_expr(node.conclusion, context)]
         body_html = "".join(render_node(s, context, mode) for s in node.body)
-    elif isinstance(node, Check):
-        header_parts = [bullet,
-                        render_keyword("check"),
-                        render_expr(node.conclusion, context)]
     else:
         raise Exception(f"Unexpected node: {type(node)}")
 

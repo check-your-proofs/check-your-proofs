@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -94,12 +94,6 @@ class Parser:
         logger.debug(f"[theorem] {name}")
         return theorem
 
-    def parse_check(self) -> Check:
-        self.consume("CHECK")
-        # conclusion 部分の式を読む
-        conclusion = self.parse_expr()
-        return Check(conclusion=conclusion)
-
     def parse_block(self) -> list:
         body = []
         while True:
@@ -112,8 +106,6 @@ class Parser:
                 body.append(self.parse_assume())
             elif tok.type == "DIVIDE":
                 body.append(self.parse_divide())
-            elif tok.type == "CHECK":
-                body.append(self.parse_check())
             elif tok.type == "SOME":
                 body.append(self.parse_some())
             elif tok.type == "DENY":
