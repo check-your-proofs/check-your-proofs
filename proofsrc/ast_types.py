@@ -96,6 +96,9 @@ class ProofInfo:
     context_formulas: list = field(init=False)
     premises: list = field(init=False)
     conclusions: list = field(init=False)
+    local_vars: list = field(init=False)
+    local_premise: list = field(init=False)
+    local_conclusion: list = field(init=False)
 
 @dataclass
 class Control:

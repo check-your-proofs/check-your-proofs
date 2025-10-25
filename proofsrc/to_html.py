@@ -313,7 +313,13 @@ def render_node(node, context: Context, mode: bool) -> str:
     conclusions = render_expr_list(node.proofinfo.conclusions, context) if isinstance(node, Control) else "No information"
     conclusions_html = f"<div class='conclusions' hidden>{conclusions}</div>"
     content_html = f"<div class='block-content'>{body_html}</div>"
-    return f"  <div class='block'>{header_html}{context_vars_html}{context_formulas_html}{premises_html}{conclusions_html}{content_html}</div>"
+    local_vars = render_expr_list(node.proofinfo.local_vars, context) if isinstance(node, (Any, Assume, Divide, Case, Some, Deny, Show)) else "No information"
+    local_vars_html = f"<div class='local_vars' hidden>{local_vars}</div>"
+    local_premise = render_expr_list(node.proofinfo.local_premise, context) if isinstance(node, (Any, Assume, Divide, Case, Some, Deny, Show)) else "No information"
+    local_premise_html = f"<div class='local_premise' hidden>{local_premise}</div>"
+    local_conclusion = render_expr_list(node.proofinfo.local_conclusion, context) if isinstance(node, (Any, Assume, Divide, Case, Some, Deny, Show)) else "No information"
+    local_conclusion_html = f"<div class='local_conclusion' hidden>{local_conclusion}</div>"
+    return f"  <div class='block'>{header_html}{context_vars_html}{context_formulas_html}{premises_html}{conclusions_html}{local_vars_html}{local_premise_html}{local_conclusion_html}{content_html}</div>"
 
 def to_html(ast: list, context: Context, title: str, mode: str):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

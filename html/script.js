@@ -20,12 +20,18 @@ function updateInfoPanel(header) {
   const context_formulas = context_vars.nextElementSibling;
   const premises = context_formulas.nextElementSibling;
   const conclusions = premises.nextElementSibling;
+  const local_vars = conclusions.nextElementSibling;
+  const local_premise = local_vars.nextElementSibling;
+  const local_conclusion = local_premise.nextElementSibling;
   infoContent.innerHTML = `
     Selected line: ${header.innerHTML}<br>
     context_vars: ${context_vars.innerHTML}<br>
     context_formulas: ${context_formulas.innerHTML}<br>
     premises: ${premises.innerHTML}<br>
-    conclusions: ${conclusions.innerHTML}
+    conclusions: ${conclusions.innerHTML}<br>
+    local_vars: ${local_vars.innerHTML}<br>
+    local_premise: ${local_premise.innerHTML}<br>
+    local_conclusion: ${local_conclusion.innerHTML}
   `;
 }
 

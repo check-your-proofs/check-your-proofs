@@ -38,6 +38,9 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         node.proofinfo = ProofInfo()
         node.proofinfo.context_vars = deepcopy(context.vars)
         node.proofinfo.context_formulas = deepcopy(context.formulas)
+        node.proofinfo.local_vars = []
+        node.proofinfo.local_premise = []
+        node.proofinfo.local_conclusion = []
 
     if isinstance(node, PrimPred):
         logger.debug(f"{sp}[PrimPred] type: {node.type}, name: {node.name}, arity: {node.arity}")
@@ -86,6 +89,9 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         implication = Implies(node.premise, goal)
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [implication]
+        node.proofinfo.local_vars = []
+        node.proofinfo.local_premise = [node.premise]
+        node.proofinfo.local_conclusion = [goal]
         add_conclusion(context, implication)
         logger.debug(f"{sp}[Assume] Added implication {pretty_expr(implication, context)}")
         return True
@@ -116,6 +122,9 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             goal = Forall(v, goal)
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [goal]
+        node.proofinfo.local_vars = node.vars
+        node.proofinfo.local_premise = []
+        node.proofinfo.local_conclusion = [local_ctx.formulas[-1]]
         add_conclusion(context, goal)
         logger.debug(f"{sp}[Any] Generalized to {pretty_expr(goal, context)}")
         return True
@@ -153,6 +162,9 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                     return False
         node.proofinfo.premises = [node.fact]
         node.proofinfo.conclusions = [goals[0]]
+        node.proofinfo.local_vars = []
+        node.proofinfo.local_premise = []
+        node.proofinfo.local_conclusion = [goals[0]]
         add_conclusion(context, goals[0])
         logger.debug(f"{sp}[Divide] derived in all cases: {pretty_expr(goals[0], context)}")
         return True
@@ -175,6 +187,9 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.debug(f"{sp}[Case] Mathched with conclusion: {pretty_expr(node.conclusion, context)}")
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [goal]
+        node.proofinfo.local_vars = []
+        node.proofinfo.local_premise = [node.premise]
+        node.proofinfo.local_conclusion = [goal]
         add_conclusion(context, goal)
         logger.debug(f"{sp}[Case] Added goal {pretty_expr(goal, context)}")
         return True
@@ -218,6 +233,9 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.debug(f"{sp}[Some] Mathched with conclusion: {pretty_expr(node.conclusion, context)}")
         node.proofinfo.premises = [node.fact]
         node.proofinfo.conclusions = [goal]
+        node.proofinfo.local_vars = list(node.env.values())
+        node.proofinfo.local_premise = [premise]
+        node.proofinfo.local_conclusion = [goal]
         add_conclusion(context, goal)
         logger.debug(f"{sp}[Some] Added goal {pretty_expr(goal, context)}")
         return True
@@ -240,6 +258,9 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 conclusion = Not(node.premise)
             node.proofinfo.premises = []
             node.proofinfo.conclusions = [conclusion]
+            node.proofinfo.local_vars = []
+            node.proofinfo.local_premise = [node.premise]
+            node.proofinfo.local_conclusion = [goal]
             add_conclusion(context, conclusion)
             logger.debug(f"{sp}[Deny] contradiction is derived; added {pretty_expr(conclusion, context)}")
             return True
@@ -519,6 +540,9 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         logger.debug(f"{sp}[Show] Matched with target conclusion: {pretty_expr(node.conclusion, context)}")
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [goal]
+        node.proofinfo.local_vars = []
+        node.proofinfo.local_premise = []
+        node.proofinfo.local_conclusion = [goal]
         add_conclusion(context, goal)
         logger.debug(f"{sp}[Show] Added {pretty_expr(goal, context)}")
         return True
