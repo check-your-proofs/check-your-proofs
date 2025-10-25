@@ -94,6 +94,7 @@ class Theorem:
 class ProofInfo:
     context_vars: list = field(init=False)
     context_formulas: list = field(init=False)
+    premises: list = field(init=False)
     conclusions: list = field(init=False)
 
 @dataclass

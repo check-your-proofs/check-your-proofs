@@ -18,11 +18,13 @@ function selectHeader(index) {
 function updateInfoPanel(header) {
   const context_vars = header.nextElementSibling;
   const context_formulas = context_vars.nextElementSibling;
-  const conclusions = context_formulas.nextElementSibling;
+  const premises = context_formulas.nextElementSibling;
+  const conclusions = premises.nextElementSibling;
   infoContent.innerHTML = `
     Selected line: ${header.innerHTML}<br>
     context_vars: ${context_vars.innerHTML}<br>
     context_formulas: ${context_formulas.innerHTML}<br>
+    premises: ${premises.innerHTML}<br>
     conclusions: ${conclusions.innerHTML}
   `;
 }
