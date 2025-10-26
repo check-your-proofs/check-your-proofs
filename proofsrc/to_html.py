@@ -18,6 +18,7 @@ HTML_TEMPLATE = """<!doctype html>
 <div class="controls">
   <button id="expandAll">Expand all</button>
   <button id="collapseAll">Collapse all</button>
+  <button id="toggleInfoPanel">Hide info (i)</button>
   <button id="toggleView">日本語 (Japanese)</button>
 </div>
 <div class="proof">

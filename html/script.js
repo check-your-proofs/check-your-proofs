@@ -4,6 +4,8 @@ const allHeaders = Array.from(document.querySelectorAll('.block-header'));
 let selectedIndex = 0;
 const toggleViewBtn = document.getElementById('toggleView');
 let currentView = 'syntax';
+const toggleInfoPanelBtn = document.getElementById('toggleInfoPanel');
+let infoVisible = true;
 
 function highlightBlock(blockElement) {
   // まず既存の selectedblock を解除
@@ -136,6 +138,11 @@ document.addEventListener('click', (e) => {
 
 let keyLocked = false;
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'i') {
+    toggleInfoPanel.click();
+    return;
+  }
+
   if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
   e.preventDefault(); // スクロールを止める
 
@@ -223,3 +230,18 @@ toggleViewBtn.addEventListener('click', () => {
   const header = allHeaders[selectedIndex];
   updateInfoPanel(header);
 });
+
+toggleInfoPanelBtn.addEventListener('click', () => {
+  const panel = document.querySelector('.info-panel');
+  if (infoVisible) {
+    panel.classList.remove('show-info')
+    panel.classList.add('hide-info')
+    toggleInfoPanel.textContent = 'Show info (i)'
+    infoVisible = false
+  } else {
+    panel.classList.remove('hide-info')
+    panel.classList.add('show-info')
+    toggleInfoPanel.textContent = 'Hide info (i)'
+    infoVisible = true
+  }
+})
