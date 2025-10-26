@@ -2,6 +2,8 @@
 const infoContent = document.getElementById('infoPanel');
 const allHeaders = Array.from(document.querySelectorAll('.block-header'));
 let selectedIndex = 0;
+const toggleViewBtn = document.getElementById('toggleView');
+let currentView = 'syntax';
 
 // 選択状態を更新する関数
 function selectHeader(index) {
@@ -16,6 +18,32 @@ function selectHeader(index) {
 
 // infoPanel を更新する関数
 function updateInfoPanel(header) {
+  let context_vars_label;
+  let context_formulas_label;
+  let premises_label;
+  let conclusions_label;
+  let local_vars_label;
+  let local_premise_label;
+  let local_conclusion_label;
+
+  if (currentView == "syntax") {
+    context_vars_label = "context_vars"
+    context_formulas_label = "context_formulas"
+    premises_label = "premises"
+    conclusions_label = "conclusions"
+    local_vars_label = "local_vars"
+    local_premise_label = "local_premise"
+    local_conclusion_label = "local_conclusion"
+  } else {
+    context_vars_label = "現在使える変数"
+    context_formulas_label = "現在使える論理式"
+    premises_label = "この文の前提"
+    conclusions_label = "この文の結論"
+    local_vars_label = "この文のブロック内に追加する変数"
+    local_premise_label = "この文のブロック内に追加する前提"
+    local_conclusion_label = "この文のブロック内で導く結論"
+  }
+
   const context_vars = header.nextElementSibling;
   const context_formulas = context_vars.nextElementSibling;
   const premises = context_formulas.nextElementSibling;
@@ -24,13 +52,13 @@ function updateInfoPanel(header) {
   const local_premise = local_vars.nextElementSibling;
   const local_conclusion = local_premise.nextElementSibling;
   infoContent.innerHTML = `
-    ${context_vars.innerHTML}<br>
-    ${context_formulas.innerHTML}<br>
-    ${premises.innerHTML}<br>
-    ${conclusions.innerHTML}<br>
-    ${local_vars.innerHTML}<br>
-    ${local_premise.innerHTML}<br>
-    ${local_conclusion.innerHTML}
+    ${context_vars_label}: ${context_vars.innerHTML}<br>
+    ${context_formulas_label}: ${context_formulas.innerHTML}<br>
+    ${premises_label}: ${premises.innerHTML}<br>
+    ${conclusions_label}: ${conclusions.innerHTML}<br>
+    ${local_vars_label}: ${local_vars.innerHTML}<br>
+    ${local_premise_label}: ${local_premise.innerHTML}<br>
+    ${local_conclusion_label}: ${local_conclusion.innerHTML}
   `;
 }
 
@@ -164,9 +192,6 @@ document.getElementById('collapseAll').addEventListener('click', () => {
   document.querySelectorAll('.toggle').forEach(b => b.textContent='▶');
 });
 
-const toggleViewBtn = document.getElementById('toggleView');
-let currentView = 'syntax';
-
 toggleViewBtn.addEventListener('click', () => {
   const proof = document.querySelector('.proof');
   if (currentView === 'syntax') {
@@ -180,4 +205,6 @@ toggleViewBtn.addEventListener('click', () => {
     toggleViewBtn.textContent = '日本語 (Japanese)';
     currentView = 'syntax';
   }
+  const header = allHeaders[selectedIndex];
+  updateInfoPanel(header);
 });
