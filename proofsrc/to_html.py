@@ -13,6 +13,7 @@ HTML_TEMPLATE = """<!doctype html>
 <body>
 <header>
   Rendered at {now_str}
+  {header_right}
 </header>
 <div class="controls">
   <button id="expandAll">Expand all</button>
@@ -26,7 +27,6 @@ HTML_TEMPLATE = """<!doctype html>
   <h3>Information</h3>
   <div id="infoContent">Please click a line to show its information.</div>
 </div>
-{footer}
 <script src="script.js"></script>
 </body>
 </html>
@@ -38,11 +38,11 @@ MATHJAX_HEAD = """
 <link rel="stylesheet" href="style_mathjax.css">
 """
 
-MATHJAX_FOOTER = """
-<footer style="font-size:0.8em; color:#666; margin-top:2rem;">
+MATHJAX_HEADER_RIGHT = """
+<div class="header-right">
   MathJax is used for rendering LaTeX math. Licensed under 
   <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License 2.0</a>.
-</footer>
+</div>
 """
 
 SVG_HEAD = """
@@ -491,13 +491,13 @@ def to_html(ast: list, context: Context, title: str, mode: str):
     body_html = "\n".join(parts)
     if mode == "mathjax":
         extra_head = MATHJAX_HEAD.format()
-        footer = MATHJAX_FOOTER
+        header_right = MATHJAX_HEADER_RIGHT
     elif mode == "svg":
         extra_head = SVG_HEAD.format()
-        footer = ""
+        header_right = ""
     else:
         raise Exception(f"Unexpected mode: {mode}")
-    return HTML_TEMPLATE.format(title=escape(title), now_str=now_str, extra_head=extra_head, body=body_html, footer=footer)
+    return HTML_TEMPLATE.format(title=escape(title), now_str=now_str, extra_head=extra_head, body=body_html, header_right=header_right)
 
 if __name__ == "__main__":
     import sys

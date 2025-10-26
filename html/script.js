@@ -24,7 +24,6 @@ function updateInfoPanel(header) {
   const local_premise = local_vars.nextElementSibling;
   const local_conclusion = local_premise.nextElementSibling;
   infoContent.innerHTML = `
-    Selected line: ${header.innerHTML}<br>
     ${context_vars.innerHTML}<br>
     ${context_formulas.innerHTML}<br>
     ${premises.innerHTML}<br>
