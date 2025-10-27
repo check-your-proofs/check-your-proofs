@@ -111,7 +111,7 @@ def alpha_equiv(e1, e2, context: Context, env: dict[Var, Var] | None = None) -> 
 
     return False
 
-def collect_quantifier_vars(e, quantifier_type: type[Forall] | type[Exists]) -> tuple[list[Var], object]:
+def collect_quantifier_vars(e, quantifier_type: type[Forall] | type[Exists] | type[ExistsUniq]) -> tuple[list[Var], object]:
     vars_ = []
     body = e
     while isinstance(body, quantifier_type):
