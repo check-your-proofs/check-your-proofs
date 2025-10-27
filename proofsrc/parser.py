@@ -11,8 +11,10 @@ class Parser:
         self.tokens = tokens
         self.pos = 0
 
-    def peek(self) -> Token | None:
-        return self.tokens[self.pos] if self.pos < len(self.tokens) else None
+    def peek(self) -> Token:
+        if self.pos >= len(self.tokens):
+            raise Exception("Unexpcted end of input")
+        return self.tokens[self.pos]
 
     def consume(self, expected_type: str | None = None) -> Token:
         tok = self.peek()
