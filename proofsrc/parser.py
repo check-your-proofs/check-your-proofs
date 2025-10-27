@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -25,7 +25,7 @@ class Parser:
         self.pos += 1
         return tok
 
-    def parse_file(self) -> list:
+    def parse_file(self) -> tuple[list, Context]:
         ast = []
         self.context = Context.init()
         while True:
@@ -494,7 +494,7 @@ class Parser:
         logger.debug(f"[equality] {type(equal)}: {equal.name}")
         return equality
 
-    def parse_term(self) -> Compound | Con | Var:
+    def parse_term(self) -> Term:
         tok = self.peek()
         if tok.type == "IDENT":
             name = self.consume("IDENT").value
