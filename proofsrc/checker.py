@@ -100,7 +100,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
     if isinstance(node, Any):
         for var in node.vars:
             if var in context.vars:
-                logger.error(f"{sp}❌ [Any] {pretty_expr(var)} is already used")
+                logger.error(f"{sp}❌ [Any] {pretty_expr(var, context)} is already used")
                 return False
         logger.debug(f"{sp}[Any] Taking {node.vars}")
         local_ctx = context.copy(list(context.vars + node.vars), list(context.formulas))
@@ -214,7 +214,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             return False
         for var in node.env.values():
             if var in context.vars:
-                logger.error(f"{sp}❌ [Some] {pretty_expr(var)} is already used")
+                logger.error(f"{sp}❌ [Some] {pretty_expr(var, context)} is already used")
         premise = substitute(body, node.env)
         logger.debug(f"{sp}[Some] Taking {node.env.values()}, premise={pretty_expr(premise, context)}")
         local_ctx = context.copy(list(context.vars + list(node.env.values())), list(context.formulas + [premise]))
