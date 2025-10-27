@@ -637,6 +637,8 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                     arity = node.equal.arity
                 elif isinstance(node.equal, DefPred):
                     arity = len(node.equal.args)
+                else:
+                    raise Exception("node.equal is not PrimPred or DefPred")
             else:
                 arity = context.primpreds[predicate].arity
             args_x = []
