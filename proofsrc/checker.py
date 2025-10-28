@@ -32,14 +32,6 @@ def check_ast(ast: list[Declaration]) -> tuple[bool, list[Declaration], Context]
 def check_proof(node: Declaration | Control, context: Context, indent: int = 0) -> bool:
     sp = "  " * indent
 
-    if isinstance(node, Control):
-        node.proofinfo = ProofInfo()
-        node.proofinfo.context_vars = deepcopy(context.vars)
-        node.proofinfo.context_formulas = deepcopy(context.formulas)
-        node.proofinfo.local_vars = []
-        node.proofinfo.local_premise = []
-        node.proofinfo.local_conclusion = []
-
     if isinstance(node, PrimPred):
         logger.debug(f"{sp}[PrimPred] type: {node.type}, name: {node.name}, arity: {node.arity}")
         context.primpreds[node.name] = node
@@ -66,33 +58,123 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [Theorem] {node.name} not proved: {pretty_expr(node.conclusion, context)}")
             return False
 
-    # --- Assume ---
-    if isinstance(node, Assume):
-        logger.debug(f"{sp}[Assume] premise={pretty_expr(node.premise, context)}")
-        local_ctx = context.copy(list(context.vars), list(context.formulas + [node.premise]))
-        for stmt in node.body:
-            if not check_proof(stmt, local_ctx, indent+1):
-                return False
-        if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
-            logger.error(f"{sp}❌ [Assume] Local context must extend the parent context")
-            return False
-        goal = local_ctx.formulas[-1]
-        logger.debug(f"{sp}[Assume] derived goal: {pretty_expr(goal, context)}")
-        if node.conclusion is not None:
-            if alpha_equiv_with_defs(node.conclusion, goal, context):
-                logger.debug(f"{sp}[Assume] Matched with conclusion: {pretty_expr(node.conclusion, context)}")
-            else:
-                logger.error(f"{sp}❌ [Assume] Not matched with conclusion: {pretty_expr(node.conclusion, context)}")
-                return False
-        implication = Implies(node.premise, goal)
-        node.proofinfo.premises = []
-        node.proofinfo.conclusions = [implication]
-        node.proofinfo.local_vars = []
-        node.proofinfo.local_premise = [node.premise]
-        node.proofinfo.local_conclusion = [goal]
-        add_conclusion(context, implication)
-        logger.debug(f"{sp}[Assume] Added implication {pretty_expr(implication, context)}")
+    if isinstance(node, DefPred):
+        logger.debug(f"{sp}[DefPred] name: {node.name}, args: {node.args}, formula: {pretty_expr(node.formula, context)}")
+        context.defpreds[node.name] = node
         return True
+
+    if isinstance(node, DefCon):
+        logger.debug(f"{sp}[DefCon] name: {node.name}, theorem: {node.theorem}")
+        context.defcons[node.name] = DefCon(node.name, node.theorem, node.tex, None, None)
+        existsuniq = context.theorems[node.theorem].conclusion
+        if not isinstance(existsuniq, ExistsUniq):
+            logger.error(f"{sp}❌ [DefCon] Theorem conclusion is not ExistsUniq object: {pretty_expr(existsuniq, context)}")
+            return False
+        logger.debug(f"{sp}[DefCon] Theorem conclusion is ExistsUniq object: {pretty_expr(existsuniq, context)}")
+        existence_formula = substitute(existsuniq.body, {existsuniq.var: Con(node.name)})
+        if not alpha_equiv_with_defs(node.existence.formula, existence_formula, context):
+            logger.error(f"{sp}❌ [DefCon] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula, context)}")
+            return False
+        logger.debug(f"{sp}[DefCon] existence_formula is matched with theorem: {pretty_expr(node.existence.formula, context)}")
+        var = fresh_var(existsuniq.var, [Con(node.name)])
+        body = substitute(existsuniq.body, {existsuniq.var: var})
+        if context.equality is None:
+            logger.error(f"{sp}❌ [DefCon] equality has not been declared yet")
+            return False
+        uniqueness_formula = Forall(var, Implies(body, Symbol(Pred(context.equality.equal.name), [var, Con(node.name)])))
+        if not alpha_equiv_with_defs(node.uniqueness.formula, uniqueness_formula, context):
+            logger.error(f"{sp}❌ [DefCon] uniqueness_formula is not matched with theorem: {pretty_expr(node.uniqueness.formula, context)}")
+            return False
+        logger.debug(f"{sp}[DefCon] uniqueness_formula is matched with theorem: {pretty_expr(node.uniqueness.formula, context)}")
+        context.defcons[node.name] = node
+        return True
+
+    if isinstance(node, DefFun):
+        logger.debug(f"{sp}[DefFun] name: {node.name}, theorem: {node.theorem}")
+        context.deffuns[node.name] = DefFun(node.name, node.arity, node.theorem, node.tex, None, None)
+        args, existsuniq = collect_quantifier_vars(context.theorems[node.theorem].conclusion, Forall)
+        if not isinstance(existsuniq, ExistsUniq):
+            logger.error(f"{sp}❌ [DefFun] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
+            return False
+        logger.debug(f"{sp}[DefFun] ExistsUniq object: {pretty_expr(existsuniq, context)}")
+        existence_formula = substitute(existsuniq.body, {existsuniq.var: Compound(Fun(node.name), args)})
+        for arg in reversed(args):
+            existence_formula = Forall(arg, existence_formula)
+        if not alpha_equiv_with_defs(node.existence.formula, existence_formula, context):
+            logger.error(f"{sp}❌ [DefFun] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula, context)}")
+            return False
+        logger.debug(f"{sp}[DefFun] existence_formula is matched with theorem: {pretty_expr(node.existence.formula, context)}")
+        if context.equality is None:
+            logger.error(f"{sp}❌ [DefFun] equality has not been declared yet")
+            return False
+        uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(Pred(context.equality.equal.name), [existsuniq.var, Compound(Fun(node.name), args)])))
+        for arg in reversed(args):
+            uniqueness_formula = Forall(arg, uniqueness_formula)
+        if not alpha_equiv_with_defs(node.uniqueness.formula, uniqueness_formula, context):
+            logger.error(f"{sp}❌ [DefFun] uniqueness_formula is not matched with theorem: {pretty_expr(node.uniqueness.formula, context)}")
+            return False
+        logger.debug(f"{sp}[DefFun] uniqueness_formula is matched with theorem: {pretty_expr(node.uniqueness.formula, context)}")
+        context.deffuns[node.name] = node
+        return True
+
+    if isinstance(node, DefFunTerm):
+        logger.debug(f"{sp}[DefFunTerm] name: {node.name}, args: {node.args}, term: {pretty_expr(node.term, context)}")
+        free, _ = collect_vars(node.term)
+        if set(node.args) != set(free):
+            logger.error(f"{sp}❌ [DefFunTerm] args are not matched with free vars: {free}")
+            return False
+        logger.debug(f"{sp}[DefFunTerm] args are mathced with free vars of term: {free}")
+        context.deffunterms[node.name] = node
+        return True
+
+    if isinstance(node, Equality):
+        logger.debug(f"{sp}[Equality] name: {node.equal.name}")
+        logger.debug(f"{sp}[Equality] Checking {node.equal.name} reflection theorem: {pretty_expr(node.reflection.evidence.conclusion, context)}")
+        reflection = Forall(Var("x"), Symbol(Pred(node.equal.name), [Var("x"), Var("x")]))
+        if not alpha_equiv_with_defs(node.reflection.evidence.conclusion, reflection, context):
+            logger.error(f"{sp}❌ [Equality] Not matched with expected formula: {pretty_expr(reflection, context)}")
+            return False
+        logger.debug(f"{sp}[Equality] Matched with expected formula: {pretty_expr(reflection, context)}")
+        for predicate in node.replacement.evidence:
+            logger.debug(f"{sp}[Equality] Checking {predicate} replacement theorem: {pretty_expr(node.replacement.evidence[predicate].conclusion, context)}")
+            if predicate == node.equal.name:
+                if isinstance(node.equal, PrimPred):
+                    arity = node.equal.arity
+                elif isinstance(node.equal, DefPred):
+                    arity = len(node.equal.args)
+                else:
+                    raise Exception("node.equal is not PrimPred or DefPred")
+            else:
+                arity = context.primpreds[predicate].arity
+            args_x = []
+            args_y = []
+            for i in range(arity):
+                args_x.append(Var(f"x_{i}"))
+                args_y.append(Var(f"y_{i}"))
+            premise = Symbol(Pred(node.equal.name), [args_x[0], args_y[0]])
+            for i in range(1, arity):
+                premise = And(premise, Symbol(Pred(node.equal.name), [args_x[i], args_y[i]]))
+            conclusion = Implies(Symbol(Pred(predicate), args_x), Symbol(Pred(predicate), args_y))
+            replacement = Implies(premise, conclusion)
+            for arg in reversed(args_y):
+                replacement = Forall(arg, replacement)
+            for arg in reversed(args_x):
+                replacement = Forall(arg, replacement)
+            if not alpha_equiv_with_defs(node.replacement.evidence[predicate].conclusion, replacement, context):
+                logger.error(f"{sp}❌ [Equality] Not matched with expected formula: {pretty_expr(replacement, context)}")
+                return False
+            logger.debug(f"{sp}[Equality] Matched with expected formula: {pretty_expr(replacement, context)}")
+        context.equality = node
+        logger.debug(f"{sp}[Equality] {node.equal.name} is registered as equality")
+        return True
+
+    if isinstance(node, Control):
+        node.proofinfo = ProofInfo()
+        node.proofinfo.context_vars = deepcopy(context.vars)
+        node.proofinfo.context_formulas = deepcopy(context.formulas)
+        node.proofinfo.local_vars = []
+        node.proofinfo.local_premise = []
+        node.proofinfo.local_conclusion = []
 
     # --- Any ---
     if isinstance(node, Any):
@@ -125,6 +207,34 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
         node.proofinfo.local_conclusion = [local_ctx.formulas[-1]]
         add_conclusion(context, goal)
         logger.debug(f"{sp}[Any] Generalized to {pretty_expr(goal, context)}")
+        return True
+
+    # --- Assume ---
+    if isinstance(node, Assume):
+        logger.debug(f"{sp}[Assume] premise={pretty_expr(node.premise, context)}")
+        local_ctx = context.copy(list(context.vars), list(context.formulas + [node.premise]))
+        for stmt in node.body:
+            if not check_proof(stmt, local_ctx, indent+1):
+                return False
+        if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
+            logger.error(f"{sp}❌ [Assume] Local context must extend the parent context")
+            return False
+        goal = local_ctx.formulas[-1]
+        logger.debug(f"{sp}[Assume] derived goal: {pretty_expr(goal, context)}")
+        if node.conclusion is not None:
+            if alpha_equiv_with_defs(node.conclusion, goal, context):
+                logger.debug(f"{sp}[Assume] Matched with conclusion: {pretty_expr(node.conclusion, context)}")
+            else:
+                logger.error(f"{sp}❌ [Assume] Not matched with conclusion: {pretty_expr(node.conclusion, context)}")
+                return False
+        implication = Implies(node.premise, goal)
+        node.proofinfo.premises = []
+        node.proofinfo.conclusions = [implication]
+        node.proofinfo.local_vars = []
+        node.proofinfo.local_premise = [node.premise]
+        node.proofinfo.local_conclusion = [goal]
+        add_conclusion(context, implication)
+        logger.debug(f"{sp}[Assume] Added implication {pretty_expr(implication, context)}")
         return True
 
     if isinstance(node, Divide):
@@ -535,116 +645,6 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
         node.proofinfo.local_conclusion = [goal]
         add_conclusion(context, goal)
         logger.debug(f"{sp}[Show] Added {pretty_expr(goal, context)}")
-        return True
-
-    if isinstance(node, DefPred):
-        logger.debug(f"{sp}[DefPred] name: {node.name}, args: {node.args}, formula: {pretty_expr(node.formula, context)}")
-        context.defpreds[node.name] = node
-        return True
-
-    if isinstance(node, DefCon):
-        logger.debug(f"{sp}[DefCon] name: {node.name}, theorem: {node.theorem}")
-        context.defcons[node.name] = DefCon(node.name, node.theorem, node.tex, None, None)
-        existsuniq = context.theorems[node.theorem].conclusion
-        if not isinstance(existsuniq, ExistsUniq):
-            logger.error(f"{sp}❌ [DefCon] Theorem conclusion is not ExistsUniq object: {pretty_expr(existsuniq, context)}")
-            return False
-        logger.debug(f"{sp}[DefCon] Theorem conclusion is ExistsUniq object: {pretty_expr(existsuniq, context)}")
-        existence_formula = substitute(existsuniq.body, {existsuniq.var: Con(node.name)})
-        if not alpha_equiv_with_defs(node.existence.formula, existence_formula, context):
-            logger.error(f"{sp}❌ [DefCon] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula, context)}")
-            return False
-        logger.debug(f"{sp}[DefCon] existence_formula is matched with theorem: {pretty_expr(node.existence.formula, context)}")
-        var = fresh_var(existsuniq.var, [Con(node.name)])
-        body = substitute(existsuniq.body, {existsuniq.var: var})
-        if context.equality is None:
-            logger.error(f"{sp}❌ [DefCon] equality has not been declared yet")
-            return False
-        uniqueness_formula = Forall(var, Implies(body, Symbol(Pred(context.equality.equal.name), [var, Con(node.name)])))
-        if not alpha_equiv_with_defs(node.uniqueness.formula, uniqueness_formula, context):
-            logger.error(f"{sp}❌ [DefCon] uniqueness_formula is not matched with theorem: {pretty_expr(node.uniqueness.formula, context)}")
-            return False
-        logger.debug(f"{sp}[DefCon] uniqueness_formula is matched with theorem: {pretty_expr(node.uniqueness.formula, context)}")
-        context.defcons[node.name] = node
-        return True
-
-    if isinstance(node, DefFun):
-        logger.debug(f"{sp}[DefFun] name: {node.name}, theorem: {node.theorem}")
-        context.deffuns[node.name] = DefFun(node.name, node.arity, node.theorem, node.tex, None, None)
-        args, existsuniq = collect_quantifier_vars(context.theorems[node.theorem].conclusion, Forall)
-        if not isinstance(existsuniq, ExistsUniq):
-            logger.error(f"{sp}❌ [DefFun] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
-            return False
-        logger.debug(f"{sp}[DefFun] ExistsUniq object: {pretty_expr(existsuniq, context)}")
-        existence_formula = substitute(existsuniq.body, {existsuniq.var: Compound(Fun(node.name), args)})
-        for arg in reversed(args):
-            existence_formula = Forall(arg, existence_formula)
-        if not alpha_equiv_with_defs(node.existence.formula, existence_formula, context):
-            logger.error(f"{sp}❌ [DefFun] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula, context)}")
-            return False
-        logger.debug(f"{sp}[DefFun] existence_formula is matched with theorem: {pretty_expr(node.existence.formula, context)}")
-        if context.equality is None:
-            logger.error(f"{sp}❌ [DefFun] equality has not been declared yet")
-            return False
-        uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(Pred(context.equality.equal.name), [existsuniq.var, Compound(Fun(node.name), args)])))
-        for arg in reversed(args):
-            uniqueness_formula = Forall(arg, uniqueness_formula)
-        if not alpha_equiv_with_defs(node.uniqueness.formula, uniqueness_formula, context):
-            logger.error(f"{sp}❌ [DefFun] uniqueness_formula is not matched with theorem: {pretty_expr(node.uniqueness.formula, context)}")
-            return False
-        logger.debug(f"{sp}[DefFun] uniqueness_formula is matched with theorem: {pretty_expr(node.uniqueness.formula, context)}")
-        context.deffuns[node.name] = node
-        return True
-
-    if isinstance(node, DefFunTerm):
-        logger.debug(f"{sp}[DefFunTerm] name: {node.name}, args: {node.args}, term: {pretty_expr(node.term, context)}")
-        free, _ = collect_vars(node.term)
-        if set(node.args) != set(free):
-            logger.error(f"{sp}❌ [DefFunTerm] args are not matched with free vars: {free}")
-            return False
-        logger.debug(f"{sp}[DefFunTerm] args are mathced with free vars of term: {free}")
-        context.deffunterms[node.name] = node
-        return True
-
-    if isinstance(node, Equality):
-        logger.debug(f"{sp}[Equality] name: {node.equal.name}")
-        logger.debug(f"{sp}[Equality] Checking {node.equal.name} reflection theorem: {pretty_expr(node.reflection.evidence.conclusion, context)}")
-        reflection = Forall(Var("x"), Symbol(Pred(node.equal.name), [Var("x"), Var("x")]))
-        if not alpha_equiv_with_defs(node.reflection.evidence.conclusion, reflection, context):
-            logger.error(f"{sp}❌ [Equality] Not matched with expected formula: {pretty_expr(reflection, context)}")
-            return False
-        logger.debug(f"{sp}[Equality] Matched with expected formula: {pretty_expr(reflection, context)}")
-        for predicate in node.replacement.evidence:
-            logger.debug(f"{sp}[Equality] Checking {predicate} replacement theorem: {pretty_expr(node.replacement.evidence[predicate].conclusion, context)}")
-            if predicate == node.equal.name:
-                if isinstance(node.equal, PrimPred):
-                    arity = node.equal.arity
-                elif isinstance(node.equal, DefPred):
-                    arity = len(node.equal.args)
-                else:
-                    raise Exception("node.equal is not PrimPred or DefPred")
-            else:
-                arity = context.primpreds[predicate].arity
-            args_x = []
-            args_y = []
-            for i in range(arity):
-                args_x.append(Var(f"x_{i}"))
-                args_y.append(Var(f"y_{i}"))
-            premise = Symbol(Pred(node.equal.name), [args_x[0], args_y[0]])
-            for i in range(1, arity):
-                premise = And(premise, Symbol(Pred(node.equal.name), [args_x[i], args_y[i]]))
-            conclusion = Implies(Symbol(Pred(predicate), args_x), Symbol(Pred(predicate), args_y))
-            replacement = Implies(premise, conclusion)
-            for arg in reversed(args_y):
-                replacement = Forall(arg, replacement)
-            for arg in reversed(args_x):
-                replacement = Forall(arg, replacement)
-            if not alpha_equiv_with_defs(node.replacement.evidence[predicate].conclusion, replacement, context):
-                logger.error(f"{sp}❌ [Equality] Not matched with expected formula: {pretty_expr(replacement, context)}")
-                return False
-            logger.debug(f"{sp}[Equality] Matched with expected formula: {pretty_expr(replacement, context)}")
-        context.equality = node
-        logger.debug(f"{sp}[Equality] {node.equal.name} is registered as equality")
         return True
 
     logger.error(f"{sp}❌ Unsupported node {node}")
