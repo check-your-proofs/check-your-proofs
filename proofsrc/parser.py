@@ -64,17 +64,6 @@ class Parser:
         else:
             raise SyntaxError(f"Unexpected token {tok}")
 
-    def parse_tex(self) -> list[str]:
-        self.consume("TEX")
-        tex = []
-        while True:
-            tex.append(self.consume("STRING").value)
-            if self.peek().type == "COMMA":
-                self.consume("COMMA")
-            else:
-                break
-        return tex
-
     def parse_axiom(self) -> Axiom:
         self.consume("AXIOM")
         name = self.consume("IDENT").value
@@ -95,6 +84,145 @@ class Parser:
         self.context.theorems[name] = theorem
         logger.debug(f"[theorem] {name}")
         return theorem
+
+    def parse_definition(self) -> DefPred | DefCon | DefFun | DefFunTerm:
+        self.consume("DEFINITION")
+        tok = self.peek()
+        if tok.type == "PREDICATE":
+            self.consume("PREDICATE")
+            if self.peek().type == "AUTOEXPAND":
+                self.consume("AUTOEXPAND")
+                autoexpand = True
+            else:
+                autoexpand =False
+            name = self.consume("IDENT").value
+            self.consume("LPAREN")
+            args = [Var(self.consume("IDENT").value)]
+            while self.peek().type == "COMMA":
+                self.consume("COMMA")
+                args.append(Var(self.consume("IDENT").value))
+            self.consume("RPAREN")
+            self.consume("AS")
+            formula = self.parse_formula()
+            tex = self.parse_tex()
+            if len(tex) != len(args) + 1:
+                raise SyntaxError("arity is different")
+            defpred = DefPred(name=name, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
+            self.context.defpreds[name] = defpred
+            logger.debug(f"[defpred] {name}")
+            return defpred
+        elif tok.type == "CONSTANT":
+            self.consume("CONSTANT")
+            name = self.consume("IDENT").value
+            self.consume("BY")
+            theorem = self.consume("IDENT").value
+            tex = self.parse_tex()
+            if len(tex) != 1:
+                raise SyntaxError("arity is different")
+            self.context.defcons[name] = DefCon(name=name, theorem=theorem, tex=tex, existence=None, uniqueness=None)
+            self.consume("EXISTENCE")
+            existence_name = self.consume("IDENT").value
+            existence_formula = self.parse_formula()
+            existence = DefConExist(name=existence_name, formula=existence_formula)
+            self.consume("UNIQUENESS")
+            uniqueness_name = self.consume("IDENT").value
+            uniqueness_formula = self.parse_formula()
+            uniqueness = DefConUniq(name=uniqueness_name, formula=uniqueness_formula)
+            defcon = DefCon(name=name, theorem=theorem, tex=tex, existence=existence, uniqueness=uniqueness)
+            self.context.defcons[name] = defcon
+            logger.debug(f"[defcon] {name}")
+            return defcon
+        elif tok.type == "FUNCTION":
+            self.consume("FUNCTION")
+            name = self.consume("IDENT").value
+            if self.peek().type == "BY":
+                self.consume("BY")
+                theorem = self.consume("IDENT").value
+                vars_, body = collect_quantifier_vars(self.context.theorems[theorem].conclusion, Forall)
+                if not (len(vars_) > 0 and isinstance(body, ExistsUniq)):
+                    raise SyntaxError(f"theorem cannot be used for function definition: {theorem}")
+                arity = len(vars_)
+                tex = self.parse_tex()
+                if len(tex) != arity + 1:
+                    raise SyntaxError("arity is different")
+                self.context.deffuns[name] = DefFun(name=name, arity=arity, theorem=theorem, tex=tex, existence=None, uniqueness=None)
+                self.consume("EXISTENCE")
+                existence_name = self.consume("IDENT").value
+                existence_formula = self.parse_formula()
+                existence = DefFunExist(name=existence_name, formula=existence_formula)
+                self.consume("UNIQUENESS")
+                uniqueness_name = self.consume("IDENT").value
+                uniqueness_formula = self.parse_formula()
+                uniqueness = DefFunUniq(name=uniqueness_name, formula=uniqueness_formula)
+                deffun = DefFun(name=name, arity=arity, theorem=theorem, tex=tex, existence=existence, uniqueness=uniqueness)
+                self.context.deffuns[name] = deffun
+                logger.debug(f"[deffun] {name}")
+                return deffun
+            else:
+                self.consume("LPAREN")
+                args = [Var(self.consume("IDENT").value)]
+                while self.peek().type == "COMMA":
+                    self.consume("COMMA")
+                    args.append(Var(self.consume("IDENT").value))
+                self.consume("RPAREN")
+                self.consume("AS")
+                term = self.parse_term()
+                tex = self.parse_tex()
+                if len(tex) != len(args) + 1:
+                    raise SyntaxError("arity is different")
+                deffunterm = DefFunTerm(name=name, args=args, term=term, tex=tex)
+                self.context.deffunterms[name] = deffunterm
+                logger.debug(f"[deffunterm] {name}")
+                return deffunterm
+        else:
+            raise SyntaxError(f"Unexpected token {tok}")
+
+    def parse_equality(self) -> Equality:
+        self.consume("EQUALITY")
+        name = self.consume("IDENT").value
+        if name in self.context.primpreds:
+            equal = self.context.primpreds[name]
+            if equal.arity != 2:
+                raise Exception(f"arity of primpred {name} is not 2")
+        elif name in self.context.defpreds:
+            equal = self.context.defpreds[name]
+            if len(equal.args) != 2:
+                raise Exception(f"arity of defpred {name} is not 2")
+        else:
+            raise Exception(f"{name} is not primpred or defpred")
+        self.consume("REFLECTION")
+        name = self.consume("IDENT").value
+        if name in self.context.axioms:
+            reflection_evidence = self.context.axioms[name]
+        elif name in self.context.theorems:
+            reflection_evidence = self.context.theorems[name]
+        else:
+            raise Exception(f"{name} is not axiom or theorem")
+        reflection = EqualityReflection(evidence=reflection_evidence)
+        self.consume("REPLACEMENT")
+        replacement_evidence = {}
+        while True:
+            predicate = self.consume("IDENT").value
+            if not (predicate == equal.name or predicate in self.context.primpreds):
+                raise Exception(f"{predicate} is not {equal.name} or primpred")
+            self.consume("COLON")
+            name = self.consume("IDENT").value
+            if name in self.context.axioms:
+                formula = self.context.axioms[name]
+            elif name in self.context.theorems:
+                formula = self.context.theorems[name]
+            else:
+                raise Exception(f"{name} is not axiom or theorem")
+            replacement_evidence[predicate] = formula
+            if self.peek().type == "COMMA":
+                self.consume("COMMA")
+            else:
+                break
+        replacement = EqualityReplacement(replacement_evidence)
+        equality = Equality(equal=equal, reflection=reflection, replacement=replacement)
+        self.context.equality = equality
+        logger.debug(f"[equality] {type(equal)}: {equal.name}")
+        return equality
 
     def parse_block(self) -> list[Control]:
         body = []
@@ -367,170 +495,45 @@ class Parser:
         self.consume("RBRACE")
         return Show(conclusion=conclusion, body=body)
 
-    def parse_definition(self) -> DefPred | DefCon | DefFun | DefFunTerm:
-        self.consume("DEFINITION")
-        tok = self.peek()
-        if tok.type == "PREDICATE":
-            self.consume("PREDICATE")
-            if self.peek().type == "AUTOEXPAND":
-                self.consume("AUTOEXPAND")
-                autoexpand = True
-            else:
-                autoexpand =False
-            name = self.consume("IDENT").value
-            self.consume("LPAREN")
-            args = [Var(self.consume("IDENT").value)]
-            while self.peek().type == "COMMA":
-                self.consume("COMMA")
-                args.append(Var(self.consume("IDENT").value))
-            self.consume("RPAREN")
-            self.consume("AS")
-            formula = self.parse_formula()
-            tex = self.parse_tex()
-            if len(tex) != len(args) + 1:
-                raise SyntaxError("arity is different")
-            defpred = DefPred(name=name, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
-            self.context.defpreds[name] = defpred
-            logger.debug(f"[defpred] {name}")
-            return defpred
-        elif tok.type == "CONSTANT":
-            self.consume("CONSTANT")
-            name = self.consume("IDENT").value
-            self.consume("BY")
-            theorem = self.consume("IDENT").value
-            tex = self.parse_tex()
-            if len(tex) != 1:
-                raise SyntaxError("arity is different")
-            self.context.defcons[name] = DefCon(name=name, theorem=theorem, tex=tex, existence=None, uniqueness=None)
-            self.consume("EXISTENCE")
-            existence_name = self.consume("IDENT").value
-            existence_formula = self.parse_formula()
-            existence = DefConExist(name=existence_name, formula=existence_formula)
-            self.consume("UNIQUENESS")
-            uniqueness_name = self.consume("IDENT").value
-            uniqueness_formula = self.parse_formula()
-            uniqueness = DefConUniq(name=uniqueness_name, formula=uniqueness_formula)
-            defcon = DefCon(name=name, theorem=theorem, tex=tex, existence=existence, uniqueness=uniqueness)
-            self.context.defcons[name] = defcon
-            logger.debug(f"[defcon] {name}")
-            return defcon
-        elif tok.type == "FUNCTION":
-            self.consume("FUNCTION")
-            name = self.consume("IDENT").value
-            if self.peek().type == "BY":
-                self.consume("BY")
-                theorem = self.consume("IDENT").value
-                vars_, body = collect_quantifier_vars(self.context.theorems[theorem].conclusion, Forall)
-                if not (len(vars_) > 0 and isinstance(body, ExistsUniq)):
-                    raise SyntaxError(f"theorem cannot be used for function definition: {theorem}")
-                arity = len(vars_)
-                tex = self.parse_tex()
-                if len(tex) != arity + 1:
-                    raise SyntaxError("arity is different")
-                self.context.deffuns[name] = DefFun(name=name, arity=arity, theorem=theorem, tex=tex, existence=None, uniqueness=None)
-                self.consume("EXISTENCE")
-                existence_name = self.consume("IDENT").value
-                existence_formula = self.parse_formula()
-                existence = DefFunExist(name=existence_name, formula=existence_formula)
-                self.consume("UNIQUENESS")
-                uniqueness_name = self.consume("IDENT").value
-                uniqueness_formula = self.parse_formula()
-                uniqueness = DefFunUniq(name=uniqueness_name, formula=uniqueness_formula)
-                deffun = DefFun(name=name, arity=arity, theorem=theorem, tex=tex, existence=existence, uniqueness=uniqueness)
-                self.context.deffuns[name] = deffun
-                logger.debug(f"[deffun] {name}")
-                return deffun
-            else:
-                self.consume("LPAREN")
-                args = [Var(self.consume("IDENT").value)]
-                while self.peek().type == "COMMA":
-                    self.consume("COMMA")
-                    args.append(Var(self.consume("IDENT").value))
-                self.consume("RPAREN")
-                self.consume("AS")
-                term = self.parse_term()
-                tex = self.parse_tex()
-                if len(tex) != len(args) + 1:
-                    raise SyntaxError("arity is different")
-                deffunterm = DefFunTerm(name=name, args=args, term=term, tex=tex)
-                self.context.deffunterms[name] = deffunterm
-                logger.debug(f"[deffunterm] {name}")
-                return deffunterm
+    def parse_reference_or_formula(self) -> str | Formula:
+        if self.peek().type == "IDENT" and self.context.has_reference(self.peek().value):
+            return self.consume("IDENT").value
         else:
-            raise SyntaxError(f"Unexpected token {tok}")
+            return self.parse_formula()
 
-    def parse_equality(self) -> Equality:
-        self.consume("EQUALITY")
-        name = self.consume("IDENT").value
-        if name in self.context.primpreds:
-            equal = self.context.primpreds[name]
-            if equal.arity != 2:
-                raise Exception(f"arity of primpred {name} is not 2")
-        elif name in self.context.defpreds:
-            equal = self.context.defpreds[name]
-            if len(equal.args) != 2:
-                raise Exception(f"arity of defpred {name} is not 2")
+    def parse_bot_or_formula(self) -> Bottom | Formula:
+        if self.peek().type == "BOT":
+            self.consume("BOT")
+            return Bottom()
         else:
-            raise Exception(f"{name} is not primpred or defpred")
-        self.consume("REFLECTION")
-        name = self.consume("IDENT").value
-        if name in self.context.axioms:
-            reflection_evidence = self.context.axioms[name]
-        elif name in self.context.theorems:
-            reflection_evidence = self.context.theorems[name]
-        else:
-            raise Exception(f"{name} is not axiom or theorem")
-        reflection = EqualityReflection(evidence=reflection_evidence)
-        self.consume("REPLACEMENT")
-        replacement_evidence = {}
-        while True:
-            predicate = self.consume("IDENT").value
-            if not (predicate == equal.name or predicate in self.context.primpreds):
-                raise Exception(f"{predicate} is not {equal.name} or primpred")
-            self.consume("COLON")
-            name = self.consume("IDENT").value
-            if name in self.context.axioms:
-                formula = self.context.axioms[name]
-            elif name in self.context.theorems:
-                formula = self.context.theorems[name]
-            else:
-                raise Exception(f"{name} is not axiom or theorem")
-            replacement_evidence[predicate] = formula
-            if self.peek().type == "COMMA":
-                self.consume("COMMA")
-            else:
-                break
-        replacement = EqualityReplacement(replacement_evidence)
-        equality = Equality(equal=equal, reflection=reflection, replacement=replacement)
-        self.context.equality = equality
-        logger.debug(f"[equality] {type(equal)}: {equal.name}")
-        return equality
+            return self.parse_formula()
 
-    def parse_term(self) -> Term:
-        tok = self.peek()
-        if tok.type == "IDENT":
-            name = self.consume("IDENT").value
-            if self.peek().type == "LPAREN":
-                if not (name in self.context.deffuns or name in self.context.deffunterms):
-                    raise SyntaxError(f"Unexpected token (fun): {tok}")
-                self.consume("LPAREN")
-                args = [self.parse_term()]
-                while self.peek().type == "COMMA":
-                    self.consume("COMMA")
-                    args.append(self.parse_term())
-                self.consume("RPAREN")
-                args = tuple(args)
-                if name in self.context.deffuns and len(args) != self.context.deffuns[name].arity:
-                    raise SyntaxError("arity is different (deffun)")
-                if name in self.context.deffunterms and len(args) != len(self.context.deffunterms[name].args):
-                    raise SyntaxError("arity is different (deffunterm)")
-                return Compound(Fun(name), args)
-            elif name in self.context.defcons:
-                return Con(name)
-            else:
-                return Var(name)
-        else:
-            raise SyntaxError(f"Unexpected token: {tok}")
+    def parse_formula(self) -> Formula:
+        return self.parse_implies()
+
+    def parse_implies(self) -> Formula:
+        left = self.parse_and()
+        while self.peek() is not None and self.peek().type in ("IMPLIES", "IFF"):
+            op = self.peek().type
+            self.consume(op)
+            right = self.parse_and()
+            if op == "IMPLIES":
+                left = Implies(left, right)
+            elif op == "IFF":
+                left = Iff(left, right)
+        return left
+
+    def parse_and(self) -> Formula:
+        left = self.parse_primary()
+        while self.peek() is not None and self.peek().type in ("AND", "OR"):
+            op = self.peek().type
+            self.consume(op)
+            right = self.parse_primary()
+            if op == "AND":
+                left = And(left, right)
+            elif op == "OR":
+                left = Or(left, right)
+        return left
 
     def parse_primary(self) -> Formula:
         tok = self.peek()
@@ -587,45 +590,42 @@ class Parser:
         else:
             raise SyntaxError(f"Unexpected token: {tok}")
 
-    def parse_reference_or_formula(self) -> str | Formula:
-        if self.peek().type == "IDENT" and self.context.has_reference(self.peek().value):
-            return self.consume("IDENT").value
+    def parse_term(self) -> Term:
+        tok = self.peek()
+        if tok.type == "IDENT":
+            name = self.consume("IDENT").value
+            if self.peek().type == "LPAREN":
+                if not (name in self.context.deffuns or name in self.context.deffunterms):
+                    raise SyntaxError(f"Unexpected token (fun): {tok}")
+                self.consume("LPAREN")
+                args = [self.parse_term()]
+                while self.peek().type == "COMMA":
+                    self.consume("COMMA")
+                    args.append(self.parse_term())
+                self.consume("RPAREN")
+                args = tuple(args)
+                if name in self.context.deffuns and len(args) != self.context.deffuns[name].arity:
+                    raise SyntaxError("arity is different (deffun)")
+                if name in self.context.deffunterms and len(args) != len(self.context.deffunterms[name].args):
+                    raise SyntaxError("arity is different (deffunterm)")
+                return Compound(Fun(name), args)
+            elif name in self.context.defcons:
+                return Con(name)
+            else:
+                return Var(name)
         else:
-            return self.parse_formula()
+            raise SyntaxError(f"Unexpected token: {tok}")
 
-    def parse_bot_or_formula(self) -> Bottom | Formula:
-        if self.peek().type == "BOT":
-            self.consume("BOT")
-            return Bottom()
-        else:
-            return self.parse_formula()
-
-    def parse_formula(self) -> Formula:
-        return self.parse_implies()
-
-    def parse_implies(self) -> Formula:
-        left = self.parse_and()
-        while self.peek() is not None and self.peek().type in ("IMPLIES", "IFF"):
-            op = self.peek().type
-            self.consume(op)
-            right = self.parse_and()
-            if op == "IMPLIES":
-                left = Implies(left, right)
-            elif op == "IFF":
-                left = Iff(left, right)
-        return left
-
-    def parse_and(self) -> Formula:
-        left = self.parse_primary()
-        while self.peek() is not None and self.peek().type in ("AND", "OR"):
-            op = self.peek().type
-            self.consume(op)
-            right = self.parse_primary()
-            if op == "AND":
-                left = And(left, right)
-            elif op == "OR":
-                left = Or(left, right)
-        return left
+    def parse_tex(self) -> list[str]:
+        self.consume("TEX")
+        tex = []
+        while True:
+            tex.append(self.consume("STRING").value)
+            if self.peek().type == "COMMA":
+                self.consume("COMMA")
+            else:
+                break
+        return tex
 
 if __name__ == "__main__":
     import sys
