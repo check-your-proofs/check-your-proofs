@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, pretty_expr
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, pretty_expr
 from svg import output_svg
 
 HTML_TEMPLATE = """<!doctype html>
@@ -56,16 +56,16 @@ def render_keyword(keyword: str) -> str:
 def render_identifier(name: str) -> str:
     return f"<span class='identifier'>{escape(name)}</span>"
 
-def render_expr_mathjax(node, context: Context) -> str:
+def render_expr_mathjax(node: str | Bottom | Formula | Term, context: Context) -> str:
     if isinstance(node, str):
         return render_identifier(node)
     else:
         return escape(f"\\({pretty_expr(node, context)}\\)")
 
-def render_expr_list_mathjax(expr_list: list, context: Context) -> str:
+def render_expr_list_mathjax(expr_list: list[str | Bottom | Formula | Term], context: Context) -> str:
     return ",".join(render_expr_mathjax(expr, context) for expr in expr_list)
 
-def render_expr_dict_mathjax(expr_dict: dict, context: Context) -> str:
+def render_expr_dict_mathjax(expr_dict: dict[Term, Term], context: Context) -> str:
     parts = [f"{render_expr_mathjax(k, context)}:{render_expr_mathjax(v, context)}" for k, v in expr_dict.items()]
     return ",".join(parts)
 
@@ -75,7 +75,7 @@ def render_tex_mathjax(tex: list[str]):
 def img_tag(svg_path: str, latex_code: str) -> str:
     return f"<img src='{escape(svg_path)}' alt='{escape(latex_code)}'>"
 
-def render_expr_svg(node, context: Context) -> str:
+def render_expr_svg(node: str | Bottom | Formula | Term, context: Context) -> str:
     if isinstance(node, str):
         return render_identifier(node)
     else:
@@ -83,10 +83,10 @@ def render_expr_svg(node, context: Context) -> str:
         svg_path = output_svg(latex_code)
         return img_tag(svg_path, latex_code)
 
-def render_expr_list_svg(expr_list: list, context: Context) -> str:
+def render_expr_list_svg(expr_list: list[str | Bottom | Formula | Term], context: Context) -> str:
     return ",".join((render_expr_svg(expr, context) for expr in expr_list))
 
-def render_expr_dict_svg(expr_dict: dict, context: Context) -> str:
+def render_expr_dict_svg(expr_dict: dict[Term, Term], context: Context) -> str:
     parts = [f"{render_expr_svg(k, context)}:{render_expr_svg(v, context)}" for k, v in expr_dict.items()]
     return f"{",".join(parts)}"
 
@@ -95,7 +95,7 @@ def render_tex_svg(tex: list[str]):
     svg_path = output_svg(latex_code)
     return img_tag(svg_path, latex_code)
 
-def render_node(node, context: Context, mode: str) -> str:
+def render_node(node: Declaration | Control, context: Context, mode: str) -> str:
     if mode == "mathjax":
         render_expr = render_expr_mathjax
         render_expr_list = render_expr_list_mathjax
@@ -483,7 +483,7 @@ def render_node(node, context: Context, mode: str) -> str:
     local_conclusion_html = f"<div class='local_conclusion' hidden>{local_conclusion}</div>"
     return f"  <div class='block'>{header_html}{context_vars_html}{context_formulas_html}{premises_html}{conclusions_html}{local_vars_html}{local_premise_html}{local_conclusion_html}{content_html}</div>"
 
-def to_html(ast: list, context: Context, title: str, mode: str):
+def to_html(ast: list[Declaration], context: Context, title: str, mode: str):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     parts = []
     for i, node in enumerate(ast):
