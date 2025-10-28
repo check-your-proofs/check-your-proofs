@@ -3,18 +3,293 @@ from dataclasses import dataclass, field
 import logging
 logger = logging.getLogger("proof")
 
+@dataclass(frozen=True)
+class Term():
+    pass
+
+@dataclass(frozen=True)
+class Fun:
+    name: str
+
+@dataclass(frozen=True)
+class Compound(Term):
+    fun: Fun
+    args: tuple[Term, ...]
+
+@dataclass(frozen=True)
+class Con(Term):
+    name: str
+
+@dataclass(frozen=True)
+class Var(Term):
+    name: str
+
+@dataclass
+class Formula:
+    pass
+
+@dataclass
+class Pred:
+    name: str
+
+@dataclass
+class Symbol(Formula):
+    pred: Pred
+    args: list[Term]
+
+@dataclass
+class Forall(Formula):
+    var: Var
+    body: Formula
+
+@dataclass
+class Exists(Formula):
+    var: Var
+    body: Formula
+
+@dataclass
+class ExistsUniq(Formula):
+    var: Var
+    body: Formula
+
+@dataclass
+class Implies(Formula):
+    left: Formula
+    right: Formula
+
+@dataclass
+class And(Formula):
+    left: Formula
+    right: Formula
+
+@dataclass
+class Or(Formula):
+    left: Formula
+    right: Formula
+
+@dataclass
+class Not(Formula):
+    body: Formula
+
+@dataclass
+class Iff(Formula):
+    left: Formula
+    right: Formula
+
+@dataclass
+class Bottom:
+    pass
+
+@dataclass
+class ProofInfo:
+    context_vars: list[Var] = field(init=False)
+    context_formulas: list[Bottom | Formula] = field(init=False)
+    premises: list["Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Bottom | Formula"] = field(init=False)
+    conclusions: list[Bottom | Formula] = field(init=False)
+    local_vars: list[Var] = field(init=False)
+    local_premise: list[Formula] = field(init=False)
+    local_conclusion: list[Bottom | Formula] = field(init=False)
+
+@dataclass
+class Control:
+    proofinfo: ProofInfo = field(init=False)
+
+@dataclass
+class Assume(Control):
+    premise: Formula
+    conclusion: Formula | None
+    body: list[Control]
+
+@dataclass
+class Any(Control):
+    vars: list[Var]
+    conclusion: Formula | None
+    body: list[Control]
+
+@dataclass
+class Case(Control):
+    premise: Formula
+    conclusion: Bottom | Formula | None
+    body: list[Control]
+
+@dataclass
+class Divide(Control):
+    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    conclusion: Bottom | Formula | None
+    cases: list[Case]
+
+@dataclass
+class Some(Control):
+    env: dict[Var, Var]
+    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    conclusion: Bottom | Formula | None
+    body: list[Control]
+
+@dataclass
+class Deny(Control):
+    premise: Formula
+    body: list[Control]
+
+@dataclass
+class Contradict(Control):
+    contradiction: Formula
+
+@dataclass
+class Explode(Control):
+    conclusion: Formula
+
+@dataclass
+class Apply(Control):
+    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    env: dict[Var, Term]
+    conclusion: Formula | None
+
+@dataclass
+class Lift(Control):
+    fact: Formula | None
+    env: dict[Var, Term]
+    conclusion: Exists
+
+@dataclass
+class Characterize(Control):
+    fact: Formula | None
+    env: dict[Var, Term]
+    conclusion: ExistsUniq
+
+@dataclass
+class Invoke(Control):
+    fact: Implies
+    conclusion: Formula | None
+
+@dataclass
+class Expand(Control):
+    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    conclusion: Formula
+
+@dataclass
+class Pad(Control):
+    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    conclusion: Or
+
+@dataclass
+class Split(Control):
+    fact: And | Iff
+
+@dataclass
+class Connect(Control):
+    conclusion: And | Iff
+
+@dataclass
+class Substitute(Control):
+    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    env: dict[Term, Term]
+    conclusion: Formula
+
+@dataclass
+class Show(Control):
+    conclusion: Bottom | Formula
+    body: list[Control]
+
+@dataclass
+class Declaration:
+    pass
+
+@dataclass
+class PrimPred(Declaration):
+    type: str
+    name: str
+    arity: int
+    tex: list[str]
+
+@dataclass
+class Axiom(Declaration):
+    name: str
+    conclusion: Formula
+
+@dataclass
+class Theorem(Declaration):
+    name: str
+    conclusion: Formula
+    proof: list[Control]
+
+@dataclass
+class DefPred(Declaration):
+    name: str
+    args: list[Var]
+    formula: Formula
+    autoexpand: bool
+    tex: list[str]
+
+@dataclass
+class DefConExist:
+    name: str
+    formula: Formula
+
+@dataclass
+class DefConUniq:
+    name: str
+    formula: Formula
+
+@dataclass
+class DefCon(Declaration):
+    name: str
+    theorem: str
+    tex: list[str]
+    existence: DefConExist
+    uniqueness: DefConUniq
+
+@dataclass
+class DefFunExist:
+    name: str
+    formula: Formula
+
+@dataclass
+class DefFunUniq:
+    name: str
+    formula: Formula
+
+@dataclass
+class DefFun(Declaration):
+    name: str
+    arity: int
+    theorem: str
+    tex: list[str]
+    existence: DefFunExist
+    uniqueness: DefFunUniq
+
+@dataclass
+class DefFunTerm(Declaration):
+    name: str
+    args: list[Var]
+    term: Term
+    tex: list[str]
+
+@dataclass
+class EqualityReflection:
+    evidence: Axiom | Theorem
+
+@dataclass
+class EqualityReplacement:
+    evidence: dict[str, Axiom | Theorem]
+
+@dataclass
+class Equality(Declaration):
+    equal: PrimPred | DefPred
+    reflection: EqualityReflection
+    replacement: EqualityReplacement
+
 @dataclass
 class Context:
-    vars: list["Var"]
-    formulas: list["Bottom | Formula"]
-    primpreds: dict[str, "PrimPred"]
-    axioms: dict[str, "Axiom"]
-    theorems: dict[str, "Theorem"]
-    defpreds: dict[str, "DefPred"]
-    defcons: dict[str, "DefCon"]
-    deffuns: dict[str, "DefFun"]
-    deffunterms: dict[str, "DefFunTerm"]
-    equality: "Equality | None"
+    vars: list[Var]
+    formulas: list[Bottom | Formula]
+    primpreds: dict[str, PrimPred]
+    axioms: dict[str, Axiom]
+    theorems: dict[str, Theorem]
+    defpreds: dict[str, DefPred]
+    defcons: dict[str, DefCon]
+    deffuns: dict[str, DefFun]
+    deffunterms: dict[str, DefFunTerm]
+    equality: Equality | None
 
     @staticmethod
     def init() -> "Context":
@@ -70,282 +345,6 @@ class Context:
             if deffun.uniqueness.name == uniqueness_name:
                 return deffun.uniqueness
         raise KeyError(f"Unexpected uniqueness_name: {uniqueness_name}")
-
-# === DSL ノード定義 ===
-@dataclass
-class Declaration:
-    pass
-
-@dataclass
-class PrimPred(Declaration):
-    type: str
-    name: str
-    arity: int
-    tex: list[str]
-
-@dataclass
-class Axiom(Declaration):
-    name: str
-    conclusion: "Formula"
-
-@dataclass
-class Theorem(Declaration):
-    name: str
-    conclusion: "Formula"
-    proof: list["Control"]
-
-@dataclass
-class ProofInfo:
-    context_vars: list["Var"] = field(init=False)
-    context_formulas: list["Bottom | Formula"] = field(init=False)
-    premises: list["Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Bottom | Formula"] = field(init=False)
-    conclusions: list["Bottom | Formula"] = field(init=False)
-    local_vars: list["Var"] = field(init=False)
-    local_premise: list["Formula"] = field(init=False)
-    local_conclusion: list["Bottom | Formula"] = field(init=False)
-
-@dataclass
-class Control:
-    proofinfo: ProofInfo = field(init=False)
-
-@dataclass
-class Assume(Control):
-    premise: "Formula"
-    conclusion: "Formula | None"
-    body: list[Control]
-
-@dataclass
-class Any(Control):
-    vars: list["Var"]
-    conclusion: "Formula | None"
-    body: list[Control]
-
-@dataclass
-class Divide(Control):
-    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
-    conclusion: "Bottom | Formula | None"
-    cases: list["Case"]
-
-@dataclass
-class Case(Control):
-    premise: "Formula"
-    conclusion: "Bottom | Formula | None"
-    body: list[Control]
-
-@dataclass
-class Some(Control):
-    env: dict["Var", "Var"]
-    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
-    conclusion: "Bottom | Formula | None"
-    body: list[Control]
-
-@dataclass
-class Deny(Control):
-    premise: "Formula"
-    body: list[Control]
-
-@dataclass
-class Contradict(Control):
-    contradiction: "Formula"
-
-@dataclass
-class Explode(Control):
-    conclusion: "Formula"
-
-@dataclass
-class Apply(Control):
-    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
-    env: dict["Var", "Term"]
-    conclusion: "Formula | None"
-
-@dataclass
-class Lift(Control):
-    fact: "Formula | None"
-    env: dict["Var", "Term"]
-    conclusion: "Exists"
-
-@dataclass
-class Characterize(Control):
-    fact: "Formula | None"
-    env: dict["Var", "Term"]
-    conclusion: "ExistsUniq"
-
-@dataclass
-class Invoke(Control):
-    fact: "Implies"
-    conclusion: "Formula | None"
-
-@dataclass
-class Expand(Control):
-    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
-    conclusion: "Formula"
-
-@dataclass
-class Pad(Control):
-    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
-    conclusion: "Or"
-
-@dataclass
-class Split(Control):
-    fact: "And | Iff"
-
-@dataclass
-class Connect(Control):
-    conclusion: "And | Iff"
-
-@dataclass
-class Substitute(Control):
-    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
-    env: dict["Term", "Term"]
-    conclusion: "Formula"
-
-@dataclass
-class Show(Control):
-    conclusion: "Bottom | Formula"
-    body: list[Control]
-
-@dataclass
-class DefPred(Declaration):
-    name: str
-    args: list["Var"]
-    formula: "Formula"
-    autoexpand: bool
-    tex: list[str]
-
-@dataclass
-class DefCon(Declaration):
-    name: str
-    theorem: str
-    tex: list[str]
-    existence: "DefConExist"
-    uniqueness: "DefConUniq"
-
-@dataclass
-class DefConExist:
-    name: str
-    formula: "Formula"
-
-@dataclass
-class DefConUniq:
-    name: str
-    formula: "Formula"
-
-@dataclass
-class DefFun(Declaration):
-    name: str
-    arity: int
-    theorem: str
-    tex: list[str]
-    existence: "DefFunExist"
-    uniqueness: "DefFunUniq"
-
-@dataclass
-class DefFunExist:
-    name: str
-    formula: "Formula"
-
-@dataclass
-class DefFunUniq:
-    name: str
-    formula: "Formula"
-
-@dataclass
-class DefFunTerm(Declaration):
-    name: str
-    args: list["Var"]
-    term: "Term"
-    tex: list[str]
-
-@dataclass
-class Equality(Declaration):
-    equal: PrimPred | DefPred
-    reflection: "EqualityReflection"
-    replacement: "EqualityReplacement"
-
-@dataclass
-class EqualityReflection:
-    evidence: Axiom | Theorem
-
-@dataclass
-class EqualityReplacement:
-    evidence: dict[str, Axiom | Theorem]
-
-@dataclass(frozen=True)
-class Term():
-    pass
-
-@dataclass
-class Formula:
-    pass
-
-@dataclass
-class Symbol(Formula):
-    pred: "Pred"
-    args: list[Term]
-
-@dataclass
-class Pred:
-    name: str
-
-@dataclass(frozen=True)
-class Compound(Term):
-    fun: "Fun"
-    args: tuple[Term, ...]
-
-@dataclass(frozen=True)
-class Fun:
-    name: str
-
-@dataclass(frozen=True)
-class Con(Term):
-    name: str
-
-@dataclass(frozen=True)
-class Var(Term):
-    name: str
-
-@dataclass
-class Forall(Formula):
-    var: Var
-    body: Formula
-
-@dataclass
-class Exists(Formula):
-    var: Var
-    body: Formula
-
-@dataclass
-class ExistsUniq(Formula):
-    var: Var
-    body: Formula
-
-@dataclass
-class Implies(Formula):
-    left: Formula
-    right: Formula
-
-@dataclass
-class And(Formula):
-    left: Formula
-    right: Formula
-
-@dataclass
-class Or(Formula):
-    left: Formula
-    right: Formula
-
-@dataclass
-class Not(Formula):
-    body: Formula
-
-@dataclass
-class Iff(Formula):
-    left: Formula
-    right: Formula
-
-@dataclass
-class Bottom:
-    pass
 
 OP_PRECEDENCE = {
     "Lowest": 0,
