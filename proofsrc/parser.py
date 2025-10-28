@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -78,7 +78,7 @@ class Parser:
     def parse_axiom(self) -> Axiom:
         self.consume("AXIOM")
         name = self.consume("IDENT").value
-        conclusion = self.parse_expr()
+        conclusion = self.parse_formula()
         axiom = Axiom(name=name, conclusion=conclusion)
         self.context.axioms[name] = axiom
         logger.debug(f"[axiom] {name}")
@@ -87,7 +87,7 @@ class Parser:
     def parse_theorem(self) -> Theorem:
         self.consume("THEOREM")
         name = self.consume("IDENT").value
-        conclusion = self.parse_expr()
+        conclusion = self.parse_formula()
         self.consume("LBRACE")
         proof = self.parse_block()
         self.consume("RBRACE")
@@ -96,7 +96,7 @@ class Parser:
         logger.debug(f"[theorem] {name}")
         return theorem
 
-    def parse_block(self) -> list:
+    def parse_block(self) -> list[Control]:
         body = []
         while True:
             tok = self.peek()
@@ -152,7 +152,7 @@ class Parser:
             break
         if self.peek().type == "CONCLUDE":
             self.consume("CONCLUDE")
-            conclusion = self.parse_expr()
+            conclusion = self.parse_formula()
         else:
             conclusion = None
         self.consume("LBRACE")
@@ -162,10 +162,10 @@ class Parser:
 
     def parse_assume(self) -> Assume:
         self.consume("ASSUME")
-        premise = self.parse_expr()
+        premise = self.parse_formula()
         if self.peek().type == "CONCLUDE":
             self.consume("CONCLUDE")
-            conclusion = self.parse_expr()
+            conclusion = self.parse_formula()
         else:
             conclusion = None
         self.consume("LBRACE")
@@ -175,10 +175,10 @@ class Parser:
     
     def parse_divide(self) -> Divide:
         self.consume("DIVIDE")
-        fact = self.parse_expr()
+        fact = self.parse_reference_or_formula()
         if self.peek().type == "CONCLUDE":
             self.consume("CONCLUDE")
-            conclusion = self.parse_expr()
+            conclusion = self.parse_bot_or_formula()
         else:
             conclusion = None
         cases = []
@@ -190,7 +190,7 @@ class Parser:
     
     def parse_case(self, conclusion) -> Case:
         self.consume("CASE")
-        premise = self.parse_expr()
+        premise = self.parse_formula()
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
@@ -209,10 +209,10 @@ class Parser:
                 continue
             break
         self.consume("SUCH")
-        fact = self.parse_expr()
+        fact = self.parse_reference_or_formula()
         if self.peek().type == "CONCLUDE":
             self.consume("CONCLUDE")
-            conclusion = self.parse_expr()
+            conclusion = self.parse_bot_or_formula()
         else:
             conclusion = None
         self.consume("LBRACE")
@@ -222,7 +222,7 @@ class Parser:
     
     def parse_deny(self) -> Deny:
         self.consume("DENY")
-        premise = self.parse_expr()
+        premise = self.parse_formula()
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
@@ -230,17 +230,17 @@ class Parser:
     
     def parse_contradict(self) -> Contradict:
         self.consume("CONTRADICT")
-        contradiction = self.parse_expr()
+        contradiction = self.parse_formula()
         return Contradict(contradiction=contradiction)
     
     def parse_explode(self) -> Explode:
         self.consume("EXPLODE")
-        conclusion = self.parse_expr()
+        conclusion = self.parse_formula()
         return Explode(conclusion=conclusion)
     
     def parse_apply(self) -> Apply:
         self.consume("APPLY")
-        fact = self.parse_expr()
+        fact = self.parse_reference_or_formula()
         self.consume("FOR")
         env = {}
         while True:
@@ -254,7 +254,7 @@ class Parser:
             break
         if self.peek().type == "CONCLUDE":
             self.consume("CONCLUDE")
-            conclusion = self.parse_expr()
+            conclusion = self.parse_formula()
         else:
             conclusion = None
         return Apply(fact=fact, env=env, conclusion=conclusion)
@@ -264,7 +264,7 @@ class Parser:
         if self.peek().type == "FOR":
             fact = None
         else:
-            fact = self.parse_expr()
+            fact = self.parse_formula()
         self.consume("FOR")
         env = {}
         while True:
@@ -277,7 +277,9 @@ class Parser:
                 continue
             break
         self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
+        conclusion = self.parse_formula()
+        if not isinstance(conclusion, Exists):
+            raise Exception("Conclusion of Lift has to be Exists object")
         return Lift(fact=fact, env=env, conclusion=conclusion)
 
     def parse_characterize(self) -> Characterize:
@@ -285,53 +287,63 @@ class Parser:
         if self.peek().type == "FOR":
             fact = None
         else:
-            fact = self.parse_expr()
+            fact = self.parse_formula()
         self.consume("FOR")
         bound = Var(self.consume("IDENT").value)
         self.consume("COLON")
         term = self.parse_term()
         env = {bound: term}
         self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
+        conclusion = self.parse_formula()
+        if not isinstance(conclusion, ExistsUniq):
+            raise Exception("Conclusion of Characterize has to be ExistsUniq object")
         return Characterize(fact=fact, env=env, conclusion=conclusion)
 
     def parse_invoke(self) -> Invoke:
         self.consume("INVOKE")
-        fact = self.parse_expr()
+        fact = self.parse_implies()
+        if not isinstance(fact, Implies):
+            raise Exception("Fact of Invoke has to be Implies object")
         if self.peek().type == "CONCLUDE":
             self.consume("CONCLUDE")
-            conclusion = self.parse_expr()
+            conclusion = self.parse_formula()
         else:
             conclusion = None
         return Invoke(fact=fact, conclusion=conclusion)
 
     def parse_expand(self) -> Expand:
         self.consume("EXPAND")
-        fact = self.parse_expr()
+        fact = self.parse_formula()
         self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
+        conclusion = self.parse_formula()
         return Expand(fact=fact, conclusion=conclusion)
 
     def parse_pad(self) -> Pad:
         self.consume("PAD")
-        fact = self.parse_expr()
+        fact = self.parse_formula()
         self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
+        conclusion = self.parse_formula()
+        if not isinstance(conclusion, Or):
+            raise Exception("Conclusion of Pad has to be Or object")
         return Pad(fact=fact, conclusion=conclusion)
 
     def parse_split(self) -> Split:
         self.consume("SPLIT")
-        fact = self.parse_expr()
+        fact = self.parse_reference_or_formula()
+        if not isinstance(fact, (And, Iff)):
+            raise Exception("Fact of Split has to be And or Iff object")
         return Split(fact=fact)
 
     def parse_connect(self):
         self.consume("CONNECT")
-        conclusion = self.parse_expr()
+        conclusion = self.parse_formula()
+        if not isinstance(conclusion, (And, Iff)):
+            raise Exception("Conclusion of Connect has to be And or Iff object")
         return Connect(conclusion=conclusion)
 
     def parse_substitute(self) -> Substitute:
         self.consume("SUBSTITUTE")
-        fact = self.parse_expr()
+        fact = self.parse_reference_or_formula()
         self.consume("FOR")
         env = {}
         while True:
@@ -344,12 +356,12 @@ class Parser:
             else:
                 break
         self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
+        conclusion = self.parse_formula()
         return Substitute(fact=fact, env=env, conclusion=conclusion)
 
     def parse_show(self) -> Show:
         self.consume("SHOW")
-        conclusion = self.parse_expr()
+        conclusion = self.parse_bot_or_formula()
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
@@ -373,7 +385,7 @@ class Parser:
                 args.append(Var(self.consume("IDENT").value))
             self.consume("RPAREN")
             self.consume("AS")
-            formula = self.parse_expr()
+            formula = self.parse_formula()
             tex = self.parse_tex()
             if len(tex) != len(args) + 1:
                 raise SyntaxError("arity is different")
@@ -392,11 +404,11 @@ class Parser:
             self.context.defcons[name] = DefCon(name=name, theorem=theorem, tex=tex, existence=None, uniqueness=None)
             self.consume("EXISTENCE")
             existence_name = self.consume("IDENT").value
-            existence_formula = self.parse_expr()
+            existence_formula = self.parse_formula()
             existence = DefConExist(name=existence_name, formula=existence_formula)
             self.consume("UNIQUENESS")
             uniqueness_name = self.consume("IDENT").value
-            uniqueness_formula = self.parse_expr()
+            uniqueness_formula = self.parse_formula()
             uniqueness = DefConUniq(name=uniqueness_name, formula=uniqueness_formula)
             defcon = DefCon(name=name, theorem=theorem, tex=tex, existence=existence, uniqueness=uniqueness)
             self.context.defcons[name] = defcon
@@ -418,11 +430,11 @@ class Parser:
                 self.context.deffuns[name] = DefFun(name=name, arity=arity, theorem=theorem, tex=tex, existence=None, uniqueness=None)
                 self.consume("EXISTENCE")
                 existence_name = self.consume("IDENT").value
-                existence_formula = self.parse_expr()
+                existence_formula = self.parse_formula()
                 existence = DefFunExist(name=existence_name, formula=existence_formula)
                 self.consume("UNIQUENESS")
                 uniqueness_name = self.consume("IDENT").value
-                uniqueness_formula = self.parse_expr()
+                uniqueness_formula = self.parse_formula()
                 uniqueness = DefFunUniq(name=uniqueness_name, formula=uniqueness_formula)
                 deffun = DefFun(name=name, arity=arity, theorem=theorem, tex=tex, existence=existence, uniqueness=uniqueness)
                 self.context.deffuns[name] = deffun
@@ -520,7 +532,7 @@ class Parser:
         else:
             raise SyntaxError(f"Unexpected token: {tok}")
 
-    def parse_primary(self):
+    def parse_primary(self) -> Formula:
         tok = self.peek()
         if tok.type == "IDENT":
             name = self.consume("IDENT").value
@@ -542,14 +554,14 @@ class Parser:
 
         elif tok.type == "LPAREN":
             self.consume("LPAREN")
-            expr = self.parse_expr()
+            expr = self.parse_formula()
             self.consume("RPAREN")
             return expr
         
         elif tok.type == "NOT":
             self.consume("NOT")
             self.consume("LPAREN")
-            body = self.parse_recursion()
+            body = self.parse_formula()
             self.consume("RPAREN")
             return Not(body)
 
@@ -561,7 +573,7 @@ class Parser:
                 vars_.append(Var(self.consume("IDENT").value))
                 tok = self.peek()
             self.consume("LPAREN")
-            body = self.parse_recursion()
+            body = self.parse_formula()
             self.consume("RPAREN")
             for quantifier, var in zip(reversed(quantifiers), reversed(vars_)):
                 if quantifier == "FORALL":
@@ -575,11 +587,8 @@ class Parser:
         else:
             raise SyntaxError(f"Unexpected token: {tok}")
 
-    def parse_expr(self):
-        if self.peek().type == "BOT":
-            self.consume("BOT")
-            return Bottom()
-        elif self.peek().type == "IDENT" and self.peek().value in self.context.axioms:
+    def parse_reference_or_formula(self) -> Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula:
+        if self.peek().type == "IDENT" and self.peek().value in self.context.axioms:
             return self.context.axioms[self.consume("IDENT").value]
         elif self.peek().type == "IDENT" and self.peek().value in self.context.theorems:
             return self.context.theorems[self.consume("IDENT").value]
@@ -592,12 +601,19 @@ class Parser:
         elif self.peek().type == "IDENT" and self.context.has_deffun_uniqueness(self.peek().value):
             return self.context.get_deffun_uniqueness(self.consume("IDENT").value)
         else:
-            return self.parse_recursion()
+            return self.parse_formula()
 
-    def parse_recursion(self):
+    def parse_bot_or_formula(self) -> Bottom | Formula:
+        if self.peek().type == "BOT":
+            self.consume("BOT")
+            return Bottom()
+        else:
+            return self.parse_formula()
+
+    def parse_formula(self) -> Formula:
         return self.parse_implies()
 
-    def parse_implies(self):
+    def parse_implies(self) -> Formula:
         left = self.parse_and()
         while self.peek() is not None and self.peek().type in ("IMPLIES", "IFF"):
             op = self.peek().type
@@ -609,7 +625,7 @@ class Parser:
                 left = Iff(left, right)
         return left
 
-    def parse_and(self):
+    def parse_and(self) -> Formula:
         left = self.parse_primary()
         while self.peek() is not None and self.peek().type in ("AND", "OR"):
             op = self.peek().type

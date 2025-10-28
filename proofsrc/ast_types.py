@@ -6,7 +6,7 @@ logger = logging.getLogger("proof")
 @dataclass
 class Context:
     vars: list["Var"]
-    formulas: list        # 通常の論理式
+    formulas: list["Bottom | Formula"]
     primpreds: dict[str, "PrimPred"]
     axioms: dict[str, "Axiom"]
     theorems: dict[str, "Theorem"]
@@ -82,23 +82,23 @@ class PrimPred:
 @dataclass
 class Axiom:
     name: str
-    conclusion: object
+    conclusion: "Formula"
 
 @dataclass
 class Theorem:
     name: str
-    conclusion: object
-    proof: list
+    conclusion: "Formula"
+    proof: list["Control"]
 
 @dataclass
 class ProofInfo:
-    context_vars: list = field(init=False)
-    context_formulas: list = field(init=False)
-    premises: list = field(init=False)
-    conclusions: list = field(init=False)
-    local_vars: list = field(init=False)
-    local_premise: list = field(init=False)
-    local_conclusion: list = field(init=False)
+    context_vars: list["Var"] = field(init=False)
+    context_formulas: list["Bottom | Formula"] = field(init=False)
+    premises: list["Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Bottom | Formula"] = field(init=False)
+    conclusions: list["Bottom | Formula"] = field(init=False)
+    local_vars: list["Var"] = field(init=False)
+    local_premise: list["Formula"] = field(init=False)
+    local_conclusion: list["Bottom | Formula"] = field(init=False)
 
 @dataclass
 class Control:
@@ -106,105 +106,105 @@ class Control:
 
 @dataclass
 class Assume(Control):
-    premise: object      # Expr AST
-    conclusion: object | None  # Expr AST
-    body: list
+    premise: "Formula"
+    conclusion: "Formula | None"
+    body: list[Control]
 
 @dataclass
 class Any(Control):
     vars: list["Var"]
-    conclusion: object | None
-    body: list
+    conclusion: "Formula | None"
+    body: list[Control]
 
 @dataclass
 class Divide(Control):
-    fact: object
-    conclusion: object | None
-    cases: list
+    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    conclusion: "Bottom | Formula | None"
+    cases: list["Case"]
 
 @dataclass
 class Case(Control):
-    premise: object
-    conclusion: object | None
-    body: list
+    premise: "Formula"
+    conclusion: "Bottom | Formula | None"
+    body: list[Control]
 
 @dataclass
 class Some(Control):
     env: dict["Var", "Var"]
-    fact: object
-    conclusion: object | None
-    body: list
+    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    conclusion: "Bottom | Formula | None"
+    body: list[Control]
 
 @dataclass
 class Deny(Control):
-    premise: object
-    body: list
+    premise: "Formula"
+    body: list[Control]
 
 @dataclass
 class Contradict(Control):
-    contradiction: object
+    contradiction: "Formula"
 
 @dataclass
 class Explode(Control):
-    conclusion: object
+    conclusion: "Formula"
 
 @dataclass
 class Apply(Control):
-    fact: object
-    env: dict["Var", "Compound | Con | Var"]
-    conclusion: object | None
+    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    env: dict["Var", "Term"]
+    conclusion: "Formula | None"
 
 @dataclass
 class Lift(Control):
-    fact: object | None
+    fact: "Formula | None"
     env: dict["Var", "Term"]
-    conclusion: object
+    conclusion: "Exists"
 
 @dataclass
 class Characterize(Control):
-    fact: object | None
+    fact: "Formula | None"
     env: dict["Var", "Term"]
-    conclusion: object
+    conclusion: "ExistsUniq"
 
 @dataclass
 class Invoke(Control):
-    fact: object
-    conclusion: object | None
+    fact: "Implies"
+    conclusion: "Formula | None"
 
 @dataclass
 class Expand(Control):
-    fact: object
-    conclusion: object
+    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    conclusion: "Formula"
 
 @dataclass
 class Pad(Control):
-    fact: object
-    conclusion: object
+    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    conclusion: "Or"
 
 @dataclass
 class Split(Control):
-    fact: object
+    fact: "And | Iff"
 
 @dataclass
 class Connect(Control):
-    conclusion: object
+    conclusion: "And | Iff"
 
 @dataclass
 class Substitute(Control):
-    fact: object
+    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
     env: dict["Term", "Term"]
-    conclusion: object
+    conclusion: "Formula"
 
 @dataclass
 class Show(Control):
-    conclusion: object
-    body: list
+    conclusion: "Bottom | Formula"
+    body: list[Control]
 
 @dataclass
 class DefPred:
     name: str
     args: list["Var"]
-    formula: object
+    formula: "Formula"
     autoexpand: bool
     tex: list[str]
 
@@ -219,12 +219,12 @@ class DefCon:
 @dataclass
 class DefConExist:
     name: str
-    formula: object
+    formula: "Formula"
 
 @dataclass
 class DefConUniq:
     name: str
-    formula: object
+    formula: "Formula"
 
 @dataclass
 class DefFun:
@@ -238,18 +238,18 @@ class DefFun:
 @dataclass
 class DefFunExist:
     name: str
-    formula: object
+    formula: "Formula"
 
 @dataclass
 class DefFunUniq:
     name: str
-    formula: object
+    formula: "Formula"
 
 @dataclass
 class DefFunTerm:
     name: str
     args: list["Var"]
-    term: object
+    term: "Term"
     tex: list[str]
 
 @dataclass
@@ -303,41 +303,41 @@ class Var(Term):
 @dataclass
 class Forall(Formula):
     var: Var
-    body: object
+    body: Formula
 
 @dataclass
 class Exists(Formula):
     var: Var
-    body: object
+    body: Formula
 
 @dataclass
 class ExistsUniq(Formula):
     var: Var
-    body: object
+    body: Formula
 
 @dataclass
 class Implies(Formula):
-    left: object
-    right: object
+    left: Formula
+    right: Formula
 
 @dataclass
 class And(Formula):
-    left: object
-    right: object
+    left: Formula
+    right: Formula
 
 @dataclass
 class Or(Formula):
-    left: object
-    right: object
+    left: Formula
+    right: Formula
 
 @dataclass
 class Not(Formula):
-    body: object
+    body: Formula
 
 @dataclass
 class Iff(Formula):
-    left: object
-    right: object
+    left: Formula
+    right: Formula
 
 @dataclass
 class Bottom:
@@ -354,7 +354,7 @@ OP_PRECEDENCE = {
     "Quantifier": 5,
 }
 
-def pretty_expr(expr, context: Context, parent_prec: int = OP_PRECEDENCE["Lowest"]):
+def pretty_expr(expr: Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Bottom | Formula | Term | Pred | Fun, context: Context, parent_prec: int = OP_PRECEDENCE["Lowest"]):
     if isinstance(expr, Axiom):
         return expr.name
     if isinstance(expr, Theorem):
