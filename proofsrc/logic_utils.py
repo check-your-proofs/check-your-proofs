@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, TemplateCall, ForallTemplate, Template
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, TemplateCall, Template
 from itertools import permutations
 from copy import deepcopy
 
@@ -55,8 +55,24 @@ def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Temp
 
             for perm in permutations(vars2):
                 newenv = env.copy()
+                skip_perm = False
                 for v1, v2 in zip(vars1, perm):
+                    if isinstance(v1, Var) and isinstance(v2, Template):
+                        skip_perm = True
+                        break
+                    if isinstance(v1, Template) and isinstance(v2, Var):
+                        skip_perm = True
+                        break
+                    if isinstance(v1, Template) and isinstance(v2, Template):
+                        if set(v1.allowed_vars) != set(v2.allowed_vars):
+                            skip_perm = True
+                            break
+                        if set(v1.not_allowed_vars) != set(v2.not_allowed_vars):
+                            skip_perm = True
+                            break
                     newenv[v1] = v2
+                if skip_perm:
+                    continue
                 if alpha_equiv(body1, body2, context, newenv):
                     return True
             return False
@@ -119,49 +135,17 @@ def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Temp
                 return False
         return True
 
-    if isinstance(e1, ForallTemplate) and isinstance(e2, ForallTemplate):
-        if set(e1.template.allowed_vars) != set(e2.template.allowed_vars):
-            return False
-        if set(e1.template.not_allowed_vars) != set(e2.template.not_allowed_vars):
-            return False
-        newenv = env.copy()
-        newenv[e1.template] = e2.template
-        if not alpha_equiv(e1.body, e2.body, context, newenv):
-            return False
-        return True
-
     return False
 
-def collect_quantifier_items(e: Formula, quantifier_types: tuple) -> tuple[list[Var | str], Formula]:
-    items: list[Var | Template] = []
-    body = e
-    while isinstance(body, quantifier_types):
-        if isinstance(body, (Forall, Exists, ExistsUniq)):
-            items.append(body.var)
-        elif isinstance(body, ForallTemplate):
-            items.append(body.template)
-        else:
-            raise Exception(f"Unexpected type: {type(body)}")
-        body = body.body
-    return items, body
-
-def collect_quantifier_vars(e: Formula, quantifier_type: type[Forall] | type[Exists] | type[ExistsUniq]) -> tuple[list[Var], Formula]:
-    vars_ = []
+def collect_quantifier_vars(e: Formula, quantifier_type: type[Forall] | type[Exists] | type[ExistsUniq]) -> tuple[list[Var | Template], Formula]:
+    vars_: list[Var | Template] = []
     body = e
     while isinstance(body, quantifier_type):
         vars_.append(body.var)
         body = body.body
     return vars_, body
 
-def collect_quantifier_templates(e: Formula, quantifier_type: type[ForallTemplate]) -> tuple[list[str], Formula]:
-    templates: list[str] = []
-    body = e
-    while isinstance(body, quantifier_type):
-        templates.append(body.template.name)
-        body = body.body
-    return templates, body
-
-def collect_vars(expr: Formula | Term, bound: set[Var] | None = None) -> tuple[set[Var], set[Var]]:
+def collect_vars(expr: Formula | Term, bound: set[Var | Template] | None = None) -> tuple[set[Var | Template], set[Var | Template]]:
     """
     式 expr から自由変数と束縛変数の集合を返す
     戻り値: (free_vars, bound_vars)
@@ -185,7 +169,7 @@ def collect_vars(expr: Formula | Term, bound: set[Var] | None = None) -> tuple[s
         else:
             return {expr}, set()
 
-    elif isinstance(expr, (Not, ForallTemplate)):
+    elif isinstance(expr, Not):
         return collect_vars(expr.body, bound)
 
     elif isinstance(expr, (And, Or, Implies, Iff)):
@@ -198,7 +182,14 @@ def collect_vars(expr: Formula | Term, bound: set[Var] | None = None) -> tuple[s
         return f_body, b_body | {expr.var}
 
     elif isinstance(expr, TemplateCall):
-        return set(), set()
+        free = set()
+        for var in expr.bindings.values():
+            f, _ = collect_vars(var, bound)
+            free.update(f)
+        if expr.template in bound:
+            return free, set()
+        else:
+            return free | {expr.template}, set()
 
     else:
         raise Exception(f"Unexpected type {type(expr)}")
@@ -253,15 +244,14 @@ def expand_basic_defs(expr: Formula, context: Context, expand_all: bool, bound_t
     elif isinstance(expr, (And, Or, Implies, Iff)):
         return type(expr)(expand_basic_defs(expr.left, context, expand_all, bound_templates), expand_basic_defs(expr.right, context, expand_all, bound_templates))
     elif isinstance(expr, (Exists, Forall, ExistsUniq)):
+        if isinstance(expr, Forall) and isinstance(expr.var, Template):
+            bound_templates.append(expr.var)
         return type(expr)(expr.var, expand_basic_defs(expr.body, context, expand_all, bound_templates))
     elif isinstance(expr, TemplateCall):
         if expr.template in context.templates or expr.template in bound_templates:
             return expr
         else:
             raise Exception(f"{expr.template} in {context.templates} or {expr.template} in {bound_templates}")
-    elif isinstance(expr, ForallTemplate):
-        bound_templates.append(expr.template)
-        return ForallTemplate(expr.template, expand_basic_defs(expr.body, context, expand_all, bound_templates))
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
@@ -277,8 +267,6 @@ def normalize_neg(expr: Formula) -> Formula:
         return type(expr)(normalize_neg(expr.left), normalize_neg(expr.right))
     elif isinstance(expr, (Exists, Forall, ExistsUniq)):
         return type(expr)(expr.var, normalize_neg(expr.body))
-    elif isinstance(expr, ForallTemplate):
-        return ForallTemplate(expr.template, normalize_neg(expr.body))
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
@@ -379,12 +367,15 @@ if __name__ == "__main__":
     y = Var("y")
     z = Var("z")
     w = Var("w")
+    v = Var("v")
     pair = Fun("pair")
     predin = Pred("in")
-    e1 = Exists(w, And(Symbol(predin, [z, w]), Symbol(predin, [w, Compound(pair, [x, y])])))
-    e2 = Exists(x, And(Symbol(predin, [z, x]), Symbol(predin, [x, Compound(pair, [x, y])])))
+    phi = Template("\\phi", (z, x), (y,))
+    psi = Template("\\psi", (z, x), (y,))
+    e1 = Forall(x, Forall(phi, ExistsUniq(y, Forall(z, Iff(Symbol(predin, [z, y]), And(Symbol(predin, [z, x]), TemplateCall(phi, {z: z, x: x})))))))
+    e2 = Forall(w, Forall(psi, ExistsUniq(y, Forall(v, Iff(Symbol(predin, [v, y]), And(Symbol(predin, [v, w]), TemplateCall(psi, {z: v, x: w})))))))
     from ast_types import pretty_expr
     print(f"e1: {pretty_expr(e1, context)}")
     print(f"e2: {pretty_expr(e2, context)}")
-    print(f"alpha_equiv(e1, e2, Context.init()): {alpha_equiv(e1, e2, Context.init())}")
-    print(f"alpha_equiv(e2, e1, Context.init()): {alpha_equiv(e2, e1, Context.init())}")
+    print(f"alpha_equiv(e1, e2): {alpha_equiv(e1, e2, context)}")
+    print(f"alpha_equiv(e2, e1): {alpha_equiv(e2, e1, context)}")

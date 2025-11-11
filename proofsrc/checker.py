@@ -1,5 +1,5 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, ProofInfo, Formula, Declaration, Template, ForallTemplate, pretty_expr
-from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs, collect_quantifier_items
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, ProofInfo, Formula, Declaration, Template, pretty_expr
+from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
 from copy import deepcopy
 
 import logging
@@ -206,10 +206,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
                 return False
         goal = local_goal
         for item in reversed(node.items):
-            if isinstance(item, Var):
-                goal = Forall(item, goal)
-            else:
-                goal = ForallTemplate(item, goal)
+            goal = Forall(item, goal)
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [goal]
         node.proofinfo.local_vars = local_vars
@@ -413,7 +410,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             return False
         logger.debug(f"{sp}[Apply] Drivable fact: {pretty_expr(node.fact, context)}")
         fact = get_fact(node.fact, context)
-        items, body = collect_quantifier_items(fact, (Forall, ForallTemplate))
+        items, body = collect_quantifier_vars(fact, Forall)
         if set(items) != set(node.env.keys()):
             logger.error(f"{sp}❌ [Apply] Not matched: items={items}, env={node.env}")
             return False

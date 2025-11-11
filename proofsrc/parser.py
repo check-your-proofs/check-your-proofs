@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, TemplateCall, ForallTemplate
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, TemplateCall
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -630,14 +630,12 @@ class Parser:
             body = self.parse_formula()
             self.consume("RPAREN")
             for quantifier, item in zip(reversed(quantifiers), reversed(items)):
-                if quantifier == "FORALL":
+                if quantifier == "FORALL" or quantifier == "FORALL_TEMPLATE":
                     body = Forall(item, body)
                 elif quantifier == "EXISTS":
                     body = Exists(item, body)
                 elif quantifier == "EXISTS_UNIQ":
                     body = ExistsUniq(item, body)
-                elif quantifier == "FORALL_TEMPLATE":
-                    body = ForallTemplate(item, body)
             return body
 
         else:
