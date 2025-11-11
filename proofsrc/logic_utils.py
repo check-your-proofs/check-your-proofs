@@ -110,28 +110,25 @@ def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Temp
         return env.get(e1, e1) == e2
 
     if isinstance(e1, TemplateCall) and isinstance(e2, TemplateCall):
-        t1 = env.get(e1.template, e1.template)
-        t2 = env.get(e2.template, e2.template)
-        if t1 != t2:
+        if env.get(e1.template, e1.template) != e2.template:
             return False
-        if len(e1.args) != len(e2.args):
+        if set(e1.bindings.keys()) != set(e2.bindings.keys()):
             return False
-        for a, b in zip(e1.args, e2.args):
-            if not alpha_equiv(a, b, context, env):
+        for k in e1.bindings:
+            if not alpha_equiv(e1.bindings[k], e2.bindings[k], context, env):
                 return False
         return True
 
     if isinstance(e1, ForallTemplate) and isinstance(e2, ForallTemplate):
-        if e1.template.arity != e2.template.arity:
+        if set(e1.template.allowed_vars) != set(e2.template.allowed_vars):
+            return False
+        if set(e1.template.not_allowed_vars) != set(e2.template.not_allowed_vars):
             return False
         newenv = env.copy()
         newenv[e1.template] = e2.template
-        return alpha_equiv(e1.body, e2.body, context, newenv)
-
-    if isinstance(e1, ForallTemplate) and isinstance(e2, ForallTemplate):
-        if e1.template != e2.template:
+        if not alpha_equiv(e1.body, e2.body, context, newenv):
             return False
-        return alpha_equiv(e1.body, e2.body, context, env)
+        return True
 
     return False
 
@@ -142,7 +139,7 @@ def collect_quantifier_items(e: Formula, quantifier_types: tuple) -> tuple[list[
         if isinstance(body, (Forall, Exists, ExistsUniq)):
             items.append(body.var)
         elif isinstance(body, ForallTemplate):
-            items.append(body.template.name)
+            items.append(body.template)
         else:
             raise Exception(f"Unexpected type: {type(body)}")
         body = body.body
@@ -172,7 +169,7 @@ def collect_vars(expr: Formula | Term, bound: set[Var] | None = None) -> tuple[s
     if bound is None:
         bound = set()
 
-    if isinstance(expr, (Symbol, Compound, TemplateCall)):
+    if isinstance(expr, (Symbol, Compound)):
         free = set()
         for arg in expr.args:
             f, _ = collect_vars(arg, bound)
@@ -199,6 +196,9 @@ def collect_vars(expr: Formula | Term, bound: set[Var] | None = None) -> tuple[s
     elif isinstance(expr, (Forall, Exists, ExistsUniq)):
         f_body, b_body = collect_vars(expr.body, bound | {expr.var})
         return f_body, b_body | {expr.var}
+
+    elif isinstance(expr, TemplateCall):
+        return set(), set()
 
     else:
         raise Exception(f"Unexpected type {type(expr)}")
@@ -256,9 +256,9 @@ def expand_basic_defs(expr: Formula, context: Context, expand_all: bool, bound_t
         return type(expr)(expr.var, expand_basic_defs(expr.body, context, expand_all, bound_templates))
     elif isinstance(expr, TemplateCall):
         if expr.template in context.templates or expr.template in bound_templates:
-            return TemplateCall(expr.template, [expand_basic_defs(arg, context, expand_all, bound_templates) for arg in expr.args])
+            return expr
         else:
-            raise Exception(f"Unexpected expr.template: {expr.template}")
+            raise Exception(f"{expr.template} in {context.templates} or {expr.template} in {bound_templates}")
     elif isinstance(expr, ForallTemplate):
         bound_templates.append(expr.template)
         return ForallTemplate(expr.template, expand_basic_defs(expr.body, context, expand_all, bound_templates))
@@ -329,6 +329,14 @@ def substitute(expr: Formula, mapping: dict[Term, Term], used_vars: set[Var] | N
         else:
             used_vars.add(var)
             return type(expr)(var, substitute(expr.body, mapping, used_vars))
+
+    if isinstance(expr, TemplateCall):
+        new_template = mapping.get(expr.template, expr.template)
+        new_bindings: dict[Var, Var] = expr.bindings.copy()
+        for var in mapping:
+            if var in expr.template.allowed_vars:
+                new_bindings[var] = mapping[var]
+        return TemplateCall(new_template, new_bindings)
 
     return expr
 

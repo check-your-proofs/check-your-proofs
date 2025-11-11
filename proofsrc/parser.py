@@ -276,11 +276,7 @@ class Parser:
         while True:
             if self.peek().type == "TEMPLATE":
                 self.consume("TEMPLATE")
-                template_name = self.consume("IDENT").value
-                self.consume("LPAREN")
-                template_arity = int(self.consume("NUMBER").value)
-                self.consume("RPAREN")
-                template = Template(template_name, template_arity)
+                template = self.parse_template()
                 items.append(template)
                 self.free_templates[template.name] = template
             else:
@@ -385,15 +381,15 @@ class Parser:
         self.consume("APPLY")
         fact = self.parse_reference_or_formula()
         self.consume("FOR")
-        env: dict[Var | str, Term | str] = {}
+        env: dict[Var | Template, Term | Template] = {}
         while True:
             if self.peek().type == "TEMPLATE":
                 self.consume("TEMPLATE")
-                bound = self.consume("IDENT").value
-                if bound not in self.bound_templates:
+                bound = self.parse_template()
+                if bound.name not in self.bound_templates:
                     raise Exception(f"{bound} is not declared")
                 self.consume("COLON")
-                free = self.consume("IDENT").value
+                free = self.parse_template()
                 env[bound] = free
             else:
                 bound = Var(self.consume("IDENT").value)
@@ -563,30 +559,45 @@ class Parser:
         tok = self.peek()
         if tok.type == "IDENT":
             name = self.consume("IDENT").value
-            if name in self.bound_templates:
-                arity = self.bound_templates[name].arity
-            elif name in self.free_templates:
-                arity = self.free_templates[name].arity
-            elif name in self.context.primpreds:
-                arity = self.context.primpreds[name].arity
-            elif name in self.context.defpreds:
-                arity = len(self.context.defpreds[name].args)
+            if name in self.bound_templates or name in self.free_templates:
+                if name in self.bound_templates:
+                    template = self.bound_templates[name]
+                else:
+                    template = self.free_templates[name]
+                env: dict[Var, Var] = {}
+                for var in template.allowed_vars:
+                    env[var] = var
+                if self.peek().type == "LBRACKET":
+                    self.consume("LBRACKET")
+                    while True:
+                        old_var = Var(self.consume("IDENT").value)
+                        self.consume("COLON")
+                        new_var = Var(self.consume("IDENT").value)
+                        if old_var not in env:
+                            raise Exception(f"{old_var} not in {env}")
+                        env[old_var] = new_var
+                        if self.peek().type == "COMMA":
+                            self.consume("COMMA")
+                        else:
+                            break
+                    self.consume("RBRACKET")
+                return TemplateCall(template, env)
+            elif name in self.context.primpreds or name in self.context.defpreds:
+                if name in self.context.primpreds:
+                    arity = self.context.primpreds[name].arity
+                else:
+                    arity = len(self.context.defpreds[name].args)
+                self.consume("LPAREN")
+                args = [self.parse_term()]
+                while self.peek().type == "COMMA":
+                    self.consume("COMMA")
+                    args.append(self.parse_term())
+                if len(args) != arity:
+                    raise SyntaxError("arity is different")
+                self.consume("RPAREN")
+                return Symbol(Pred(name), args)
             else:
                 raise SyntaxError(f"not found in primpreds or defpreds: {name}")
-            self.consume("LPAREN")
-            args = [self.parse_term()]
-            while self.peek().type == "COMMA":
-                self.consume("COMMA")
-                args.append(self.parse_term())
-            if len(args) != arity:
-                raise SyntaxError("arity is different")
-            self.consume("RPAREN")
-            if name in self.bound_templates:
-                return TemplateCall(self.bound_templates[name], args)
-            elif name in self.free_templates:
-                return TemplateCall(self.free_templates[name], args)
-            else:
-                return Symbol(Pred(name), args)
 
         elif tok.type == "LPAREN":
             self.consume("LPAREN")
@@ -611,11 +622,7 @@ class Parser:
                     tok = self.peek()
                 else:
                     quantifiers.append(self.consume(tok.type).type)
-                    template_name = self.consume("IDENT").value
-                    self.consume("LPAREN")
-                    template_arity = int(self.consume("NUMBER").value)
-                    self.consume("RPAREN")
-                    template = Template(template_name, template_arity)
+                    template = self.parse_template()
                     items.append(template)
                     self.bound_templates[template.name] = template
                     tok = self.peek()
@@ -672,6 +679,21 @@ class Parser:
             else:
                 break
         return tex
+
+    def parse_template(self) -> Template:
+        template_name = self.consume("IDENT").value
+        self.consume("LBRACKET")
+        allowed_vars: list[Var] = [Var(self.consume("IDENT").value)]
+        while self.peek().type == "COMMA":
+            self.consume("COMMA")
+            allowed_vars.append(Var(self.consume("IDENT").value))
+        self.consume("NOT_ALLOWED")
+        not_allowed_vars: list[Var] = [Var(self.consume("IDENT").value)]
+        while self.peek().type == "COMMA":
+            self.consume("COMMA")
+            not_allowed_vars.append(Var(self.consume("IDENT").value))
+        self.consume("RBRACKET")
+        return Template(template_name, tuple(allowed_vars), tuple(not_allowed_vars))
 
 if __name__ == "__main__":
     import sys

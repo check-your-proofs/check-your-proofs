@@ -83,16 +83,18 @@ class Bottom:
 @dataclass(frozen=True)
 class Template:
     name: str
-    arity: int
+    allowed_vars: tuple[Var]
+    not_allowed_vars:  tuple[Var]
 
 @dataclass
 class TemplateCall(Formula):
     template: Template
-    args: list[Term]
+    bindings: dict[Var, Var]
 
     def __post_init__(self):
-        if len(self.args) != self.template.arity:
-            raise ValueError(f"{self.template.name} expects {self.template.arity} args, got {len(self.args)}")
+        for var in self.bindings:
+            if var not in self.template.allowed_vars:
+                raise Exception(f"{var} not in {self.template.allowed_vars}")
 
 @dataclass
 class ForallTemplate(Formula):
@@ -487,7 +489,9 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
     if isinstance(expr, Bottom):
         return "\\bot"
     if isinstance(expr, Template):
-        return f"{expr.name}({str(expr.arity)})"
+        allowed_vars_text = ",".join([var.name for var in expr.allowed_vars])
+        not_allowed_vars_text = ",".join([var.name for var in expr.not_allowed_vars])
+        return f"{expr.name}[{allowed_vars_text}\\mid\\text{{not }}{not_allowed_vars_text}]"
     if isinstance(expr, ForallTemplate):
         body = expr
         qtemps = []
@@ -501,10 +505,15 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
         for qtemp in qtemps:
             if isinstance(qtemp, ForallTemplate):
                 q_text = "\\forall^T"
-            qtemps_text += q_text + qtemp.template.name + "(" + str(qtemp.template.arity) + ")"
+            allowed_vars_text = ",".join([var.name for var in qtemp.template.allowed_vars])
+            not_allowed_vars_text = ",".join([var.name for var in qtemp.template.not_allowed_vars])
+            qtemps_text += f"{q_text}{qtemp.template.name}[{allowed_vars_text}\\mid\\text{{not }}{not_allowed_vars_text}]"
         text = f"{qtemps_text} {pretty_expr(body, context, OP_PRECEDENCE["Quantifier"])}"
         return text if OP_PRECEDENCE["Quantifier"] > parent_prec else f"({text})"
     if isinstance(expr, TemplateCall):
-        text = f"{expr.template.name}({",".join([pretty_expr(arg, context) for arg in expr.args])})"
+        env_text = ",".join([f"{k.name}:{v.name}" for k, v in expr.bindings.items() if k != v])
+        if env_text != "":
+            env_text = f"[{env_text}]"
+        text = f"{expr.template.name}{env_text}"
         return text if OP_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
     raise TypeError(f"Unsupported node type: {type(expr)}")

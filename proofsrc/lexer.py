@@ -16,7 +16,9 @@ SYMBOLS = {
     ":": "COLON",
     ",": "COMMA",
     "(": "LPAREN",
-    ")": "RPAREN"
+    ")": "RPAREN",
+    "[": "LBRACKET",
+    "]": "RBRACKET",
 }
 
 def lex(src: str) -> list[Token]:
@@ -45,6 +47,9 @@ def lex(src: str) -> list[Token]:
         if c in SYMBOLS:
             tokens.append(Token(SYMBOLS[c], c, i, line))
             i += 1
+        elif src[i:].startswith("|not"):
+            tokens.append(Token("NOT_ALLOWED", "|not", i, line))
+            i += len("|not")
         elif src[i:].startswith("\\forall^T"):
             tokens.append(Token("FORALL_TEMPLATE", "\\forall^T", i, line))
             i += len("\\forall^T")
