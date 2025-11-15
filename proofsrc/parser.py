@@ -10,8 +10,8 @@ class Parser:
     def __init__(self, tokens: list[Token]):
         self.tokens = tokens
         self.pos = 0
-        self.bound_templates: dict[str, Template] = {}
-        self.free_templates: dict[str, Template] = {}
+        self.bound_items: dict[str, Var | Template] = {}
+        self.free_items: dict[str, Var | Template] = {}
 
     def peek(self) -> Token:
         if self.pos >= len(self.tokens):
@@ -99,13 +99,20 @@ class Parser:
                 autoexpand =False
             name = self.consume("IDENT").value
             self.consume("LPAREN")
-            args = [Var(self.consume("IDENT").value)]
-            while self.peek().type == "COMMA":
-                self.consume("COMMA")
+            args: list[Var] = []
+            while True:
                 args.append(Var(self.consume("IDENT").value))
+                if self.peek().type == "COMMA":
+                    self.consume("COMMA")
+                else:
+                    break
             self.consume("RPAREN")
             self.consume("AS")
+            for arg in args:
+                self.free_items[arg.name] = arg
             formula = self.parse_formula()
+            for arg in args:
+                self.free_items.pop(arg.name)
             tex = self.parse_tex()
             if len(tex) != len(args) + 1:
                 raise SyntaxError("arity is different")
@@ -162,13 +169,20 @@ class Parser:
                 return deffun
             else:
                 self.consume("LPAREN")
-                args = [Var(self.consume("IDENT").value)]
-                while self.peek().type == "COMMA":
-                    self.consume("COMMA")
+                args: list[Var] = []
+                while True:
                     args.append(Var(self.consume("IDENT").value))
+                    if self.peek().type == "COMMA":
+                        self.consume("COMMA")
+                    else:
+                        break
                 self.consume("RPAREN")
                 self.consume("AS")
+                for arg in args:
+                    self.free_items[arg.name] = arg
                 term = self.parse_term()
+                for arg in args:
+                    self.free_items.pop(arg.name)
                 tex = self.parse_tex()
                 if len(tex) != len(args) + 1:
                     raise SyntaxError("arity is different")
@@ -278,7 +292,6 @@ class Parser:
                 self.consume("TEMPLATE")
                 template = self.parse_template()
                 items.append(template)
-                self.free_templates[template.name] = template
             else:
                 var = Var(self.consume("IDENT").value)
                 items.append(var)
@@ -286,6 +299,8 @@ class Parser:
                 self.consume("COMMA")
             else:
                 break
+        for item in items:
+            self.free_items[item.name] = item
         if self.peek().type == "CONCLUDE":
             self.consume("CONCLUDE")
             conclusion = self.parse_formula()
@@ -295,8 +310,7 @@ class Parser:
         body = self.parse_block()
         self.consume("RBRACE")
         for item in items:
-            if isinstance(item, Template):
-                self.free_templates.pop(item.name)
+            self.free_items.pop(item.name)
         return Any(items=items, conclusion=conclusion, body=body)
 
     def parse_assume(self) -> Assume:
@@ -337,7 +351,7 @@ class Parser:
     
     def parse_some(self) -> Some:
         self.consume("SOME")
-        env = {}
+        env: dict[Var, Var] = {}
         while True:
             bound = Var(self.consume("IDENT").value)
             self.consume("COLON")
@@ -349,6 +363,8 @@ class Parser:
             break
         self.consume("SUCH")
         fact = self.parse_reference_or_formula()
+        for item in env.values():
+            self.free_items[item.name] = item
         if self.peek().type == "CONCLUDE":
             self.consume("CONCLUDE")
             conclusion = self.parse_bot_or_formula()
@@ -357,6 +373,8 @@ class Parser:
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
+        for item in env.values():
+            self.free_items.pop(item.name)
         return Some(env=env, fact=fact, conclusion=conclusion, body=body)
     
     def parse_deny(self) -> Deny:
@@ -386,8 +404,6 @@ class Parser:
             if self.peek().type == "TEMPLATE":
                 self.consume("TEMPLATE")
                 bound = self.parse_template()
-                if bound.name not in self.bound_templates:
-                    raise Exception(f"{bound} is not declared")
                 self.consume("COLON")
                 free = self.parse_template()
                 env[bound] = free
@@ -559,11 +575,13 @@ class Parser:
         tok = self.peek()
         if tok.type == "IDENT":
             name = self.consume("IDENT").value
-            if name in self.bound_templates or name in self.free_templates:
-                if name in self.bound_templates:
-                    template = self.bound_templates[name]
+            if name in self.bound_items or name in self.free_items:
+                if name in self.bound_items:
+                    template = self.bound_items[name]
                 else:
-                    template = self.free_templates[name]
+                    template = self.free_items[name]
+                if not isinstance(template, Template):
+                    raise Exception(f"{template} is not Template object")
                 env: dict[Var, Var] = {}
                 for var in template.allowed_vars:
                     env[var] = var
@@ -624,11 +642,14 @@ class Parser:
                     quantifiers.append(self.consume(tok.type).type)
                     template = self.parse_template()
                     items.append(template)
-                    self.bound_templates[template.name] = template
                     tok = self.peek()
+            for item in items:
+                self.bound_items[item.name] = item
             self.consume("LPAREN")
             body = self.parse_formula()
             self.consume("RPAREN")
+            for item in items:
+                self.bound_items.pop(item.name)
             for quantifier, item in zip(reversed(quantifiers), reversed(items)):
                 if quantifier == "FORALL" or quantifier == "FORALL_TEMPLATE":
                     body = Forall(item, body)
@@ -645,9 +666,13 @@ class Parser:
         tok = self.peek()
         if tok.type == "IDENT":
             name = self.consume("IDENT").value
-            if self.peek().type == "LPAREN":
-                if not (name in self.context.deffuns or name in self.context.deffunterms):
-                    raise SyntaxError(f"Unexpected token (fun): {tok}")
+            if name in self.bound_items:
+                return self.bound_items[name]
+            elif name in self.free_items:
+                return self.free_items[name]
+            elif name in self.context.defcons:
+                return Con(name)
+            elif name in self.context.deffuns or name in self.context.deffunterms:
                 self.consume("LPAREN")
                 args = [self.parse_term()]
                 while self.peek().type == "COMMA":
@@ -660,10 +685,8 @@ class Parser:
                 if name in self.context.deffunterms and len(args) != len(self.context.deffunterms[name].args):
                     raise SyntaxError("arity is different (deffunterm)")
                 return Compound(Fun(name), args)
-            elif name in self.context.defcons:
-                return Con(name)
             else:
-                return Var(name)
+                raise SyntaxError(f"Unexpected token: {tok}")
         else:
             raise SyntaxError(f"Unexpected token: {tok}")
 

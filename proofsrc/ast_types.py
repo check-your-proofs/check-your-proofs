@@ -38,7 +38,7 @@ class Symbol(Formula):
     args: list[Term]
 
 @dataclass(frozen=True)
-class Template:
+class Template(Term):
     name: str
     allowed_vars: tuple[Var]
     not_allowed_vars:  tuple[Var]

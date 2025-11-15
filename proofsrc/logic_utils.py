@@ -125,6 +125,9 @@ def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Temp
     if isinstance(e1, Var) and isinstance(e2, Var):
         return env.get(e1, e1) == e2
 
+    if isinstance(e1, Template) and isinstance(e2, Template):
+        return env.get(e1, e1) == e2
+
     if isinstance(e1, TemplateCall) and isinstance(e2, TemplateCall):
         if env.get(e1.template, e1.template) != e2.template:
             return False
@@ -163,7 +166,7 @@ def collect_vars(expr: Formula | Term, bound: set[Var | Template] | None = None)
     elif isinstance(expr, (Fun, Con)):
         return set(), set()
 
-    elif isinstance(expr, Var):
+    elif isinstance(expr, (Var, Template)):
         if expr in bound:
             return set(), set()
         else:
@@ -237,7 +240,7 @@ def expand_basic_defs(expr: Formula, context: Context, expand_all: bool, bound_t
                 return Compound(expand_basic_defs(expr.fun, context, expand_all, bound_templates), [expand_basic_defs(arg, context, expand_all, bound_templates) for arg in expr.args])
         else:
             raise Exception(f"Unexpected function name: {expr.fun.name}")
-    elif isinstance(expr, (Pred, Fun, Con, Var)):
+    elif isinstance(expr, (Pred, Fun, Con, Var, Template)):
         return expr
     elif isinstance(expr, Not):
         return Not(expand_basic_defs(expr.body, context, expand_all, bound_templates))
