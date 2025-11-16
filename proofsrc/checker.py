@@ -622,12 +622,22 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
         if context.equality is None:
             logger.error(f"{sp}❌ [Substitute] equality has not been declared yet")
             return False
-        equations = [Symbol(Pred(context.equality.equal.name), [k, v]) for k, v in node.env.items()]
-        for equation in equations:
-            if not goal_in_context(equation, context):
-                logger.error(f"{sp}❌ [Substitute] Not fact: {pretty_expr(equation, context)}")
-                return False
-            logger.debug(f"{sp}[Substitute] Fact: {pretty_expr(equation, context)}")
+        premises_equal: list[str | Formula] = []
+        for k, v in node.env.items():
+            equation = Symbol(Pred(context.equality.equal.name), [k, v])
+            if k in node.evidence:
+                evidence = get_fact(node.evidence[k], context)
+                if not alpha_equiv_with_defs(equation, evidence, context):
+                    logger.error(f"{sp}❌ [Substitute] Not fact: {pretty_expr(equation, context)}")
+                    return False
+                logger.debug(f"{sp}[Substitute] Fact: {pretty_expr(equation, context)}")
+                premises_equal.append(node.evidence[k])
+            else:
+                if not goal_in_context(equation, context):
+                    logger.error(f"{sp}❌ [Substitute] Not fact: {pretty_expr(equation, context)}")
+                    return False
+                logger.debug(f"{sp}[Substitute] Fact: {pretty_expr(equation, context)}")
+                premises_equal.append(equation)
         fact_subst = substitute(fact, node.env)
         conclusion_subst = substitute(node.conclusion, node.env)
         logger.debug(f"{sp}[Substitute] fact_subst: {pretty_expr(fact_subst, context)}")
@@ -636,7 +646,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [Substitute] Not matched")
             return False
         logger.debug(f"{sp}[Substitute] Matched")
-        node.proofinfo.premises = [fact] + equations
+        node.proofinfo.premises = [fact] + premises_equal
         node.proofinfo.conclusions = [node.conclusion]
         add_conclusion(context, node.conclusion)
         logger.debug(f"{sp}[Substitute] Added {pretty_expr(node.conclusion, context)}")

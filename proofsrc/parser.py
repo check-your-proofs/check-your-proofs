@@ -506,19 +506,24 @@ class Parser:
         self.consume("SUBSTITUTE")
         fact = self.parse_reference_or_formula()
         self.consume("FOR")
-        env = {}
+        env: dict[Term, Term] = {}
+        evidence: dict[Term, str] = {}
         while True:
             key = self.parse_term()
             self.consume("COLON")
             value = self.parse_term()
             env[key] = value
+            if self.peek().type == "BY":
+                self.consume("BY")
+                evidence_name = self.consume("IDENT").value
+                evidence[key] = evidence_name
             if self.peek().type == "COMMA":
                 self.consume("COMMA")
             else:
                 break
         self.consume("CONCLUDE")
         conclusion = self.parse_formula()
-        return Substitute(fact=fact, env=env, conclusion=conclusion)
+        return Substitute(fact=fact, env=env, evidence=evidence, conclusion=conclusion)
 
     def parse_show(self) -> Show:
         self.consume("SHOW")

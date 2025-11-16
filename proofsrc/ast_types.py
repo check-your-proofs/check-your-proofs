@@ -205,6 +205,7 @@ class Connect(Control):
 class Substitute(Control):
     fact: str | Formula
     env: dict[Term, Term]
+    evidence: dict[Term, str]
     conclusion: Formula
 
 @dataclass

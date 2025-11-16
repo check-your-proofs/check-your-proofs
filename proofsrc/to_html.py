@@ -440,11 +440,17 @@ def render_node(node: Declaration | Control, context: Context, mode: str) -> str
                            render_expr_list(node.proofinfo.conclusions, context),
                            "を得る。"]
     elif isinstance(node, Substitute):
+        env_parts = ""
+        for k, v in node.env.items():
+            if k in node.evidence:
+                env_parts += render_expr(k, context) + ":" + render_expr(v, context) + render_keyword("by") + render_identifier(node.evidence[k])
+            else:
+                env_parts += render_expr(k, context) + ":" + render_expr(v, context)
         header_parts = [bullet,
                         render_keyword("substitute"),
                         render_expr(node.fact, context),
                         render_keyword("for"),
-                        render_expr_dict(node.env, context),
+                        env_parts,
                         render_keyword("conclude"),
                         render_expr(node.conclusion, context)]
         header_parts_jp = [bullet,
