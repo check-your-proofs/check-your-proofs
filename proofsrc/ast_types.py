@@ -44,6 +44,16 @@ class Symbol(Formula):
 @dataclass(frozen=True)
 class Template(Term):
     name: str
+    arity: int
+
+@dataclass(frozen=True)
+class TemplateCall(Formula):
+    template: Template
+    args: tuple[Var]
+
+    def __post_init__(self):
+        if len(self.args) != self.template.arity:
+            raise Exception(f"arity of {self.template.name} is {self.template.arity}, but args are {",".join([arg.name for arg in self.args])}")
 
 @dataclass(frozen=True)
 class FormulaTerm(Term):
@@ -488,7 +498,9 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
     if isinstance(expr, Bottom):
         return "\\bot"
     if isinstance(expr, Template):
-        return expr.name
+        return f"{expr.name}[{str(expr.arity)}]"
+    if isinstance(expr, TemplateCall):
+        return f"{expr.template.name}({",".join([arg.name for arg in expr.args])})"
     if isinstance(expr, FormulaTerm):
         return f"[{",".join([var.name for var in expr.allowed_vars])} \\mid {pretty_expr(expr.formula, context)}]"
     raise TypeError(f"Unsupported node type: {type(expr)}")

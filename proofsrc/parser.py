@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, FormulaTerm, FreshVar
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, FormulaTerm, FreshVar, TemplateCall
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -584,7 +584,16 @@ class Parser:
                     template = self.free_items[name]
                 if not isinstance(template, Template):
                     raise Exception(f"{template} is not Template object")
-                return template
+                self.consume("LPAREN")
+                args: list[Var] = []
+                while True:
+                    args.append(self.parse_var())
+                    if self.peek().type == "COMMA":
+                        self.consume("COMMA")
+                    else:
+                        break
+                self.consume("RPAREN")
+                return TemplateCall(template, args)
             elif name in self.context.primpreds or name in self.context.defpreds:
                 if name in self.context.primpreds:
                     arity = self.context.primpreds[name].arity
@@ -621,15 +630,16 @@ class Parser:
             while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_TEMPLATE"):
                 if tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
                     quantifiers.append(self.consume(tok.type).type)
-                    items.append(self.parse_var())
+                    var = self.parse_var()
+                    items.append(var)
+                    self.bound_items[var.name] = var
                     tok = self.peek()
                 else:
                     quantifiers.append(self.consume(tok.type).type)
                     template = self.parse_template()
                     items.append(template)
+                    self.bound_items[template.name] = template
                     tok = self.peek()
-            for item in items:
-                self.bound_items[item.name] = item
             self.consume("LPAREN")
             body = self.parse_formula()
             self.consume("RPAREN")
@@ -710,25 +720,34 @@ class Parser:
         return tex
 
     def parse_var(self) -> Var:
-        name = self.consume("IDENT").value
+        var_name = self.consume("IDENT").value
         if self.peek().type == "LBRACKET":
             self.consume("LBRACKET")
             self.consume("HASH")
             fresh_templates: list[Template] = []
             while True:
-                fresh_templates.append(self.parse_template())
+                template_name = self.consume("IDENT").value
+                if template_name in self.bound_items:
+                    fresh_templates.append(self.bound_items[template_name])
+                elif template_name in self.free_items:
+                    fresh_templates.append(self.free_items[template_name])
+                else:
+                    raise Exception(f"Unknown template name: {template_name} at line {self.tokens[self.pos].line}, column {self.tokens[self.pos].column}")
                 if self.peek().type == "COMMA":
                     self.consume("COMMA")
                 else:
                     break
             self.consume("RBRACKET")
-            return FreshVar(name, tuple(fresh_templates))
+            return FreshVar(var_name, tuple(fresh_templates))
         else:
-            return Var(name)
+            return Var(var_name)
 
     def parse_template(self) -> Template:
         template_name = self.consume("IDENT").value
-        return Template(template_name)
+        self.consume("LBRACKET")
+        arity = int(self.consume("NUMBER").value)
+        self.consume("RBRACKET")
+        return Template(template_name, arity)
 
 if __name__ == "__main__":
     import sys
