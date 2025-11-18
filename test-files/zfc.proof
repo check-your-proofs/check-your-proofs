@@ -864,11 +864,11 @@ theorem sep_cor1 \forall x\forall^T\phi[1](subset(sep(x,\phi),x)) {
   }
 }
 
-definition function bigcap(u) as sep(bigcup(u),[z | \forall w(in(w,u)\to in(z,w))]) tex "\bigcap",""
+definition function bigcap(u) as sep(bigcup(u), lambda z. \forall w(in(w,u)\to in(z,w))) tex "\bigcap",""
 
 theorem bigcap_cor1 equal(bigcap(emptyset),emptyset) {
-  apply sep_cor1 for x:bigcup(emptyset), \phi:[z | \forall w(in(w,emptyset)\to in(z,w))]
-  expand subset(sep(bigcup(emptyset),[z | \forall w(in(w,emptyset)\to in(z,w))]),bigcup(emptyset)) conclude subset(bigcap(emptyset),bigcup(emptyset))
+  apply sep_cor1 for x:bigcup(emptyset), \phi: lambda z. \forall w(in(w,emptyset)\to in(z,w))
+  expand subset(sep(bigcup(emptyset), lambda z. \forall w(in(w,emptyset)\to in(z,w))),bigcup(emptyset)) conclude subset(bigcap(emptyset),bigcup(emptyset))
   substitute subset(bigcap(emptyset),bigcup(emptyset)) for bigcup(emptyset):emptyset by bigcup_cor2 conclude subset(bigcap(emptyset),emptyset)
   apply emptyset_subset_cor1 for x:bigcap(emptyset)
   invoke subset(bigcap(emptyset),emptyset)\to equal(bigcap(emptyset),emptyset)

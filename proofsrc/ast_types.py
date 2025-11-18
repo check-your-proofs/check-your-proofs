@@ -56,9 +56,9 @@ class TemplateCall(Formula):
             raise Exception(f"arity of {self.template.name} is {self.template.arity}, but args are {",".join([arg.name for arg in self.args])}")
 
 @dataclass(frozen=True)
-class FormulaTerm(Term):
-    allowed_vars: tuple[Var]
-    formula: Formula
+class Lambda(Term):
+    args: tuple[Var]
+    body: Formula
 
 @dataclass(frozen=True)
 class Forall(Formula):
@@ -501,6 +501,6 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
         return f"{expr.name}[{str(expr.arity)}]"
     if isinstance(expr, TemplateCall):
         return f"{expr.template.name}({",".join([arg.name for arg in expr.args])})"
-    if isinstance(expr, FormulaTerm):
-        return f"[{",".join([var.name for var in expr.allowed_vars])} \\mid {pretty_expr(expr.formula, context)}]"
+    if isinstance(expr, Lambda):
+        return f"\\lambda {",".join([var.name for var in expr.args])}. {pretty_expr(expr.body, context)}"
     raise TypeError(f"Unsupported node type: {type(expr)}")

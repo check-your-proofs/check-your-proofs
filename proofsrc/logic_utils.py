@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, Template, FormulaTerm, TemplateCall
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, Template, Lambda, TemplateCall
 from itertools import permutations
 from copy import deepcopy
 
@@ -133,8 +133,8 @@ def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Temp
                 return False
         return True
 
-    if isinstance(e1, FormulaTerm) and isinstance(e2, FormulaTerm):
-        return alpha_equiv(e1.formula, e2.formula, context, env)
+    if isinstance(e1, Lambda) and isinstance(e2, Lambda):
+        return alpha_equiv(e1.body, e2.body, context, env)
 
     return False
 
@@ -192,9 +192,9 @@ def collect_vars(expr: Formula | Term, bound: set[Var | Template] | None = None)
         else:
             return free | {expr.template}, set()
 
-    elif isinstance(expr, FormulaTerm):
-        f_body, b_body= collect_vars(expr.formula, bound | set(expr.allowed_vars))
-        return f_body, b_body | set(expr.allowed_vars)
+    elif isinstance(expr, Lambda):
+        f_body, b_body= collect_vars(expr.body, bound | set(expr.args))
+        return f_body, b_body | set(expr.args)
 
     else:
         raise Exception(f"Unexpected type {type(expr)}")
@@ -257,8 +257,8 @@ def expand_basic_defs(expr: Formula, context: Context, expand_all: bool, bound_t
             return expr
         else:
             raise Exception(f"{expr.template} in {context.templates} or {expr.template} in {bound_templates}")
-    elif isinstance(expr, FormulaTerm):
-        return expand_basic_defs(expr.formula, context, expand_all, bound_templates)
+    elif isinstance(expr, Lambda):
+        return expand_basic_defs(expr.body, context, expand_all, bound_templates)
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
@@ -328,8 +328,8 @@ def substitute(expr: Formula, mapping: dict[Term, Term], used_vars: set[Var] | N
             used_vars.add(var)
             return type(expr)(var, substitute(expr.body, mapping, used_vars))
 
-    if isinstance(expr, FormulaTerm):
-        return FormulaTerm(expr.allowed_vars, substitute(expr.formula, mapping, used_vars))
+    if isinstance(expr, Lambda):
+        return Lambda(expr.args, substitute(expr.body, mapping, used_vars))
 
     return expr
 

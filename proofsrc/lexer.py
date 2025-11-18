@@ -9,7 +9,7 @@ class Token:
     line: int
     column: int
 
-KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "lift", "primitive", "predicate", "arity", "axiom", "invoke", "expand", "constant", "by", "pad", "split", "connect", "existence", "uniqueness", "autoexpand", "function", "equality", "reflection", "replacement", "substitute", "characterize", "show", "tex", "as", "template"}
+KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "lift", "primitive", "predicate", "arity", "axiom", "invoke", "expand", "constant", "by", "pad", "split", "connect", "existence", "uniqueness", "autoexpand", "function", "equality", "reflection", "replacement", "substitute", "characterize", "show", "tex", "as", "template", "lambda"}
 
 SYMBOLS = {
     "{": "LBRACE",
@@ -21,7 +21,8 @@ SYMBOLS = {
     "[": "LBRACKET",
     "]": "RBRACKET",
     "|": "SLASH",
-    "#": "HASH"
+    "#": "HASH",
+    ".": "DOT"
 }
 
 def lex(src: str) -> list[Token]:

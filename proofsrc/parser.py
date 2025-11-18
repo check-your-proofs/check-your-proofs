@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, FormulaTerm, FreshVar, TemplateCall
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, FreshVar, TemplateCall
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -688,23 +688,22 @@ class Parser:
                 return Compound(Fun(name), args)
             else:
                 raise SyntaxError(f"Unexpected token: {tok}")
-        elif tok.type == "LBRACKET":
-            self.consume("LBRACKET")
-            allowed_vars: list[Var] = []
+        elif tok.type == "LAMBDA":
+            self.consume("LAMBDA")
+            args: list[Var] = []
             while True:
-                allowed_vars.append(self.parse_var())
+                args.append(self.parse_var())
                 if self.peek().type == "COMMA":
                     self.consume("COMMA")
                 else:
                     break
-            for var in allowed_vars:
-                self.free_items[var.name] = var
-            self.consume("SLASH")
+            for arg in args:
+                self.free_items[arg.name] = arg
+            self.consume("DOT")
             formula = self.parse_formula()
-            self.consume("RBRACKET")
-            for var in allowed_vars:
-                self.free_items.pop(var.name)
-            return FormulaTerm(tuple(allowed_vars), formula)
+            for arg in args:
+                self.free_items.pop(arg.name)
+            return Lambda(tuple(args), formula)
         else:
             raise SyntaxError(f"Unexpected token: {tok}")
 
