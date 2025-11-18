@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, TemplateCall, Template, FormulaTerm
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, Template, FormulaTerm
 from itertools import permutations
 from copy import deepcopy
 
@@ -63,13 +63,6 @@ def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Temp
                     if isinstance(v1, Template) and isinstance(v2, Var):
                         skip_perm = True
                         break
-                    if isinstance(v1, Template) and isinstance(v2, Template):
-                        if set(v1.allowed_vars) != set(v2.allowed_vars):
-                            skip_perm = True
-                            break
-                        if set(v1.not_allowed_vars) != set(v2.not_allowed_vars):
-                            skip_perm = True
-                            break
                     newenv[v1] = v2
                 if skip_perm:
                     continue
@@ -128,16 +121,6 @@ def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Temp
     if isinstance(e1, Template) and isinstance(e2, Template):
         return env.get(e1, e1) == e2
 
-    if isinstance(e1, TemplateCall) and isinstance(e2, TemplateCall):
-        if env.get(e1.template, e1.template) != e2.template:
-            return False
-        if set(e1.bindings.keys()) != set(e2.bindings.keys()):
-            return False
-        for k in e1.bindings:
-            if not alpha_equiv(e1.bindings[k], e2.bindings[k], context, env):
-                return False
-        return True
-
     if isinstance(e1, FormulaTerm) and isinstance(e2, FormulaTerm):
         return alpha_equiv(e1.formula, e2.formula, context, env)
 
@@ -186,16 +169,6 @@ def collect_vars(expr: Formula | Term, bound: set[Var | Template] | None = None)
     elif isinstance(expr, (Forall, Exists, ExistsUniq)):
         f_body, b_body = collect_vars(expr.body, bound | {expr.var})
         return f_body, b_body | {expr.var}
-
-    elif isinstance(expr, TemplateCall):
-        free = set()
-        for var in expr.bindings.values():
-            f, _ = collect_vars(var, bound)
-            free.update(f)
-        if expr.template in bound:
-            return free, set()
-        else:
-            return free | {expr.template}, set()
 
     elif isinstance(expr, FormulaTerm):
         f_body, b_body= collect_vars(expr.formula, bound | set(expr.allowed_vars))
@@ -257,18 +230,13 @@ def expand_basic_defs(expr: Formula, context: Context, expand_all: bool, bound_t
         if isinstance(expr, Forall) and isinstance(expr.var, Template):
             bound_templates.append(expr.var)
         return type(expr)(expr.var, expand_basic_defs(expr.body, context, expand_all, bound_templates))
-    elif isinstance(expr, TemplateCall):
-        if expr.template in context.templates or expr.template in bound_templates:
-            return expr
-        else:
-            raise Exception(f"{expr.template} in {context.templates} or {expr.template} in {bound_templates}")
     elif isinstance(expr, FormulaTerm):
         return expand_basic_defs(expr.formula, context, expand_all, bound_templates)
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
 def normalize_neg(expr: Formula) -> Formula:
-    if isinstance(expr, (Symbol, TemplateCall)):
+    if isinstance(expr, (Symbol, Template)):
         return expr
     elif isinstance(expr, Not):
         if isinstance(expr.body, Not):
@@ -301,6 +269,9 @@ def substitute(expr: Formula, mapping: dict[Term, Term], used_vars: set[Var] | N
         if expr == k:
             return deepcopy(v)
 
+        if isinstance(k, Var) and isinstance(expr, Var) and expr.name == k.name:
+            return deepcopy(v)
+
     if isinstance(expr, Symbol):
         new_args = [substitute(arg, mapping, used_vars) for arg in expr.args]
         return Symbol(substitute(expr.pred, mapping, used_vars), new_args)
@@ -329,14 +300,6 @@ def substitute(expr: Formula, mapping: dict[Term, Term], used_vars: set[Var] | N
         else:
             used_vars.add(var)
             return type(expr)(var, substitute(expr.body, mapping, used_vars))
-
-    if isinstance(expr, TemplateCall):
-        new_template = mapping.get(expr.template, expr.template)
-        new_bindings: dict[Var, Var] = expr.bindings.copy()
-        for var in mapping:
-            if var in expr.template.allowed_vars:
-                new_bindings[var] = mapping[var]
-        return TemplateCall(new_template, new_bindings)
 
     if isinstance(expr, FormulaTerm):
         return FormulaTerm(expr.allowed_vars, substitute(expr.formula, mapping, used_vars))
@@ -385,10 +348,10 @@ if __name__ == "__main__":
     v = Var("v")
     pair = Fun("pair")
     predin = Pred("in")
-    phi = Template("\\phi", (z, x), (y,))
-    psi = Template("\\psi", (z, x), (y,))
-    e1 = Forall(x, Forall(phi, ExistsUniq(y, Forall(z, Iff(Symbol(predin, [z, y]), And(Symbol(predin, [z, x]), TemplateCall(phi, {z: z, x: x})))))))
-    e2 = Forall(w, Forall(psi, ExistsUniq(y, Forall(v, Iff(Symbol(predin, [v, y]), And(Symbol(predin, [v, w]), TemplateCall(psi, {z: v, x: w})))))))
+    phi = Template("\\phi")
+    psi = Template("\\psi")
+    e1 = Forall(x, Forall(phi, ExistsUniq(y, Forall(z, Iff(Symbol(predin, [z, y]), And(Symbol(predin, [z, x]), phi))))))
+    e2 = Forall(w, Forall(psi, ExistsUniq(y, Forall(v, Iff(Symbol(predin, [v, y]), And(Symbol(predin, [v, w]), psi))))))
     from ast_types import pretty_expr
     print(f"e1: {pretty_expr(e1, context)}")
     print(f"e2: {pretty_expr(e2, context)}")

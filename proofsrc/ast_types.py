@@ -25,6 +25,10 @@ class Var(Term):
     name: str
 
 @dataclass(frozen=True)
+class FreshVar(Var):
+    fresh_templates: tuple["Template"]
+
+@dataclass(frozen=True)
 class Formula:
     pass
 
@@ -40,18 +44,6 @@ class Symbol(Formula):
 @dataclass(frozen=True)
 class Template(Term):
     name: str
-    allowed_vars: tuple[Var]
-    not_allowed_vars:  tuple[Var]
-
-@dataclass(frozen=True)
-class TemplateCall(Formula):
-    template: Template
-    bindings: dict[Var, Var]
-
-    def __post_init__(self):
-        for var in self.bindings:
-            if var not in self.template.allowed_vars:
-                raise Exception(f"{var} not in {self.template.allowed_vars}")
 
 @dataclass(frozen=True)
 class FormulaTerm(Term):
@@ -452,7 +444,10 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
             raise Exception("arity is different")
         return tex[0]
     if isinstance(expr, Var):
-        return expr.name
+        if isinstance(expr, FreshVar):
+            return f"{expr.name}[\\text{{fresh }} {",".join([template.name for template in expr.fresh_templates])}]"
+        else:
+            return expr.name
     if isinstance(expr, Implies):
         text = f"{pretty_expr(expr.left, context, OP_PRECEDENCE["Implies"])} \\to {pretty_expr(expr.right, context, OP_PRECEDENCE["Implies"])}"
         return text if OP_PRECEDENCE["Implies"] > parent_prec else f"({text})"
@@ -481,29 +476,19 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
         for qvar in qvars:
             if isinstance(qvar, Forall):
                 if isinstance(qvar.var, Var):
-                    qvars_text += f"\\forall {qvar.var.name}"
+                    qvars_text += f"\\forall {pretty_expr(qvar.var, context)}"
                 elif isinstance(qvar.var, Template):
-                    allowed_vars_text = ",".join([var.name for var in qvar.var.allowed_vars])
-                    not_allowed_vars_text = ",".join([var.name for var in qvar.var.not_allowed_vars])
-                    qvars_text += f"\\forall^T {qvar.var.name}[{allowed_vars_text}\\mid\\text{{not }}{not_allowed_vars_text}]"
+                    qvars_text += f"\\forall^T {pretty_expr(qvar.var, context)}"
             elif isinstance(qvar, Exists):
-                qvars_text += f"\\exists {qvar.var.name}"
+                qvars_text += f"\\exists {pretty_expr(qvar.var, context)}"
             elif isinstance(qvar, ExistsUniq):
-                qvars_text += f"\\exists! {qvar.var.name}"
+                qvars_text += f"\\exists! {pretty_expr(qvar.var, context)}"
         text = f"{qvars_text} {pretty_expr(body, context, OP_PRECEDENCE["Quantifier"])}"
         return text if OP_PRECEDENCE["Quantifier"] > parent_prec else f"({text})"
     if isinstance(expr, Bottom):
         return "\\bot"
     if isinstance(expr, Template):
-        allowed_vars_text = ",".join([var.name for var in expr.allowed_vars])
-        not_allowed_vars_text = ",".join([var.name for var in expr.not_allowed_vars])
-        return f"{expr.name}[{allowed_vars_text}\\mid\\text{{not }}{not_allowed_vars_text}]"
-    if isinstance(expr, TemplateCall):
-        env_text = ",".join([f"{k.name}:{v.name}" for k, v in expr.bindings.items() if k != v])
-        if env_text != "":
-            env_text = f"[{env_text}]"
-        text = f"{expr.template.name}{env_text}"
-        return text if OP_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
+        return expr.name
     if isinstance(expr, FormulaTerm):
         return f"[{",".join([var.name for var in expr.allowed_vars])} \\mid {pretty_expr(expr.formula, context)}]"
     raise TypeError(f"Unsupported node type: {type(expr)}")

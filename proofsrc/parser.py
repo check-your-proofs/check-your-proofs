@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, TemplateCall, FormulaTerm
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, FormulaTerm, FreshVar
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -101,7 +101,7 @@ class Parser:
             self.consume("LPAREN")
             args: list[Var] = []
             while True:
-                args.append(Var(self.consume("IDENT").value))
+                args.append(self.parse_var())
                 if self.peek().type == "COMMA":
                     self.consume("COMMA")
                 else:
@@ -171,7 +171,7 @@ class Parser:
                 self.consume("LPAREN")
                 args: list[Var] = []
                 while True:
-                    args.append(Var(self.consume("IDENT").value))
+                    args.append(self.parse_var())
                     if self.peek().type == "COMMA":
                         self.consume("COMMA")
                     else:
@@ -293,7 +293,7 @@ class Parser:
                 template = self.parse_template()
                 items.append(template)
             else:
-                var = Var(self.consume("IDENT").value)
+                var = self.parse_var()
                 items.append(var)
             if self.peek().type == "COMMA":
                 self.consume("COMMA")
@@ -353,9 +353,9 @@ class Parser:
         self.consume("SOME")
         env: dict[Var, Var] = {}
         while True:
-            bound = Var(self.consume("IDENT").value)
+            bound = self.parse_var()
             self.consume("COLON")
-            free = Var(self.consume("IDENT").value)
+            free = self.parse_var()
             env[bound] = free
             if self.peek().type == "COMMA":
                 self.consume("COMMA")
@@ -425,7 +425,7 @@ class Parser:
         self.consume("FOR")
         env = {}
         while True:
-            bound = Var(self.consume("IDENT").value)
+            bound = self.parse_var()
             self.consume("COLON")
             term = self.parse_term()
             env[bound] = term
@@ -446,7 +446,7 @@ class Parser:
         else:
             fact = self.parse_formula()
         self.consume("FOR")
-        bound = Var(self.consume("IDENT").value)
+        bound = self.parse_var()
         self.consume("COLON")
         term = self.parse_term()
         env = {bound: term}
@@ -584,24 +584,7 @@ class Parser:
                     template = self.free_items[name]
                 if not isinstance(template, Template):
                     raise Exception(f"{template} is not Template object")
-                env: dict[Var, Var] = {}
-                for var in template.allowed_vars:
-                    env[var] = var
-                if self.peek().type == "LBRACKET":
-                    self.consume("LBRACKET")
-                    while True:
-                        old_var = Var(self.consume("IDENT").value)
-                        self.consume("COLON")
-                        new_var = Var(self.consume("IDENT").value)
-                        if old_var not in env:
-                            raise Exception(f"{old_var} not in {env}")
-                        env[old_var] = new_var
-                        if self.peek().type == "COMMA":
-                            self.consume("COMMA")
-                        else:
-                            break
-                    self.consume("RBRACKET")
-                return TemplateCall(template, env)
+                return template
             elif name in self.context.primpreds or name in self.context.defpreds:
                 if name in self.context.primpreds:
                     arity = self.context.primpreds[name].arity
@@ -638,7 +621,7 @@ class Parser:
             while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_TEMPLATE"):
                 if tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
                     quantifiers.append(self.consume(tok.type).type)
-                    items.append(Var(self.consume("IDENT").value))
+                    items.append(self.parse_var())
                     tok = self.peek()
                 else:
                     quantifiers.append(self.consume(tok.type).type)
@@ -669,9 +652,15 @@ class Parser:
         if tok.type == "IDENT":
             name = self.consume("IDENT").value
             if name in self.bound_items:
-                return self.bound_items[name]
+                if isinstance(self.bound_items[name], FreshVar):
+                    return Var(name)
+                else:
+                    return self.bound_items[name]
             elif name in self.free_items:
-                return self.free_items[name]
+                if isinstance(self.free_items[name], FreshVar):
+                    return Var(name)
+                else:
+                    return self.free_items[name]
             elif name in self.context.defcons:
                 return Con(name)
             elif name in self.context.deffuns or name in self.context.deffunterms:
@@ -693,7 +682,7 @@ class Parser:
             self.consume("LBRACKET")
             allowed_vars: list[Var] = []
             while True:
-                allowed_vars.append(Var(self.consume("IDENT").value))
+                allowed_vars.append(self.parse_var())
                 if self.peek().type == "COMMA":
                     self.consume("COMMA")
                 else:
@@ -720,21 +709,26 @@ class Parser:
                 break
         return tex
 
+    def parse_var(self) -> Var:
+        name = self.consume("IDENT").value
+        if self.peek().type == "LBRACKET":
+            self.consume("LBRACKET")
+            self.consume("FRESH")
+            fresh_templates: list[Template] = []
+            while True:
+                fresh_templates.append(self.parse_template())
+                if self.peek().type == "COMMA":
+                    self.consume("COMMA")
+                else:
+                    break
+            self.consume("RBRACKET")
+            return FreshVar(name, tuple(fresh_templates))
+        else:
+            return Var(name)
+
     def parse_template(self) -> Template:
         template_name = self.consume("IDENT").value
-        self.consume("LBRACKET")
-        allowed_vars: list[Var] = [Var(self.consume("IDENT").value)]
-        while self.peek().type == "COMMA":
-            self.consume("COMMA")
-            allowed_vars.append(Var(self.consume("IDENT").value))
-        self.consume("SLASH")
-        self.consume("NOT")
-        not_allowed_vars: list[Var] = [Var(self.consume("IDENT").value)]
-        while self.peek().type == "COMMA":
-            self.consume("COMMA")
-            not_allowed_vars.append(Var(self.consume("IDENT").value))
-        self.consume("RBRACKET")
-        return Template(template_name, tuple(allowed_vars), tuple(not_allowed_vars))
+        return Template(template_name)
 
 if __name__ == "__main__":
     import sys
