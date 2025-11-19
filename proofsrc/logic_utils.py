@@ -134,7 +134,12 @@ def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Temp
         return True
 
     if isinstance(e1, Lambda) and isinstance(e2, Lambda):
-        return alpha_equiv(e1.body, e2.body, context, env)
+        if len(e1.args) != len(e2.args):
+            return False
+        newenv = env.copy()
+        for a, b in zip(e1.args, e2.args):
+            newenv[a] = b
+        return alpha_equiv(e1.body, e2.body, context, newenv)
 
     return False
 
@@ -258,7 +263,7 @@ def expand_basic_defs(expr: Formula, context: Context, expand_all: bool, bound_t
         else:
             raise Exception(f"{expr.template} in {context.templates} or {expr.template} in {bound_templates}")
     elif isinstance(expr, Lambda):
-        return expand_basic_defs(expr.body, context, expand_all, bound_templates)
+        return Lambda(expr.args, expand_basic_defs(expr.body, context, expand_all, bound_templates))
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
@@ -307,7 +312,7 @@ def substitute(expr: Formula, mapping: dict[Term, Term], used_vars: set[Var] | N
         new_args = tuple(substitute(arg, mapping, used_vars) for arg in expr.args)
         return Compound(substitute(expr.fun, mapping, used_vars), new_args)
 
-    if isinstance(expr, (Pred, Fun, Con, Var)):
+    if isinstance(expr, (Pred, Fun, Con, Var, Template)):
         return expr
 
     if isinstance(expr, Not):
@@ -327,6 +332,20 @@ def substitute(expr: Formula, mapping: dict[Term, Term], used_vars: set[Var] | N
         else:
             used_vars.add(var)
             return type(expr)(var, substitute(expr.body, mapping, used_vars))
+
+    if isinstance(expr, TemplateCall):
+        new_template = substitute(expr.template, mapping, used_vars)
+        if isinstance(new_template, Template):
+            new_args = tuple(substitute(arg, mapping, used_vars) for arg in expr.args)
+            return TemplateCall(substitute(expr.template, mapping, used_vars), new_args)
+        elif isinstance(new_template, Lambda):
+            lambda_mapping = {}
+            for a, b in zip(new_template.args, expr.args):
+                lambda_mapping[a] = b
+            lambda_mapped = substitute(new_template.body, lambda_mapping)
+            return substitute(lambda_mapped, mapping, used_vars)
+        else:
+            raise Exception(f"Unexpected type: {type(new_template)}")
 
     if isinstance(expr, Lambda):
         return Lambda(expr.args, substitute(expr.body, mapping, used_vars))

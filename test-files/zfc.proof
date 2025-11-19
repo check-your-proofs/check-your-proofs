@@ -264,22 +264,22 @@ definition constant emptyset by emptyset_exists_uniquely tex "\emptyset"
   existence emptyset_existence \forall y(notin(y,emptyset))
   uniqueness emptyset_uniqueness \forall x(\forall y(notin(y,x))\to equal(x,emptyset))
 
-theorem not_emptyset_has_a_member \forall x(\neg(equal(x, emptyset))\to\exists y(in(y,x))) {
-    any x conclude \neg(equal(x,emptyset))\to\exists y(in(y,x)) {
-        assume \neg(equal(x,emptyset)) conclude \exists y(in(y,x)) {
-            deny \neg(\exists y(in(y,x))) {
-                any y conclude notin(y,x) {
-                    deny in(y,x) {
-                        lift in(y,x) for y:y conclude \exists y(in(y,x))
-                        contradict \exists y(in(y,x))
-                    }
-                }
-                apply emptyset_uniqueness for x:x conclude \forall y(notin(y,x))\to equal(x,emptyset)
-                invoke \forall y(notin(y,x))\to equal(x,emptyset) conclude equal(x,emptyset)
-                contradict equal(x,emptyset)
-            }
+theorem not_emptyset_has_a_member \forall x(neq(x, emptyset)\to\exists y(in(y,x))) {
+  any x conclude neq(x,emptyset)\to\exists y(in(y,x)) {
+    assume neq(x,emptyset) conclude \exists y(in(y,x)) {
+      deny \neg(\exists y(in(y,x))) {
+        any y conclude notin(y,x) {
+          deny in(y,x) {
+            lift in(y,x) for y:y conclude \exists y(in(y,x))
+            contradict \exists y(in(y,x))
+          }
         }
+        apply emptyset_uniqueness for x:x conclude \forall y(notin(y,x))\to equal(x,emptyset)
+        invoke \forall y(notin(y,x))\to equal(x,emptyset) conclude equal(x,emptyset)
+        contradict equal(x,emptyset)
+      }
     }
+  }
 }
 
 theorem emptyset_subset_cor1 \forall x(subset(x,emptyset)\to equal(x,emptyset)) {
@@ -872,4 +872,39 @@ theorem bigcap_cor1 equal(bigcap(emptyset),emptyset) {
   substitute subset(bigcap(emptyset),bigcup(emptyset)) for bigcup(emptyset):emptyset by bigcup_cor2 conclude subset(bigcap(emptyset),emptyset)
   apply emptyset_subset_cor1 for x:bigcap(emptyset)
   invoke subset(bigcap(emptyset),emptyset)\to equal(bigcap(emptyset),emptyset)
+}
+
+theorem bigcap_cor2 \forall u(neq(u,emptyset)\to\forall z(in(z,bigcap(u))\leftrightarrow\forall w(in(w,u)\to in(z,w)))) {
+  any u {
+    assume neq(u,emptyset) {
+      any z {
+        assume in(z,bigcap(u)) {
+          expand in(z,bigcap(u)) conclude in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))
+          apply sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
+          split in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+          invoke in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\to in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+          split 2 in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+        }
+        assume \forall w(in(w,u)\to in(z,w)) {
+          apply not_emptyset_has_a_member for x:u
+          invoke neq(u,emptyset)\to\exists y(in(y,u))
+          some y:y such \exists y(in(y,u)) {
+            apply \forall w(in(w,u)\to in(z,w)) for w:y
+            invoke in(y,u)\to in(z,y)
+            connect in(z,y)\wedge in(y,u)
+            lift for y:y conclude \exists y(in(z,y)\wedge in(y,u))
+          }
+          apply bigcup_existence for x:u,z:z
+          split in(z,bigcup(u))\leftrightarrow\exists y(in(z,y)\wedge in(y,u))
+          invoke \exists y(in(z,y)\wedge in(y,u))\to in(z,bigcup(u))
+          connect in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+          apply sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
+          split in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+          invoke in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))\to in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))
+          expand in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w)))) conclude in(z,bigcap(u))
+        }
+        connect in(z,bigcap(u))\leftrightarrow\forall w(in(w,u)\to in(z,w))
+      }
+    }
+  }
 }
