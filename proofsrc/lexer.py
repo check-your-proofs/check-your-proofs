@@ -103,13 +103,14 @@ def lex(src: str) -> list[Token]:
                 else:
                     tokens.append(Token("IDENT", text, i, line, column))
                 i += len(text)
-            elif re.match(r"\d+", src[i:]):
-                m = re.match(r"\d+", src[i:])
-                text = m.group(0)
-                tokens.append(Token("NUMBER", text, i, line, column))
-                i += len(text)
             else:
-                raise SyntaxError(f"Unexpected character {c} at pos {i}, line {line}")
+                m = re.match(r"\d+", src[i:])
+                if m:
+                    text = m.group(0)
+                    tokens.append(Token("NUMBER", text, i, line, column))
+                    i += len(text)
+                else:
+                    raise SyntaxError(f"Unexpected character {c} at pos {i}, line {line}")
     tokens.append(Token("EOF", "", i, line, len(src) - line_start_pos + 1))
     return tokens
 
