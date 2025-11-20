@@ -282,6 +282,20 @@ theorem not_emptyset_has_a_member \forall x(neq(x, emptyset)\to\exists y(in(y,x)
   }
 }
 
+theorem has_a_member_not_emptyset \forall x(\exists y(in(y,x))\to neq(x,emptyset)) {
+  any x {
+    assume \exists y(in(y,x)) {
+      deny equal(x,emptyset) {
+        substitute \exists y(in(y,x)) for x:emptyset conclude \exists y(in(y,emptyset))
+        some y:y such \exists y(in(y,emptyset)) {
+          apply emptyset_existence for y:y
+          contradict in(y,emptyset)
+        }
+      }
+    }
+  }
+}
+
 theorem emptyset_subset_cor1 \forall x(subset(x,emptyset)\to equal(x,emptyset)) {
   any x {
     assume subset(x,emptyset) {
@@ -446,6 +460,15 @@ theorem pair_cor8 \forall x\forall y\forall z(equal(pair(x,y),pair(x,z))\to equa
         }
         case equal(y,z) {}
     }
+  }
+}
+
+theorem pair_cor9 \forall x\forall y(neq(pair(x,y),emptyset)) {
+  any x, y {
+    apply pair_cor1 for x:x,y:y
+    lift for z:x conclude \exists z(in(z,pair(x,y)))
+    apply has_a_member_not_emptyset for x:pair(x,y)
+    invoke \exists z(in(z,pair(x,y)))\to neq(pair(x,y),emptyset)
   }
 }
 
@@ -866,7 +889,7 @@ theorem sep_cor1 \forall x\forall^T\phi[1](subset(sep(x,\phi),x)) {
 
 definition function bigcap(u) as sep(bigcup(u), lambda z. \forall w(in(w,u)\to in(z,w))) tex "\bigcap",""
 
-theorem bigcap_cor1 \forall u\forall z(in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))) {
+theorem bigcap_characterization \forall u\forall z(in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))) {
   any u, z {
     assume in(z,bigcap(u)) {
       expand in(z,bigcap(u)) conclude in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))
@@ -884,7 +907,7 @@ theorem bigcap_cor1 \forall u\forall z(in(z,bigcap(u))\leftrightarrow in(z,bigcu
   }
 }
 
-theorem bigcap_cor2 equal(bigcap(emptyset),emptyset) {
+theorem bigcap_cor1 equal(bigcap(emptyset),emptyset) {
   apply sep_cor1 for x:bigcup(emptyset), \phi: lambda z. \forall w(in(w,emptyset)\to in(z,w))
   expand subset(sep(bigcup(emptyset), lambda z. \forall w(in(w,emptyset)\to in(z,w))),bigcup(emptyset)) conclude subset(bigcap(emptyset),bigcup(emptyset))
   substitute subset(bigcap(emptyset),bigcup(emptyset)) for bigcup(emptyset):emptyset by bigcup_cor2 conclude subset(bigcap(emptyset),emptyset)
@@ -892,12 +915,12 @@ theorem bigcap_cor2 equal(bigcap(emptyset),emptyset) {
   invoke subset(bigcap(emptyset),emptyset)\to equal(bigcap(emptyset),emptyset)
 }
 
-theorem bigcap_cor3 \forall u(neq(u,emptyset)\to\forall z(in(z,bigcap(u))\leftrightarrow\forall w(in(w,u)\to in(z,w)))) {
+theorem bigcap_cor2 \forall u(neq(u,emptyset)\to\forall z(in(z,bigcap(u))\leftrightarrow\forall w(in(w,u)\to in(z,w)))) {
   any u {
     assume neq(u,emptyset) {
       any z {
         assume in(z,bigcap(u)) {
-          apply bigcap_cor1 for u:u,z:z
+          apply bigcap_characterization for u:u,z:z
           split in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
           invoke in(z,bigcap(u))\to in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
           split 2 in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
@@ -915,12 +938,73 @@ theorem bigcap_cor3 \forall u(neq(u,emptyset)\to\forall z(in(z,bigcap(u))\leftri
           split in(z,bigcup(u))\leftrightarrow\exists y(in(z,y)\wedge in(y,u))
           invoke \exists y(in(z,y)\wedge in(y,u))\to in(z,bigcup(u))
           connect in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
-          apply bigcap_cor1 for u:u,z:z
+          apply bigcap_characterization for u:u,z:z
           split in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
           invoke in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))\to in(z,bigcap(u))
         }
         connect in(z,bigcap(u))\leftrightarrow\forall w(in(w,u)\to in(z,w))
       }
     }
+  }
+}
+
+theorem bigcap_cor3 \forall x\forall y(in(y,x)\to subset(bigcap(x),y)) {
+  any x, y {
+    assume in(y,x) {
+      any z {
+        assume in(z,bigcap(x)) {
+          apply bigcap_characterization for z:z,u:x
+          split in(z,bigcap(x))\leftrightarrow in(z,bigcup(x))\wedge\forall w(in(w,x)\to in(z,w))
+          invoke in(z,bigcap(x))\to in(z,bigcup(x))\wedge\forall w(in(w,x)\to in(z,w))
+          split in(z,bigcup(x))\wedge\forall w(in(w,x)\to in(z,w))
+          apply \forall w(in(w,x)\to in(z,w)) for w:y
+          invoke in(y,x)\to in(z,y)
+        }
+      }
+      expand \forall z(in(z,bigcap(x))\to in(z,y)) conclude subset(bigcap(x),y)
+    }
+  }
+}
+
+definition function cap(x,y) as bigcap(pair(x,y)) tex "","\cap",""
+
+theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrightarrow in(z,x)\wedge in(z,y)) {
+  any x, y, z {
+    apply bigcap_cor2 for u:pair(x,y)
+    apply pair_cor9 for x:x,y:y
+    invoke neq(pair(x,y),emptyset)\to\forall z(in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w)))
+    apply \forall z(in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))) for z:z
+    split in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))
+    assume in(z,cap(x,y)) {
+      expand in(z,cap(x,y)) conclude in(z,bigcap(pair(x,y)))
+      invoke in(z,bigcap(pair(x,y)))\to\forall w(in(w,pair(x,y))\to in(z,w))
+      apply \forall w(in(w,pair(x,y))\to in(z,w)) for w:x
+      apply pair_cor1 for x:x,y:y
+      invoke in(x,pair(x,y))\to in(z,x)
+      apply \forall w(in(w,pair(x,y))\to in(z,w)) for w:y
+      apply pair_cor2 for x:x,y:y
+      invoke in(y,pair(x,y))\to in(z,y)
+      connect in(z,x)\wedge in(z,y)
+    }
+    assume in(z,x)\wedge in(z,y) {
+      split in(z,x)\wedge in(z,y)
+      any w {
+        assume in(w,pair(x,y)) {
+          apply pair_existence for x:x,y:y,w:w
+          split in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y)
+          invoke in(w,pair(x,y))\to equal(w,x)\vee equal(w,y)
+          divide equal(w,x)\vee equal(w,y)
+            case equal(w,x) {
+              substitute in(z,x) for x:w conclude in(z,w)
+            }
+            case equal(w,y) {
+              substitute in(z,y) for y:w conclude in(z,w)
+            }
+        }
+      }
+      invoke \forall w(in(w,pair(x,y))\to in(z,w))\to in(z,bigcap(pair(x,y)))
+      expand in(z,bigcap(pair(x,y))) conclude in(z,cap(x,y))
+    }
+    connect in(z,cap(x,y))\leftrightarrow in(z,x)\wedge in(z,y)
   }
 }
