@@ -378,30 +378,3 @@ def alpha_rename(expr: Formula, rename_map: dict[Var, Var]) -> Formula:
         return type(expr)(var, alpha_rename(expr.body, rename_map))
     else:
         return expr
-
-if __name__ == "__main__":
-    path = r"test-files\zfc.proof"
-    f = open(path)
-    src = f.read()
-    f.close()
-    from lexer import lex
-    tokens = lex(src)
-    from parser import Parser
-    parser = Parser(tokens)
-    _, context = parser.parse_file()
-    x = Var("x")
-    y = Var("y")
-    z = Var("z")
-    w = Var("w")
-    v = Var("v")
-    pair = Fun("pair")
-    predin = Pred("in")
-    phi = Template("\\phi")
-    psi = Template("\\psi")
-    e1 = Forall(x, Forall(phi, ExistsUniq(y, Forall(z, Iff(Symbol(predin, [z, y]), And(Symbol(predin, [z, x]), phi))))))
-    e2 = Forall(w, Forall(psi, ExistsUniq(y, Forall(v, Iff(Symbol(predin, [v, y]), And(Symbol(predin, [v, w]), psi))))))
-    from ast_types import pretty_expr
-    print(f"e1: {pretty_expr(e1, context)}")
-    print(f"e2: {pretty_expr(e2, context)}")
-    print(f"alpha_equiv(e1, e2): {alpha_equiv(e1, e2, context)}")
-    print(f"alpha_equiv(e2, e1): {alpha_equiv(e2, e1, context)}")
