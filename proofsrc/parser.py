@@ -585,10 +585,10 @@ class Parser:
                 if not isinstance(template, Template):
                     raise Exception(f"{template} is not Template object")
                 if template.arity == 0:
-                    args: list[Var] = []
+                    args: list[Term] = []
                 else:
                     self.consume("LPAREN")
-                    args: list[Var] = []
+                    args: list[Term] = []
                     while True:
                         args.append(self.parse_var())
                         if self.peek().type == "COMMA":
@@ -598,7 +598,7 @@ class Parser:
                     self.consume("RPAREN")
                     if len(args) != template.arity:
                         raise SyntaxError("arity is different")
-                return TemplateCall(template, args)
+                return TemplateCall(template, tuple(args))
             elif name in self.context.primpreds or name in self.context.defpreds:
                 if name in self.context.primpreds:
                     arity = self.context.primpreds[name].arity
@@ -689,20 +689,20 @@ class Parser:
                 raise SyntaxError(f"Unexpected token: {tok}")
         elif tok.type == "LAMBDA":
             self.consume("LAMBDA")
-            args: list[Var] = []
+            vars: list[Var] = []
             while True:
-                args.append(self.parse_var())
+                vars.append(self.parse_var())
                 if self.peek().type == "COMMA":
                     self.consume("COMMA")
                 else:
                     break
-            for arg in args:
-                self.free_items[arg.name] = arg
+            for var in vars:
+                self.free_items[var.name] = var
             self.consume("DOT")
             formula = self.parse_formula()
-            for arg in args:
-                self.free_items.pop(arg.name)
-            return Lambda(tuple(args), formula)
+            for var in vars:
+                self.free_items.pop(var.name)
+            return Lambda(tuple(vars), formula)
         else:
             raise SyntaxError(f"Unexpected token: {tok}")
 

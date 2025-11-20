@@ -45,15 +45,15 @@ class Template(Term):
 @dataclass(frozen=True)
 class TemplateCall(Formula):
     template: Template
-    args: tuple[Var]
+    args: tuple[Term, ...]
 
     def __post_init__(self):
         if len(self.args) != self.template.arity:
-            raise Exception(f"arity of {self.template.name} is {self.template.arity}, but args are {",".join([arg.name for arg in self.args])}")
+            raise Exception(f"arity of {self.template.name} is {self.template.arity}, but length of args is {len(self.args)}")
 
 @dataclass(frozen=True)
 class Lambda(Term):
-    args: tuple[Var]
+    args: tuple[Var, ...]
     body: Formula
 
 @dataclass(frozen=True)
@@ -495,7 +495,7 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
         if expr.template.arity == 0:
             return expr.template.name
         else:
-            return f"{expr.template.name}({",".join([arg.name for arg in expr.args])})"
+            return f"{expr.template.name}({",".join([pretty_expr(arg, context) for arg in expr.args])})"
     if isinstance(expr, Lambda):
         return f"\\lambda {",".join([var.name for var in expr.args])}. {pretty_expr(expr.body, context)}"
     raise TypeError(f"Unsupported node type: {type(expr)}")
