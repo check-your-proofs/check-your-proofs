@@ -28,12 +28,79 @@ def op_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Templat
 
     return True
 
-def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Template, Var | Template] | None = None) -> bool:
+def alpha_equiv(e1: Formula | Term | Pred | Fun, e2: Formula | Term | Pred | Fun, context: Context, env: dict[Var | Template, Var | Template] | None = None) -> bool:
     if env is None:
         env = {}
 
+    if isinstance(e1, Var) and isinstance(e2, Var):
+        return env.get(e1, e1) == e2
+
+    if isinstance(e1, Template) and isinstance(e2, Template):
+        return env.get(e1, e1) == e2
+
+    if isinstance(e1, Con) and isinstance(e2, Con):
+        return e1.name == e2.name
+
+    if isinstance(e1, Fun) and isinstance(e2, Fun):
+        return e1.name == e2.name
+
+    if isinstance(e1, Pred) and isinstance(e2, Pred):
+        return e1.name == e2.name
+
+    if isinstance(e1, Compound) and isinstance(e2, Compound):
+        if not alpha_equiv(e1.fun, e2.fun, context, env):
+            return False
+        if len(e1.args) != len(e2.args):
+            return False
+        for a, b in zip(e1.args, e2.args):
+            if not alpha_equiv(a, b, context, env):
+                return False
+        return True
+
+    if isinstance(e1, Symbol) and isinstance(e2, Symbol):
+        if not alpha_equiv(e1.pred, e2.pred, context, env):
+            return False
+        if len(e1.args) != len(e2.args):
+            return False
+        if context.equality is not None and e1.pred.name == context.equality.equal.name:
+            a1, b1 = e1.args
+            a2, b2 = e2.args
+            return (alpha_equiv(a1, a2, context, env) and alpha_equiv(b1, b2, context, env)) or (alpha_equiv(a1, b2, context, env) and alpha_equiv(b1, a2, context, env))
+        for a, b in zip(e1.args, e2.args):
+            if not alpha_equiv(a, b, context, env):
+                return False
+        return True
+
+    if isinstance(e1, TemplateCall) and isinstance(e2, TemplateCall):
+        if not alpha_equiv(e1.template, e2.template, context, env):
+            return False
+        for a, b in zip(e1.args, e2.args):
+            if not alpha_equiv(a, b, context, env):
+                return False
+        return True
+
     if isinstance(e1, Not) and isinstance(e2, Not):
         return alpha_equiv(e1.body, e2.body, context, env)
+
+    if isinstance(e1, And) and isinstance(e2, And):
+        return op_equiv(e1, e2, context, env, And)
+
+    if isinstance(e1, Or) and isinstance(e2, Or):
+        return op_equiv(e1, e2, context, env, Or)
+
+    if isinstance(e1, Implies) and isinstance(e2, Implies):
+        return alpha_equiv(e1.left, e2.left, context, env) and alpha_equiv(e1.right, e2.right, context, env)
+
+    if isinstance(e1, Iff) and isinstance(e2, Iff):
+        return alpha_equiv(e1.left, e2.left, context, env) and alpha_equiv(e1.right, e2.right, context, env)
+
+    if isinstance(e1, Lambda) and isinstance(e2, Lambda):
+        if len(e1.args) != len(e2.args):
+            return False
+        newenv = env.copy()
+        for a, b in zip(e1.args, e2.args):
+            newenv[a] = b
+        return alpha_equiv(e1.body, e2.body, context, newenv)
 
     for quantifier_type in (Forall, Exists, ExistsUniq):
         if isinstance(e1, quantifier_type) and isinstance(e2, quantifier_type):
@@ -73,73 +140,6 @@ def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Temp
                 if alpha_equiv(body1, body2, context, newenv):
                     return True
             return False
-
-    if isinstance(e1, And) and isinstance(e2, And):
-        return op_equiv(e1, e2, context, env, And)
-
-    if isinstance(e1, Or) and isinstance(e2, Or):
-        return op_equiv(e1, e2, context, env, Or)
-
-    if isinstance(e1, Implies) and isinstance(e2, Implies):
-        return alpha_equiv(e1.left, e2.left, context, env) and alpha_equiv(e1.right, e2.right, context, env)
-
-    if isinstance(e1, Iff) and isinstance(e2, Iff):
-        return alpha_equiv(e1.left, e2.left, context, env) and alpha_equiv(e1.right, e2.right, context, env)
-
-    if isinstance(e1, Symbol) and isinstance(e2, Symbol):
-        if not alpha_equiv(e1.pred, e2.pred, context, env):
-            return False
-        if len(e1.args) != len(e2.args):
-            return False
-        if context.equality is not None and e1.pred.name == context.equality.equal.name:
-            a1, b1 = e1.args
-            a2, b2 = e2.args
-            return (alpha_equiv(a1, a2, context, env) and alpha_equiv(b1, b2, context, env)) or (alpha_equiv(a1, b2, context, env) and alpha_equiv(b1, a2, context, env))
-        for a, b in zip(e1.args, e2.args):
-            if not alpha_equiv(a, b, context, env):
-                return False
-        return True
-
-    if isinstance(e1, Pred) and isinstance(e2, Pred):
-        return e1.name == e2.name
-
-    if isinstance(e1, Compound) and isinstance(e2, Compound):
-        if not alpha_equiv(e1.fun, e2.fun, context, env):
-            return False
-        if len(e1.args) != len(e2.args):
-            return False
-        for a, b in zip(e1.args, e2.args):
-            if not alpha_equiv(a, b, context, env):
-                return False
-        return True
-
-    if isinstance(e1, Fun) and isinstance(e2, Fun):
-        return e1.name == e2.name
-
-    if isinstance(e1, Con) and isinstance(e2, Con):
-        return e1.name == e2.name
-
-    if isinstance(e1, Var) and isinstance(e2, Var):
-        return env.get(e1, e1) == e2
-
-    if isinstance(e1, Template) and isinstance(e2, Template):
-        return env.get(e1, e1) == e2
-
-    if isinstance(e1, TemplateCall) and isinstance(e2, TemplateCall):
-        if env.get(e1.template, e1.template) != e2.template:
-            return False
-        for a, b in zip(e1.args, e2.args):
-            if not alpha_equiv(a, b, context, env):
-                return False
-        return True
-
-    if isinstance(e1, Lambda) and isinstance(e2, Lambda):
-        if len(e1.args) != len(e2.args):
-            return False
-        newenv = env.copy()
-        for a, b in zip(e1.args, e2.args):
-            newenv[a] = b
-        return alpha_equiv(e1.body, e2.body, context, newenv)
 
     return False
 
