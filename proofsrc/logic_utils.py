@@ -1,6 +1,7 @@
 from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, Template, Lambda, TemplateCall
 from itertools import permutations
 from copy import deepcopy
+from typing import Mapping, TypeVar
 
 def flatten_op(expr: Formula, op: type[And] | type[Or]) -> list:
     if isinstance(expr, op):
@@ -300,7 +301,9 @@ def fresh_var(var: Var | Template, used: set[Var | Template]) -> Var | Template:
     else:
         return var
 
-def substitute_term(expr: Term, mapping: dict[Term, Term], used_vars: set[Var | Template] | None = None) -> Term:
+T_Key = TypeVar("T_Key", bound=Term)
+
+def substitute_term(expr: Term, mapping: Mapping[T_Key, Term], used_vars: set[Var | Template] | None = None) -> Term:
     if used_vars is None:
         used_vars = collect_vars(expr)[0]
         for v in mapping.values():
@@ -322,7 +325,7 @@ def substitute_term(expr: Term, mapping: dict[Term, Term], used_vars: set[Var | 
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
-def substitute_formula(expr: Formula, mapping: dict[Term, Term], used_vars: set[Var | Template] | None = None) -> Formula:
+def substitute_formula(expr: Formula, mapping: Mapping[T_Key, Term], used_vars: set[Var | Template] | None = None) -> Formula:
     if used_vars is None:
         used_vars = collect_vars(expr)[0]
         for v in mapping.values():

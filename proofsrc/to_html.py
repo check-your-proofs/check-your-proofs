@@ -1,8 +1,8 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, pretty_expr
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, pretty_expr
 from svg import output_svg
-from typing import Sequence, Mapping
+from typing import Sequence, Mapping, TypeVar
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -66,7 +66,9 @@ def render_expr_mathjax(node: str | Bottom | Formula | Term, context: Context) -
 def render_expr_list_mathjax(expr_list: Sequence[str | Bottom | Formula | Term], context: Context) -> str:
     return ",".join(render_expr_mathjax(expr, context) for expr in expr_list)
 
-def render_expr_dict_mathjax(expr_dict: Mapping[Term, Term], context: Context) -> str:
+T_Key = TypeVar("T_Key", str, Var)
+
+def render_expr_dict_mathjax(expr_dict: Mapping[T_Key, Term], context: Context) -> str:
     parts = [f"{escape(f"\\({pretty_expr(k, context)}\\)")}:{escape(f"\\({pretty_expr(v, context)}\\)")}" for k, v in expr_dict.items()]
     return ",".join(parts)
 
@@ -87,7 +89,7 @@ def render_expr_svg(node: str | Bottom | Formula | Term, context: Context) -> st
 def render_expr_list_svg(expr_list: Sequence[str | Bottom | Formula | Term], context: Context) -> str:
     return ",".join((render_expr_svg(expr, context) for expr in expr_list))
 
-def render_expr_dict_svg(expr_dict: Mapping[Term, Term], context: Context) -> str:
+def render_expr_dict_svg(expr_dict: Mapping[T_Key, Term], context: Context) -> str:
     parts = [f"{render_expr_svg(k, context)}:{render_expr_svg(v, context)}" for k, v in expr_dict.items()]
     return f"{",".join(parts)}"
 
