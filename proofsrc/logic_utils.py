@@ -343,7 +343,7 @@ def substitute_formula(expr: Formula, mapping: dict[Term, Term], used_vars: set[
         if var in mapping.values() or var in used_vars:
             new_var = fresh_var(var, used_vars)
             used_vars.add(new_var)
-            body = substitute_formula(alpha_rename(expr.body, {var: new_var}), mapping, used_vars)
+            body = substitute_formula(alpha_rename_formula(expr.body, {var: new_var}), mapping, used_vars)
             return type(expr)(new_var, body)
         else:
             used_vars.add(var)
@@ -365,27 +365,27 @@ def substitute_formula(expr: Formula, mapping: dict[Term, Term], used_vars: set[
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
-def alpha_rename(expr: Formula, rename_map: dict[Var, Var]) -> Formula:
-    if isinstance(expr, Symbol):
-        new_args = [alpha_rename(a, rename_map) for a in expr.args]
-        return Symbol(alpha_rename(expr.pred, rename_map), new_args)
-    elif isinstance(expr, Pred):
-        return expr
-    elif isinstance(expr, Compound):
-        new_args = [alpha_rename(a, rename_map) for a in expr.args]
-        return Compound(alpha_rename(expr.fun, rename_map), new_args)
-    elif isinstance(expr, Fun):
-        return expr
+def alpha_rename_var(expr: Var | Template, rename_map: dict[Var | Template, Var | Template]) -> Var | Template:
+    return rename_map.get(expr, expr)    
+
+def alpha_rename_term(expr: Term, rename_map: dict[Var | Template, Var | Template]) -> Term:
+    if isinstance(expr, (Var, Template)):
+        return alpha_rename_var(expr, rename_map)
     elif isinstance(expr, Con):
         return expr
-    elif isinstance(expr, Var):
-        return rename_map.get(expr, expr)
-    elif isinstance(expr, Not):
-        return Not(alpha_rename(expr.body, rename_map))
-    elif isinstance(expr, (And, Or, Implies, Iff)):
-        return type(expr)(alpha_rename(expr.left, rename_map), alpha_rename(expr.right, rename_map))
-    elif isinstance(expr, (Exists, Forall)):
-        var = rename_map.get(expr.var, expr.var)
-        return type(expr)(var, alpha_rename(expr.body, rename_map))
+    elif isinstance(expr, Compound):
+        return Compound(expr.fun, tuple(alpha_rename_term(a, rename_map) for a in expr.args))
     else:
-        return expr
+        raise Exception(f"Unexpected type: {type(expr)}")
+
+def alpha_rename_formula(expr: Formula, rename_map: dict[Var | Template, Var | Template]) -> Formula:
+    if isinstance(expr, Symbol):
+        return Symbol(expr.pred, tuple(alpha_rename_term(a, rename_map) for a in expr.args))
+    elif isinstance(expr, Not):
+        return Not(alpha_rename_formula(expr.body, rename_map))
+    elif isinstance(expr, (And, Or, Implies, Iff)):
+        return type(expr)(alpha_rename_formula(expr.left, rename_map), alpha_rename_formula(expr.right, rename_map))
+    elif isinstance(expr, (Exists, Forall)):
+        return type(expr)(alpha_rename_var(expr.var, rename_map), alpha_rename_formula(expr.body, rename_map))
+    else:
+        raise Exception(f"Unexpected type: {type(expr)}")
