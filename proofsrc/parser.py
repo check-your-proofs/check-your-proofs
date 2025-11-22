@@ -612,7 +612,7 @@ class Parser:
                 if len(args) != arity:
                     raise SyntaxError("arity is different")
                 self.consume("RPAREN")
-                return Symbol(Pred(name), args)
+                return Symbol(Pred(name), tuple(args))
             else:
                 raise SyntaxError(f"not found in primpreds or defpreds: {name}")
 

@@ -152,14 +152,14 @@ def render_node(node: Declaration | Control, context: Context, mode: str) -> str
                         render_keyword("definition predicate"),
                         render_keyword("autoexpand") if node.autoexpand else "",
                         render_identifier(node.name),
-                        render_expr(Symbol(Pred(node.name), node.args), context),
+                        render_expr(Symbol(Pred(node.name), tuple(node.args)), context),
                         render_keyword("as"),
                         render_expr(node.formula, context)]
         header_parts_jp = [bullet,
                         render_keyword("述語記号定義"),
                         render_keyword("autoexpand") if node.autoexpand else "",
                         render_identifier(node.name),
-                        render_expr(Symbol(Pred(node.name), node.args), context),
+                        render_expr(Symbol(Pred(node.name), tuple(node.args)), context),
                         "を",
                         render_expr(node.formula, context),
                         "により定める。"]
@@ -233,13 +233,13 @@ def render_node(node: Declaration | Control, context: Context, mode: str) -> str
         header_parts = [bullet,
                         render_keyword("definition function"),
                         render_identifier(node.name),
-                        render_expr(Compound(Fun(node.name), node.args), context),
+                        render_expr(Compound(Fun(node.name), tuple(node.args)), context),
                         render_keyword("as"),
                         render_expr(node.term, context)]
         header_parts_jp = [bullet,
                            render_keyword("関数記号定義"),
                            render_identifier(node.name),
-                           render_expr(Compound(Fun(node.name), node.args), context),
+                           render_expr(Compound(Fun(node.name), tuple(node.args)), context),
                            "を",
                            render_expr(node.term, context),
                            "により定める。"]
@@ -456,7 +456,7 @@ def render_node(node: Declaration | Control, context: Context, mode: str) -> str
         header_parts_jp = [bullet,
                            render_expr(node.fact, context),
                            "に",
-                           ",".join([render_expr(Symbol(Pred(context.equality.equal.name), [k, v]), context) for k, v in node.env.items()]),
+                           ",".join([render_expr(Symbol(Pred(context.equality.equal.name), (k, v)), context) for k, v in node.env.items()]),
                            "を代入して",
                            render_expr_list(node.proofinfo.conclusions, context),
                            "を得る。"]

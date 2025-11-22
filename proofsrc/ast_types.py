@@ -35,7 +35,7 @@ class Pred:
 @dataclass(frozen=True)
 class Symbol(Formula):
     pred: Pred
-    args: list[Term]
+    args: tuple[Term, ...]
 
 @dataclass(frozen=True)
 class Template(Term):

@@ -97,7 +97,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [DefFun] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
             return False
         logger.debug(f"{sp}[DefFun] ExistsUniq object: {pretty_expr(existsuniq, context)}")
-        existence_formula = substitute(existsuniq.body, {existsuniq.var: Compound(Fun(node.name), args)})
+        existence_formula = substitute(existsuniq.body, {existsuniq.var: Compound(Fun(node.name), tuple(args))})
         for arg in reversed(args):
             existence_formula = Forall(arg, existence_formula)
         if not alpha_equiv_with_defs(node.existence.formula, existence_formula, context):
@@ -107,7 +107,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
         if context.equality is None:
             logger.error(f"{sp}❌ [DefFun] equality has not been declared yet")
             return False
-        uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(Pred(context.equality.equal.name), [Var(existsuniq.var.name), Compound(Fun(node.name), args)])))
+        uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(Pred(context.equality.equal.name), (Var(existsuniq.var.name), Compound(Fun(node.name), tuple(args))))))
         for arg in reversed(args):
             uniqueness_formula = Forall(arg, uniqueness_formula)
         if not alpha_equiv_with_defs(node.uniqueness.formula, uniqueness_formula, context):
@@ -130,7 +130,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
     if isinstance(node, Equality):
         logger.debug(f"{sp}[Equality] name: {node.equal.name}")
         logger.debug(f"{sp}[Equality] Checking {node.equal.name} reflection theorem: {pretty_expr(node.reflection.evidence.conclusion, context)}")
-        reflection = Forall(Var("x"), Symbol(Pred(node.equal.name), [Var("x"), Var("x")]))
+        reflection = Forall(Var("x"), Symbol(Pred(node.equal.name), (Var("x"), Var("x"))))
         if not alpha_equiv_with_defs(node.reflection.evidence.conclusion, reflection, context):
             logger.error(f"{sp}❌ [Equality] Not matched with expected formula: {pretty_expr(reflection, context)}")
             return False
@@ -151,10 +151,10 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             for i in range(arity):
                 args_x.append(Var(f"x_{i}"))
                 args_y.append(Var(f"y_{i}"))
-            premise = Symbol(Pred(node.equal.name), [args_x[0], args_y[0]])
+            premise = Symbol(Pred(node.equal.name), (args_x[0], args_y[0]))
             for i in range(1, arity):
-                premise = And(premise, Symbol(Pred(node.equal.name), [args_x[i], args_y[i]]))
-            conclusion = Implies(Symbol(Pred(predicate), args_x), Symbol(Pred(predicate), args_y))
+                premise = And(premise, Symbol(Pred(node.equal.name), (args_x[i], args_y[i])))
+            conclusion = Implies(Symbol(Pred(predicate), tuple(args_x)), Symbol(Pred(predicate), tuple(args_y)))
             replacement = Implies(premise, conclusion)
             for arg in reversed(args_y):
                 replacement = Forall(arg, replacement)
@@ -629,7 +629,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             return False
         premises_equal: list[str | Formula] = []
         for k, v in node.env.items():
-            equation = Symbol(Pred(context.equality.equal.name), [k, v])
+            equation = Symbol(Pred(context.equality.equal.name), (k, v))
             if k in node.evidence:
                 evidence = get_fact(node.evidence[k], context)
                 if not alpha_equiv_with_defs(equation, evidence, context):
