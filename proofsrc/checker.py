@@ -65,6 +65,12 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
 
     if isinstance(node, DefCon):
         logger.debug(f"{sp}[DefCon] name: {node.name}, theorem: {node.theorem}")
+        if node.existence is None:
+            logger.error(f"{sp}❌ [DefCon] node.existence is None")
+            return False
+        if node.uniqueness is None:
+            logger.error(f"{sp}❌ [DefCon] node.uniqueness is None")
+            return False
         context.defcons[node.name] = DefCon(node.name, node.theorem, node.tex, None, None)
         existsuniq = context.theorems[node.theorem].conclusion
         if not isinstance(existsuniq, ExistsUniq):
@@ -92,6 +98,12 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
 
     if isinstance(node, DefFun):
         logger.debug(f"{sp}[DefFun] name: {node.name}, theorem: {node.theorem}")
+        if node.existence is None:
+            logger.error(f"{sp}❌ [DefCon] node.existence is None")
+            return False
+        if node.uniqueness is None:
+            logger.error(f"{sp}❌ [DefCon] node.uniqueness is None")
+            return False
         context.deffuns[node.name] = DefFun(node.name, node.arity, node.theorem, node.tex, None, None)
         args, existsuniq = collect_quantifier_vars(context.theorems[node.theorem].conclusion, Forall)
         if not isinstance(existsuniq, ExistsUniq):

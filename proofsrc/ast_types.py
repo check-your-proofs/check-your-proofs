@@ -259,8 +259,8 @@ class DefCon(Declaration):
     name: str
     theorem: str
     tex: list[str]
-    existence: DefConExist
-    uniqueness: DefConUniq
+    existence: DefConExist | None
+    uniqueness: DefConUniq | None
 
 @dataclass
 class DefFunExist(DeclarationSupport):
@@ -278,8 +278,8 @@ class DefFun(Declaration):
     arity: int
     theorem: str
     tex: list[str]
-    existence: DefFunExist
-    uniqueness: DefFunUniq
+    existence: DefFunExist | None
+    uniqueness: DefFunUniq | None
 
 @dataclass
 class DefFunTerm(Declaration):
@@ -344,49 +344,49 @@ class Context:
 
     def has_defcon_existence(self, existence_name: str) -> bool:
         for defcon in self.defcons.values():
-            if defcon.existence.name == existence_name:
+            if defcon.existence is not None and defcon.existence.name == existence_name:
                 return True
         return False
 
     def get_defcon_existence(self, existence_name: str):
         for defcon in self.defcons.values():
-            if defcon.existence.name == existence_name:
+            if defcon.existence is not None and defcon.existence.name == existence_name:
                 return defcon.existence
         raise KeyError(f"Unexpected existence_name: {existence_name}")
 
     def has_defcon_uniqueness(self, uniqueness_name: str) -> bool:
         for defcon in self.defcons.values():
-            if defcon.uniqueness.name == uniqueness_name:
+            if defcon.uniqueness is not None and defcon.uniqueness.name == uniqueness_name:
                 return True
         return False
 
     def get_defcon_uniqueness(self, uniqueness_name: str):
         for defcon in self.defcons.values():
-            if defcon.uniqueness.name == uniqueness_name:
+            if defcon.uniqueness is not None and defcon.uniqueness.name == uniqueness_name:
                 return defcon.uniqueness
         raise KeyError(f"Unexpected uniqueness_name: {uniqueness_name}")
 
     def has_deffun_existence(self, existence_name: str) -> bool:
         for deffun in self.deffuns.values():
-            if deffun.existence.name == existence_name:
+            if deffun.existence is not None and deffun.existence.name == existence_name:
                 return True
         return False
 
     def get_deffun_existence(self, existence_name: str):
         for deffun in self.deffuns.values():
-            if deffun.existence.name == existence_name:
+            if deffun.existence is not None and deffun.existence.name == existence_name:
                 return deffun.existence
         raise KeyError(f"Unexpected existence_name: {existence_name}")
 
     def has_deffun_uniqueness(self, uniqueness_name: str) -> bool:
         for deffun in self.deffuns.values():
-            if deffun.uniqueness.name == uniqueness_name:
+            if deffun.uniqueness is not None and deffun.uniqueness.name == uniqueness_name:
                 return True
         return False
 
     def get_deffun_uniqueness(self, uniqueness_name: str):
         for deffun in self.deffuns.values():
-            if deffun.uniqueness.name == uniqueness_name:
+            if deffun.uniqueness is not None and deffun.uniqueness.name == uniqueness_name:
                 return deffun.uniqueness
         raise KeyError(f"Unexpected uniqueness_name: {uniqueness_name}")
 

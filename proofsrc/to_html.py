@@ -180,6 +180,10 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
                            "存在と一意性は",
                            render_identifier(node.theorem),
                            "により示された。"]
+        if node.existence is None:
+            raise Exception("node.existence is None")
+        if node.uniqueness is None:
+            raise Exception("node.uniqueness is None")
         body_html = render_node(node.existence, context, mode) + render_node(node.uniqueness, context, mode)
     elif isinstance(node, DefConExist):
         header_parts = [bullet,
@@ -213,6 +217,10 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
                            "存在と一意性は",
                            render_identifier(node.theorem),
                            "により示された。"]
+        if node.existence is None:
+            raise Exception("node.existence is None")
+        if node.uniqueness is None:
+            raise Exception("node.uniqueness is None")
         body_html = render_node(node.existence, context, mode) + render_node(node.uniqueness, context, mode)
     elif isinstance(node, DefFunExist):
         header_parts = [bullet,
