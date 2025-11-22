@@ -3,7 +3,7 @@ from itertools import permutations
 from copy import deepcopy
 from typing import Mapping, TypeVar
 
-def flatten_op(expr: Formula, op: type[And] | type[Or]) -> list:
+def flatten_op(expr: Formula, op: type[And] | type[Or]) -> list[Formula]:
     if isinstance(expr, op):
         return flatten_op(expr.left, op) + flatten_op(expr.right, op)
     else:
@@ -161,7 +161,7 @@ def collect_vars(expr: Formula | Term, bound: set[Var | Template] | None = None)
         bound = set()
 
     if isinstance(expr, (Symbol, Compound)):
-        free = set()
+        free: set[Var | Template] = set()
         for arg in expr.args:
             f, _ = collect_vars(arg, bound)
             free.update(f)
@@ -357,7 +357,7 @@ def substitute_formula(expr: Formula, mapping: Mapping[T_Key, Term], used_vars: 
         if isinstance(new_template, Template):
             return TemplateCall(new_template, tuple(substitute_term(arg, mapping, used_vars) for arg in expr.args))
         elif isinstance(new_template, Lambda):
-            lambda_mapping = {}
+            lambda_mapping: dict[Var, Term] = {}
             for a, b in zip(new_template.args, expr.args):
                 lambda_mapping[a] = b
             lambda_mapped = substitute_formula(new_template.body, lambda_mapping)

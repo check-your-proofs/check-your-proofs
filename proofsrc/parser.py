@@ -28,7 +28,7 @@ class Parser:
         return tok
 
     def parse_file(self) -> tuple[list[Declaration], Context]:
-        ast = []
+        ast: list[Declaration] = []
         self.context = Context.init()
         while True:
             tok = self.peek()
@@ -216,7 +216,7 @@ class Parser:
             raise Exception(f"{name} is not axiom or theorem")
         reflection = EqualityReflection(evidence=reflection_evidence)
         self.consume("REPLACEMENT")
-        replacement_evidence = {}
+        replacement_evidence: dict[str, Axiom | Theorem] = {}
         while True:
             predicate = self.consume("IDENT").value
             if not (predicate == equal.name or predicate in self.context.primpreds):
@@ -241,7 +241,7 @@ class Parser:
         return equality
 
     def parse_block(self) -> list[Control]:
-        body = []
+        body: list[Control] = []
         while True:
             tok = self.peek()
             if not tok or tok.type == "RBRACE":
@@ -334,14 +334,14 @@ class Parser:
             conclusion = self.parse_bot_or_formula()
         else:
             conclusion = None
-        cases = []
+        cases: list[Case] = []
         while self.peek().type == "CASE":
             cases.append(self.parse_case(conclusion))
         if len(cases) < 2:
             raise SyntaxError("At least two cases are necessary")
         return Divide(fact=fact, conclusion=conclusion, cases=cases)
     
-    def parse_case(self, conclusion) -> Case:
+    def parse_case(self, conclusion: Bottom | Formula | None) -> Case:
         self.consume("CASE")
         premise = self.parse_formula()
         self.consume("LBRACE")
@@ -423,7 +423,7 @@ class Parser:
         else:
             fact = self.parse_formula()
         self.consume("FOR")
-        env = {}
+        env: dict[Var, Term] = {}
         while True:
             bound = self.parse_var()
             self.consume("COLON")
@@ -630,7 +630,7 @@ class Parser:
             return Not(body)
 
         elif tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_TEMPLATE"):
-            quantifiers = []
+            quantifiers: list[str] = []
             items: list[Var | Template] = []
             while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_TEMPLATE"):
                 if tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
@@ -708,7 +708,7 @@ class Parser:
 
     def parse_tex(self) -> list[str]:
         self.consume("TEX")
-        tex = []
+        tex: list[str] = []
         while True:
             tex.append(self.consume("STRING").value)
             if self.peek().type == "COMMA":

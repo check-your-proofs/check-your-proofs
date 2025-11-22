@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, ProofInfo, Formula, Declaration, Template, Term, Lambda, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, ProofInfo, Formula, Declaration, Template, Term, Lambda, pretty_expr
 from logic_utils import expr_in_context, collect_quantifier_vars, substitute_formula, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs
 from copy import deepcopy
 
@@ -21,7 +21,7 @@ def get_fact(fact: str | Formula, context: Context) -> Formula:
     else:
         raise Exception(f"Unexpected type {type(fact)}")
 
-def add_conclusion(context: Context, conclusion) -> None:
+def add_conclusion(context: Context, conclusion: Bottom | Formula) -> None:
     context.formulas.append(conclusion)
 
 def check_ast(ast: list[Declaration]) -> tuple[bool, list[Declaration], Context]:
@@ -159,8 +159,8 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
                     raise Exception("node.equal is not PrimPred or DefPred")
             else:
                 arity = context.primpreds[predicate].arity
-            args_x = []
-            args_y = []
+            args_x: list[Var] = []
+            args_y: list[Var] = []
             for i in range(arity):
                 args_x.append(Var(f"x_{i}"))
                 args_y.append(Var(f"y_{i}"))
@@ -280,7 +280,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             return False
         logger.debug(f"{sp}[Divide] fact={pretty_expr(fact, context)}")
         local_ctx = context.copy(list(context.vars), list(context.formulas), list(context.templates))
-        goals = []
+        goals: list[Bottom | Formula] = []
         for stmt in node.cases:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False

@@ -506,7 +506,7 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
 
 def to_html(ast: list[Declaration], context: Context, title: str, mode: str):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    parts = []
+    parts: list[str] = []
     for i, node in enumerate(ast):
         print(f"\rRendering node {i + 1} / {len(ast)} finished", end="")
         parts.append(render_node(node, context, mode))

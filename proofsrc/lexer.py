@@ -25,7 +25,7 @@ SYMBOLS = {
 }
 
 def lex(src: str) -> list[Token]:
-    tokens = []
+    tokens: list[Token] = []
     i = 0
     line = 1
     line_start_pos = 0
