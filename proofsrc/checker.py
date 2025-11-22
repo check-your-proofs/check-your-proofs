@@ -33,7 +33,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
     sp = "  " * indent
 
     if isinstance(node, PrimPred):
-        logger.debug(f"{sp}[PrimPred] type: {node.type}, name: {node.name}, arity: {node.arity}")
+        logger.debug(f"{sp}[PrimPred] name: {node.name}, arity: {node.arity}")
         context.primpreds[node.name] = node
         return True
 

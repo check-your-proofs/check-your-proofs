@@ -52,14 +52,14 @@ class Parser:
         self.consume("PRIMITIVE")
         tok = self.peek()
         if tok.type == "PREDICATE":
-            self.consume(tok.type)
+            self.consume("PREDICATE")
             name = self.consume("IDENT").value
             self.consume("ARITY")
             arity = int(self.consume("NUMBER").value)
             tex = self.parse_tex()
             if len(tex) != arity + 1:
                 raise SyntaxError("arity is different")
-            primpred = PrimPred(type=tok.type, name=name, arity=arity, tex=tex)
+            primpred = PrimPred(name=name, arity=arity, tex=tex)
             self.context.primpreds[name] = primpred
             logger.debug(f"[primpred] {name}")
             return primpred

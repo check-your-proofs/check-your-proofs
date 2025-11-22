@@ -221,7 +221,6 @@ class DeclarationSupport:
 
 @dataclass
 class PrimPred(Declaration):
-    type: str
     name: str
     arity: int
     tex: list[str]
