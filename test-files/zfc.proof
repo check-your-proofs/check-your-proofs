@@ -472,6 +472,29 @@ theorem pair_cor9 \forall x\forall y(neq(pair(x,y),emptyset)) {
   }
 }
 
+theorem pair_cor10 \forall x\forall y\forall z(in(x,z)\wedge in(y,z)\to subset(pair(x,y),z)) {
+  any x,y,z {
+    assume in(x,z)\wedge in(y,z) {
+      split in(x,z)\wedge in(y,z)
+      any w {
+        assume in(w,pair(x,y)) {
+          apply pair_existence for x:x,y:y,w:w
+          split in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y)
+          invoke in(w,pair(x,y))\to equal(w,x)\vee equal(w,y)
+          divide equal(w,x)\vee equal(w,y)
+            case equal(w,x) {
+              substitute in(x,z) for x:w conclude in(w,z)
+            }
+            case equal(w,y) {
+              substitute in(y,z) for y:w conclude in(w,z)
+            }
+        }
+      }
+      expand \forall w(in(w,pair(x,y))\to in(w,z)) conclude subset(pair(x,y),z)
+    }
+  }
+}
+
 definition function singleton(x) as pair(x,x) tex "\{","\}"
 
 theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrightarrow equal(y,x)) {
@@ -512,6 +535,22 @@ theorem singleton_cor2 \forall x\forall y(equal(singleton(x),singleton(y))\to eq
       apply singleton_characterization for x:y,y:x conclude in(x,singleton(y))\leftrightarrow equal(x,y)
       split in(x,singleton(y))\leftrightarrow equal(x,y)
       invoke in(x,singleton(y))\to equal(x,y) conclude equal(x,y)
+    }
+  }
+}
+
+theorem singleton_cor3 \forall x\forall y(in(x,y)\to subset(singleton(x),y)) {
+  any x,y {
+    assume in(x,y) {
+      any z {
+        assume in(z,singleton(x)) {
+          apply singleton_characterization for x:x,y:z
+          split in(z,singleton(x))\leftrightarrow equal(z,x)
+          invoke in(z,singleton(x))\to equal(z,x)
+          substitute in(x,y) for x:z conclude in(z,y)
+        }
+      }
+      expand \forall z(in(z,singleton(x))\to in(z,y)) conclude subset(singleton(x),y)
     }
   }
 }
@@ -765,6 +804,37 @@ theorem cup_cor4 \forall x\forall y(subset(y,cup(x,y))) {
   }
 }
 
+theorem cup_cor5 \forall x\forall y\forall X\forall Y(in(x,X)\wedge in(y,Y)\to subset(pair(x,y),cup(X,Y))) {
+  any x,y,X,Y {
+    assume in(x,X)\wedge in(y,Y) {
+      split in(x,X)\wedge in(y,Y)
+      any z {
+        assume in(z,pair(x,y)) {
+          apply pair_existence for x:x,y:y,w:z
+          split in(z,pair(x,y))\leftrightarrow equal(z,x)\vee equal(z,y)
+          invoke in(z,pair(x,y))\to equal(z,x)\vee equal(z,y)
+          divide equal(z,x)\vee equal(z,y)
+            case equal(z,x) {
+              substitute in(x,X) for x:z conclude in(z,X)
+              apply cup_cor3 for x:X,y:Y
+              connect in(z,X)\wedge subset(X,cup(X,Y))
+              apply subset_cor1 for z:z,x:X,y:cup(X,Y)
+              invoke in(z,X)\wedge subset(X,cup(X,Y))\to in(z,cup(X,Y))
+            }
+            case equal(z,y) {
+              substitute in(y,Y) for y:z conclude in(z,Y)
+              apply cup_cor4 for x:X,y:Y
+              connect in(z,Y)\wedge subset(Y,cup(X,Y))
+              apply subset_cor1 for z:z,x:Y,y:cup(X,Y)
+              invoke in(z,Y)\wedge subset(Y,cup(X,Y))\to in(z,cup(X,Y))
+            }
+        }
+      }
+      expand \forall z(in(z,pair(x,y))\to in(z,cup(X,Y))) conclude subset(pair(x,y),cup(X,Y))
+    }
+  }
+}
+
 axiom axiom_of_powerset \forall x\exists y\forall z(in(z,y)\leftrightarrow subset(z,x))
 
 theorem powerset_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightarrow subset(z,x)) {
@@ -1006,5 +1076,36 @@ theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrigh
       expand in(z,bigcap(pair(x,y))) conclude in(z,cap(x,y))
     }
     connect in(z,cap(x,y))\leftrightarrow in(z,x)\wedge in(z,y)
+  }
+}
+
+definition function cartprod(X,Y) as sep(powerset(powerset(cup(X,Y))), lambda z. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))) tex "","\times",""
+
+theorem cartprod_lem1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)\to in(op(x,y),powerset(powerset(cup(X,Y))))) {
+  any X,Y,x,y {
+    assume in(x,X)\wedge in(y,Y) {
+      split in(x,X)\wedge in(y,Y)
+      apply singleton_cor3 for x:x,y:X
+      invoke in(x,X)\to subset(singleton(x),X)
+      apply cup_cor3 for x:X,y:Y
+      connect subset(singleton(x),X)\wedge subset(X,cup(X,Y))
+      apply subset_trans for x:singleton(x),y:X,z:cup(X,Y)
+      invoke subset(singleton(x),X)\wedge subset(X,cup(X,Y))\to subset(singleton(x),cup(X,Y))
+      apply powerset_existence for x:cup(X,Y),z:singleton(x)
+      split in(singleton(x),powerset(cup(X,Y)))\leftrightarrow subset(singleton(x),cup(X,Y))
+      invoke subset(singleton(x),cup(X,Y))\to in(singleton(x),powerset(cup(X,Y)))
+      apply cup_cor5 for x:x,y:y,X:X,Y:Y
+      invoke in(x,X)\wedge in(y,Y)\to subset(pair(x,y),cup(X,Y))
+      apply powerset_existence for x:cup(X,Y),z:pair(x,y)
+      split in(pair(x,y),powerset(cup(X,Y)))\leftrightarrow subset(pair(x,y),cup(X,Y))
+      invoke subset(pair(x,y),cup(X,Y))\to in(pair(x,y),powerset(cup(X,Y)))
+      connect in(singleton(x),powerset(cup(X,Y)))\wedge in(pair(x,y),powerset(cup(X,Y)))
+      apply pair_cor10 for x:singleton(x),y:pair(x,y),z:powerset(cup(X,Y))
+      invoke in(singleton(x),powerset(cup(X,Y)))\wedge in(pair(x,y),powerset(cup(X,Y)))\to subset(pair(singleton(x),pair(x,y)),powerset(cup(X,Y)))
+      expand subset(pair(singleton(x),pair(x,y)),powerset(cup(X,Y))) conclude subset(op(x,y),powerset(cup(X,Y)))
+      apply powerset_existence for x:powerset(cup(X,Y)),z:op(x,y)
+      split in(op(x,y),powerset(powerset(cup(X,Y))))\leftrightarrow subset(op(x,y),powerset(cup(X,Y)))
+      invoke subset(op(x,y),powerset(cup(X,Y)))\to in(op(x,y),powerset(powerset(cup(X,Y))))
+    }
   }
 }
