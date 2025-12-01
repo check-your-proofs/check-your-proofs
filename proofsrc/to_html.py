@@ -300,20 +300,22 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
                         render_keyword("connect"),
                         render_expr(node.conclusion, context)]
         header_parts_jp = [bullet,
-                           render_expr_list(node.proofinfo.premises, context),
-                           "をまとめて",
-                           render_expr_list(node.proofinfo.conclusions, context),
+                           "結合により",
+                           render_expr(node.conclusion, context),
                            "を得る。"]
     elif isinstance(node, Expand):
+        defs = ",".join([render_identifier(definition) for definition in node.defs])
         header_parts = [bullet,
                         render_keyword("expand"),
                         render_expr(node.fact, context),
+                        render_keyword("for"),
+                        defs,
                         render_keyword("conclude"),
                         render_expr(node.conclusion, context)]
         header_parts_jp = [bullet,
-                           render_expr_list(node.proofinfo.premises, context),
-                           "を定義により言い換えて",
-                           render_expr_list(node.proofinfo.conclusions, context),
+                           render_expr(node.fact, context),
+                           f"を{defs}の定義により言い換えて",
+                           render_expr(node.conclusion, context),
                            "を得る。"]
     elif isinstance(node, Split):
         header_parts = [bullet,
@@ -323,9 +325,7 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
         header_parts.append(render_expr(node.fact, context))
         header_parts_jp = [bullet,
                            render_expr(node.fact, context),
-                           "を分解して",
-                           render_expr_list(node.proofinfo.conclusions, context),
-                           "を得る。"]
+                           "を分解する。" if node.index is None else f"を分解して{node.index}番目を得る。"]
     elif isinstance(node, Apply):
         fact = render_expr(node.fact, context)
         header_parts = [bullet,
@@ -337,20 +337,21 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
                            fact,
                            "の",
                            "、".join([render_expr(k, context) + "を" + render_expr(v, context) + "に" for k, v in node.env.items()]),
-                           "適用して",
-                           render_expr_list(node.proofinfo.conclusions, context),
-                           "を得る。"]
+                           "適用する。"]
     elif isinstance(node, Invoke):
+        if node.direction == "none" or node.direction == "rightward":
+            premise = "左側"
+            conclusion = "右側"
+        else:
+            premise = "右側"
+            conclusion = "左側"
         header_parts = [bullet,
                         render_keyword("invoke"),
+                        "" if node.direction == "none" else render_keyword(node.direction),
                         render_expr(node.fact, context)]
         header_parts_jp = [bullet,
                            render_expr(node.fact, context),
-                           "の前提",
-                           render_expr(node.fact.left, context),
-                           "が成り立つので結論の",
-                           render_expr(node.fact.right, context),
-                           "を得る。"]
+                           f"の{premise}が成り立つので{conclusion}を得る。"]
     elif isinstance(node, Deny):
         header_parts = [toggle,
                         render_keyword("deny"),
@@ -377,21 +378,19 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
                         render_keyword("contradict"),
                         render_expr(node.contradiction, context)]
         header_parts_jp = [bullet,
-                          render_expr_list(node.proofinfo.premises, context),
-                          "より矛盾する。"]
+                          render_expr(node.contradiction, context),
+                          "とその否定が成り立つので矛盾する。"]
     elif isinstance(node, Lift):
         header_parts = [bullet,
-                        render_keyword("lift")]
-        header_parts.extend([render_keyword("for"),
-                             render_expr_dict(node.env, context),
-                             render_keyword("conclude"),
-                             render_expr(node.conclusion, context)])
+                        render_keyword("lift"),
+                        render_keyword("for"),
+                        render_expr_dict(node.env, context),
+                        render_keyword("conclude"),
+                        render_expr(node.conclusion, context)]
         header_parts_jp = [bullet,
-                           render_expr_list(node.proofinfo.premises, context),
-                           "の",
                            "、".join([render_expr(v, context) + "を" + render_expr(k, context) + "に" for k, v in node.env.items()]),
                            "置き換えて",
-                           render_expr_list(node.proofinfo.conclusions, context),
+                           render_expr(node.conclusion, context),
                            "を得る。"]
     elif isinstance(node, Pad):
         header_parts = [bullet,
@@ -430,17 +429,15 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
                            "を得る。"]
     elif isinstance(node, Characterize):
         header_parts = [bullet,
-                        render_keyword("characterize")]
-        header_parts.extend([render_keyword("for"),
-                             render_expr_dict(node.env, context),
-                             render_keyword("conclude"),
-                             render_expr(node.conclusion, context)])
+                        render_keyword("characterize"),
+                        render_keyword("for"),
+                        render_expr_dict(node.env, context),
+                        render_keyword("conclude"),
+                        render_expr(node.conclusion, context)]
         header_parts_jp = [bullet,
-                           render_expr_list(node.proofinfo.premises, context),
-                           "の",
                            "、".join([render_expr(v, context) + "を" + render_expr(k, context) + "に" for k, v in node.env.items()]),
                            "置き換えて",
-                           render_expr_list(node.proofinfo.conclusions, context),
+                           render_expr(node.conclusion, context),
                            "を得る。"]
     elif isinstance(node, Substitute):
         env_parts = ""
@@ -463,7 +460,7 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
                            "に",
                            ",".join([render_expr(Symbol(Pred(context.equality.equal.name), (k, v)), context) for k, v in node.env.items()]),
                            "を代入して",
-                           render_expr_list(node.proofinfo.conclusions, context),
+                           render_expr(node.conclusion, context),
                            "を得る。"]
     elif isinstance(node, Show):
         header_parts = [toggle,
