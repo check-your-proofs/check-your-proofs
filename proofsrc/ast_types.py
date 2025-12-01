@@ -138,7 +138,6 @@ class Divide(Control):
 class Some(Control):
     env: dict[Var, Var]
     fact: str | Formula
-    conclusion: Bottom | Formula | None
     body: list[Control]
 
 @dataclass

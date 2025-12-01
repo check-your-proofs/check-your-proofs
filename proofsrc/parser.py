@@ -348,17 +348,12 @@ class Parser:
         fact = self.parse_reference_or_formula()
         for item in env.values():
             self.free_items[item.name] = item
-        if self.peek().type == "CONCLUDE":
-            self.consume("CONCLUDE")
-            conclusion = self.parse_bot_or_formula()
-        else:
-            conclusion = None
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
         for item in env.values():
             self.free_items.pop(item.name)
-        return Some(env=env, fact=fact, conclusion=conclusion, body=body)
+        return Some(env=env, fact=fact, body=body)
     
     def parse_deny(self) -> Deny:
         self.consume("DENY")

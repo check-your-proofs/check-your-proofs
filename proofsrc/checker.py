@@ -334,11 +334,6 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             return False
         goal = local_ctx.formulas[-1]
         logger.debug(f"{sp}[Some] derived goal: {pretty_expr(goal, context)}")
-        if node.conclusion is not None:
-            if not alpha_equiv_with_defs(node.conclusion, goal, context):
-                logger.error(f"{sp}❌ [Some] Not matched with conclusion: {pretty_expr(node.conclusion, context)}")
-                return False
-            logger.debug(f"{sp}[Some] Mathched with conclusion: {pretty_expr(node.conclusion, context)}")
         node.proofinfo.premises = [node.fact]
         node.proofinfo.conclusions = [goal]
         node.proofinfo.local_vars = list(node.env.values())

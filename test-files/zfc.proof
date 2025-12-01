@@ -99,7 +99,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
         }
         contradict \forall z(in(z,x)\leftrightarrow in(z,y))
       }
-      some z:z such \exists z(\neg(in(z,x)\leftrightarrow in(z,y))) conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
+      some z:z such \exists z(\neg(in(z,x)\leftrightarrow in(z,y))) {
         deny (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x)) {
           split (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x))
           connect in(z,x)\leftrightarrow in(z,y)
@@ -146,7 +146,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
       }
     }
     assume \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
-      some z:z such \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) conclude neq(x,y) {
+      some z:z such \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
         deny equal(x,y) {
           expand equal(x,y) for equal conclude \forall z(in(z,x)\leftrightarrow in(z,y))
           apply \forall z(in(z,x)\leftrightarrow in(z,y)) for z:z conclude in(z,x)\leftrightarrow in(z,y)
@@ -236,7 +236,7 @@ theorem subset_trans \forall x\forall y\forall z(subset(x,y)\wedge subset(y,z)\t
 axiom axiom_of_emptyset \exists x\forall y(notin(y,x))
 
 theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {
-  some x:x such axiom_of_emptyset conclude \exists!x\forall y(notin(y,x)) {
+  some x:x such axiom_of_emptyset {
     any x' {
       assume \forall y(notin(y,x')) {
         any y {
@@ -319,7 +319,7 @@ axiom axiom_of_pair \forall x\forall y\exists z\forall w(in(w,z)\leftrightarrow 
 theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
   any x, y {
     apply axiom_of_pair for x:x, y:y conclude \exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
-    some z:z such \exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
+    some z:z such \exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
       any z' {
         assume \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) {
           any w {
@@ -687,7 +687,7 @@ theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrigh
         split in(z,bigcup(pair(x,y)))\leftrightarrow\exists w(in(z,w)\wedge in(w,pair(x,y)))
         invoke in(z,bigcup(pair(x,y)))\to\exists w(in(z,w)\wedge in(w,pair(x,y)))
       }
-      some w:w such \exists w(in(z,w)\wedge in(w,pair(x,y))) conclude in(z,x)\vee in(z,y) {
+      some w:w such \exists w(in(z,w)\wedge in(w,pair(x,y))) {
         split in(z,w)\wedge in(w,pair(x,y))
         show equal(w,x)\vee equal(w,y) {
           apply pair_existence for x:x,y:y,w:w
