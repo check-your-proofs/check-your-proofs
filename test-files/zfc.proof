@@ -461,8 +461,7 @@ theorem pair_cor10 \forall x\forall y\forall z(in(x,z)\wedge in(y,z)\to subset(p
       any w {
         assume in(w,pair(x,y)) {
           apply pair_existence for x:x,y:y,w:w
-          split in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y)
-          invoke in(w,pair(x,y))\to equal(w,x)\vee equal(w,y)
+          invoke rightward in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y)
           divide equal(w,x)\vee equal(w,y)
             case equal(w,x) {
               substitute in(x,z) for x:w conclude in(w,z)
@@ -873,9 +872,7 @@ theorem separation_is_unique \forall x\forall^T\phi[1]\exists!y\forall z(in(z,y)
         assume \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)) {
           any z {
             apply \forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
-            split in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)
             apply \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
-            split in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)
             assume in(z,y') {
               invoke rightward in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)
               invoke leftward in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)
