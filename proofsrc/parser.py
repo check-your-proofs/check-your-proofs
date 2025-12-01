@@ -309,15 +309,10 @@ class Parser:
     def parse_assume(self) -> Assume:
         self.consume("ASSUME")
         premise = self.parse_formula()
-        if self.peek().type == "CONCLUDE":
-            self.consume("CONCLUDE")
-            conclusion = self.parse_formula()
-        else:
-            conclusion = None
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
-        return Assume(premise=premise, conclusion=conclusion, body=body)
+        return Assume(premise=premise, body=body)
     
     def parse_divide(self) -> Divide:
         self.consume("DIVIDE")

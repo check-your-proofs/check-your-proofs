@@ -241,12 +241,6 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [Assume] Bottom is not allowed as goal")
             return False
         logger.debug(f"{sp}[Assume] derived goal: {pretty_expr(goal, context)}")
-        if node.conclusion is not None:
-            if alpha_equiv_with_defs(node.conclusion, goal, context):
-                logger.debug(f"{sp}[Assume] Matched with conclusion: {pretty_expr(node.conclusion, context)}")
-            else:
-                logger.error(f"{sp}❌ [Assume] Not matched with conclusion: {pretty_expr(node.conclusion, context)}")
-                return False
         implication = Implies(node.premise, goal)
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [implication]

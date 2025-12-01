@@ -117,7 +117,6 @@ class Control:
 @dataclass
 class Assume(Control):
     premise: Formula
-    conclusion: Formula | None
     body: list[Control]
 
 @dataclass

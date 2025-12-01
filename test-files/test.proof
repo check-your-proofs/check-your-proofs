@@ -2,13 +2,13 @@ primitive predicate in arity 2 tex "","\in",""
 
 theorem test01 \forall x\forall y(in(x,y)\to in(x,y)) {
   any x, y {
-    assume in(x,y) conclude in(x,y) {}
+    assume in(x,y) {}
   }
 }
 
 theorem test02 \forall x\forall y(in(x,y)\to in(x,y)\wedge in(x,y)) {
   any x, y {
-    assume in(x,y) conclude in(x,y)\wedge in(x,y) {
+    assume in(x,y) {
       connect in(x,y)\wedge in(x,y)
     }
   }
@@ -16,22 +16,22 @@ theorem test02 \forall x\forall y(in(x,y)\to in(x,y)\wedge in(x,y)) {
 
 theorem test03 \forall x\forall y((in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y))) {
   any x, y {
-    assume in(x,y) conclude in(x,y) {}
+    assume in(x,y) {}
     connect (in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y))
   }
 }
 
 theorem test04 (\forall x\forall y(in(x,y)\to in(x,y)))\wedge(\forall z\forall w(in(z,w)\to in(z,w))) {
   any x, y {
-    assume in(x,y) conclude in(x,y) {}
+    assume in(x,y) {}
   }
   connect (\forall x\forall y(in(x,y)\to in(x,y)))\wedge(\forall z\forall w(in(z,w)\to in(z,w)))
 }
 
 theorem test05 \forall x\forall y((in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y)\wedge in(x,y))) {
   any x, y {
-    assume in(x,y) conclude in(x,y) {}
-    assume in(x,y) conclude in(x,y)\wedge in(x,y) {
+    assume in(x,y) {}
+    assume in(x,y) {
       connect in(x,y)\wedge in(x,y)
     }
     connect (in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y)\wedge in(x,y))
@@ -40,10 +40,10 @@ theorem test05 \forall x\forall y((in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y)\
 
 theorem test06 (\forall x\forall y(in(x,y)\to in(x,y)))\wedge(\forall x\forall y(in(x,y)\to in(x,y)\wedge in(x,y))) {
   any x, y {
-    assume in(x,y) conclude in(x,y) {}
+    assume in(x,y) {}
   }
   any x, y {
-    assume in(x,y) conclude in(x,y)\wedge in(x,y) {
+    assume in(x,y) {
       connect in(x,y)\wedge in(x,y)
     }
   }
@@ -52,9 +52,9 @@ theorem test06 (\forall x\forall y(in(x,y)\to in(x,y)))\wedge(\forall x\forall y
 
 theorem test07 \forall x\forall y(in(x,y)\to in(x,y)\wedge\forall z(in(z,x)\to in(z,x))) {
   any x, y {
-    assume in(x,y) conclude in(x,y)\wedge\forall z(in(z,x)\to in(z,x)) {
+    assume in(x,y) {
       any z {
-        assume in(z,x) conclude in(z,x) {} 
+        assume in(z,x) {} 
       }
       connect in(x,y)\wedge\forall z(in(z,x)\to in(z,x))
     } 
@@ -63,25 +63,25 @@ theorem test07 \forall x\forall y(in(x,y)\to in(x,y)\wedge\forall z(in(z,x)\to i
 
 theorem test08 \forall v\forall u(in(u,v)\to in(u,v)) {
   any x, y {
-    assume in(x,y) conclude in(x,y) {}
+    assume in(x,y) {}
   }
 }
 
 theorem test09 \forall v\forall u(in(u,v)\to in(u,v)) {
   any x, y {
-    assume in(x,y) conclude in(x,y) {}
+    assume in(x,y) {}
   }
 }
 
 theorem test10 \forall v\forall u(in(u,v)\to in(u,v)) {
   any x, y {
-    assume in(x,y) conclude in(x,y) {}
+    assume in(x,y) {}
   }
 }
 
 theorem test11 \forall u\forall v(in(u,v)\to in(u,v)\vee in(v,u)) {
   any x, y {
-    assume in(x,y) conclude in(x,y)\vee in(y,x) {
+    assume in(x,y) {
       pad in(x,y) conclude in(x,y)\vee in(y,x)
     }
   }
@@ -89,13 +89,13 @@ theorem test11 \forall u\forall v(in(u,v)\to in(u,v)\vee in(v,u)) {
 
 theorem test12 \forall u\forall v(in(u,v)\vee in(v,u)\to in(v,u)\vee in(u,v)) {
   any x, y {
-    assume in(x,y)\vee in(y,x) conclude in(y,x)\vee in(x,y) {}
+    assume in(x,y)\vee in(y,x) {}
   }
 }
 
 theorem test13 \forall x\forall y(in(x,y)\vee in(y,x)\to(in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x))) {
   any x, y {
-    assume in(x,y)\vee in(y,x) conclude (in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x)) {
+    assume in(x,y)\vee in(y,x) {
       divide in(x,y)\vee in(y,x) conclude (in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x))
         case in(x,y) {
           connect in(x,y)\wedge in(x,y)
@@ -111,7 +111,7 @@ theorem test13 \forall x\forall y(in(x,y)\vee in(y,x)\to(in(x,y)\wedge in(x,y))\
 
 theorem test14 \forall x\forall y(in(x,x)\vee in(x,y)\vee in(y,x)\to in(x,x)\vee in(x,y)\vee in(y,x)) {
   any x, y {
-    assume in(x,x)\vee in(x,y)\vee in(y,x) conclude in(x,x)\vee in(x,y)\vee in(y,x) {
+    assume in(x,x)\vee in(x,y)\vee in(y,x) {
       divide in(x,x)\vee in(x,y)\vee in(y,x) conclude in(x,x)\vee in(x,y)\vee in(y,x)
         case in(x,x) {
           pad in(x,x) conclude in(x,x)\vee in(x,y)\vee in(y,x)
@@ -127,7 +127,7 @@ theorem test14 \forall x\forall y(in(x,x)\vee in(x,y)\vee in(y,x)\to in(x,x)\vee
 }
 
 theorem test15 \exists x\exists y(in(x,y))\to\exists x\exists y(in(x,y)\wedge in(x,y)) {
-  assume \exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(x,y)) {
+  assume \exists x\exists y(in(x,y)) {
     some x:x, y:y such \exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(x,y)) {
       connect in(x,y)\wedge in(x,y)
       lift in(x,y)\wedge in(x,y) for x: x, y: y conclude \exists x\exists y(in(x,y)\wedge in(x,y))
@@ -136,11 +136,11 @@ theorem test15 \exists x\exists y(in(x,y))\to\exists x\exists y(in(x,y)\wedge in
 }
 
 theorem test16 \forall x\forall y(in(x,y))\to\forall x\forall y(in(x,y)) {
-  assume \forall x\forall y(in(x,y)) conclude \forall x\forall y(in(x,y)) {}
+  assume \forall x\forall y(in(x,y)) {}
 }
 
 theorem test17 \exists x(in(x,x))\to\exists x(in(x,x)) {
-  assume \exists x(in(x,x)) conclude \exists x(in(x,x)) {
+  assume \exists x(in(x,x)) {
     some x:x such \exists x(in(x,x)) conclude \exists x(in(x,x)) {
       lift in(x,x) for x: x conclude \exists x(in(x,x))
     }
@@ -148,7 +148,7 @@ theorem test17 \exists x(in(x,x))\to\exists x(in(x,x)) {
 }
 
 theorem test18 \exists x\exists y(in(x,y)\vee in(y,x))\to\exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x)))) {
-  assume \exists x\exists y(in(x,y)\vee in(y,x)) conclude \exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x)))) {
+  assume \exists x\exists y(in(x,y)\vee in(y,x)) {
     some x:x, y:y such \exists x\exists y(in(x,y)\vee in(y,x)) conclude \exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x)))) {
       divide in(x,y)\vee in(y,x) conclude \neg(\neg(in(x,y))\wedge\neg(in(y,x)))
         case in(x,y) {
@@ -169,7 +169,7 @@ theorem test18 \exists x\exists y(in(x,y)\vee in(y,x))\to\exists x\exists y(\neg
 }
 
 theorem test19 \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x)))\to\exists x\exists y(in(x,y)) {
-  assume \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x))) conclude \exists x\exists y(in(x,y)) {
+  assume \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x))) {
     some x:x, y:y such \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x))) conclude \exists x\exists y(in(x,y)) {
       split (in(x,y)\vee in(y,x))\wedge\neg(in(y,x))
       divide in(x,y)\vee in(y,x) conclude in(x,y)
@@ -184,7 +184,7 @@ theorem test19 \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x)))\to\e
 }
 
 theorem test20 \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\exists y(in(x,y))\to\exists x\exists y(in(x,y)\wedge in(y,x)) {
-  assume \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(y,x)) {
+  assume \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\exists y(in(x,y)) {
     split \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\exists y(in(x,y))
     some x:x, y:y such \exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(y,x)) {
       apply \forall x\forall y(in(x,y)\to\forall z(in(z,x))) for x: x, y: y conclude in(x,y)\to\forall z(in(z,x))
@@ -197,7 +197,7 @@ theorem test20 \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\e
 }
 
 theorem test21 \forall x\forall y(in(x,y))\to\neg(\exists x\exists y(\neg(in(x,y)))) {
-  assume \forall x\forall y(in(x,y)) conclude \neg(\exists x\exists y(\neg(in(x,y)))) {
+  assume \forall x\forall y(in(x,y)) {
     deny \exists x\exists y(\neg(in(x,y))) {
       some x:x, y:y such \exists x\exists y(\neg(in(x,y))) conclude \bot {
         apply \forall x\forall y(in(x,y)) for x: x, y: y conclude in(x,y)
@@ -208,7 +208,7 @@ theorem test21 \forall x\forall y(in(x,y))\to\neg(\exists x\exists y(\neg(in(x,y
 }
 
 theorem test22 \neg(\exists x\exists y(\neg(in(x,y))))\to\forall x\forall y(in(x,y)) {
-  assume \neg(\exists x\exists y(\neg(in(x,y)))) conclude \forall x\forall y(in(x,y)) {
+  assume \neg(\exists x\exists y(\neg(in(x,y)))) {
     any x, y {
       deny \neg(in(x,y)) {
         lift \neg(in(x,y)) for x: x, y: y conclude \exists x\exists y(\neg(in(x,y)))
@@ -219,8 +219,8 @@ theorem test22 \neg(\exists x\exists y(\neg(in(x,y))))\to\forall x\forall y(in(x
 }
 
 theorem test23 \forall x(in(x,x)\to\neg(in(x,x)))\to(\forall x(in(x,x))\to\forall x(\neg(in(x,x)))) {
-  assume \forall x(in(x,x)\to\neg(in(x,x))) conclude \forall x(in(x,x))\to\forall x(\neg(in(x,x))) {
-    assume \forall x(in(x,x)) conclude \forall x(\neg(in(x,x))) {
+  assume \forall x(in(x,x)\to\neg(in(x,x))) {
+    assume \forall x(in(x,x)) {
       any x {
         apply \forall x(in(x,x)\to\neg(in(x,x))) for x: x conclude in(x,x)\to\neg(in(x,x))
         apply \forall x(in(x,x)) for x: x conclude in(x,x)
@@ -231,7 +231,7 @@ theorem test23 \forall x(in(x,x)\to\neg(in(x,x)))\to(\forall x(in(x,x))\to\foral
 }
 
 theorem test24 \forall x\forall y(\neg(in(x,y)))\to\neg(\exists x\exists y(in(x,y))) {
-  assume \forall x\forall y(\neg(in(x,y))) conclude \neg(\exists x\exists y(in(x,y))) {
+  assume \forall x\forall y(\neg(in(x,y))) {
     deny \exists x\exists y(in(x,y)) {
       some x:x, y:y such \exists x\exists y(in(x,y)) conclude \bot {
         apply \forall x\forall y(\neg(in(x,y))) for x: x, y: y conclude \neg(in(x,y))
@@ -242,7 +242,7 @@ theorem test24 \forall x\forall y(\neg(in(x,y)))\to\neg(\exists x\exists y(in(x,
 }
 
 theorem test25 \neg(\exists x\exists y(in(x,y)))\to\forall x\forall y(\neg(in(x,y))) {
-  assume \neg(\exists x\exists y(in(x,y))) conclude \forall x\forall y(\neg(in(x,y))) {
+  assume \neg(\exists x\exists y(in(x,y))) {
     any x, y {
       deny in(x,y) {
         lift in(x,y) for x: x, y: y conclude \exists x\exists y(in(x,y))
