@@ -340,8 +340,6 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
                            "適用して",
                            render_expr_list(node.proofinfo.conclusions, context),
                            "を得る。"]
-        if node.conclusion is not None:
-            header_parts.append(f"<span class='keyword'>conclude</span> {render_expr(node.conclusion, context)}")
     elif isinstance(node, Invoke):
         header_parts = [bullet,
                         render_keyword("invoke"),

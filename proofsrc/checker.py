@@ -417,11 +417,6 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
         logger.debug(f"{sp}[Apply] Instantiable: env={env}")
         instantiation = substitute_formula(body, env)
         logger.debug(f"{sp}[Apply] \\forall-elimination is done: instantiation={pretty_expr(instantiation, context)}")
-        if node.conclusion is not None:
-            if not alpha_equiv_with_defs(node.conclusion, instantiation, context):
-                logger.error(f"{sp}❌ [Apply] Not matched: node.conclusion={pretty_expr(node.conclusion, context)}, instantiation={pretty_expr(instantiation, context)}")
-                return False
-            logger.debug(f"{sp}[Apply] Matched: node.conclusion={pretty_expr(node.conclusion, context)}, instantiation={pretty_expr(instantiation, context)}")
         logger.debug(f"{sp}[Apply] Added {pretty_expr(instantiation, context)}")
         node.proofinfo.premises = [node.fact]
         node.proofinfo.conclusions = [instantiation]

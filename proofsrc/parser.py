@@ -387,12 +387,7 @@ class Parser:
                 self.consume("COMMA")
             else:
                 break
-        if self.peek().type == "CONCLUDE":
-            self.consume("CONCLUDE")
-            conclusion = self.parse_formula()
-        else:
-            conclusion = None
-        return Apply(fact=fact, env=env, conclusion=conclusion)
+        return Apply(fact=fact, env=env)
 
     def parse_lift(self) -> Lift:
         self.consume("LIFT")

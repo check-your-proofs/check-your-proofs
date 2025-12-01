@@ -157,7 +157,6 @@ class Explode(Control):
 class Apply(Control):
     fact: str | Formula
     env: dict[str, Term]
-    conclusion: Formula | None
 
 @dataclass
 class Lift(Control):
