@@ -241,32 +241,34 @@ class DefPred(Declaration):
     tex: list[str]
 
 @dataclass
-class DefConExist(DeclarationSupport):
+class DefConExist(Declaration):
     name: str
     formula: Formula
+    con_name: str
 
 @dataclass
-class DefConUniq(DeclarationSupport):
+class DefConUniq(Declaration):
     name: str
     formula: Formula
+    con_name: str
 
 @dataclass
 class DefCon(Declaration):
     name: str
     theorem: str
     tex: list[str]
-    existence: DefConExist | None
-    uniqueness: DefConUniq | None
 
 @dataclass
-class DefFunExist(DeclarationSupport):
+class DefFunExist(Declaration):
     name: str
     formula: Formula
+    fun_name: str
 
 @dataclass
-class DefFunUniq(DeclarationSupport):
+class DefFunUniq(Declaration):
     name: str
     formula: Formula
+    fun_name: str
 
 @dataclass
 class DefFun(Declaration):
@@ -274,8 +276,6 @@ class DefFun(Declaration):
     arity: int
     theorem: str
     tex: list[str]
-    existence: DefFunExist | None
-    uniqueness: DefFunUniq | None
 
 @dataclass
 class DefFunTerm(Declaration):
@@ -308,83 +308,39 @@ class Context:
     theorems: dict[str, Theorem]
     defpreds: dict[str, DefPred]
     defcons: dict[str, DefCon]
+    defconexists: dict[str, DefConExist]
+    defconuniqs: dict[str, DefConUniq]
     deffuns: dict[str, DefFun]
+    deffunexists: dict[str, DefFunExist]
+    deffununiqs: dict[str, DefFunUniq]
     deffunterms: dict[str, DefFunTerm]
     equality: Equality | None
 
     @staticmethod
     def init() -> "Context":
-        return Context(vars=[], formulas=[], templates=[], primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, deffuns={}, deffunterms={}, equality=None)
+        return Context(vars=[], formulas=[], templates=[], primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None)
 
     def copy(self, vars: list[Var], formulas: list[Bottom | Formula], templates: list[Template]) -> "Context":
-        return Context(vars=vars, formulas=formulas, templates=templates, primpreds=self.primpreds, axioms=self.axioms, theorems=self.theorems, defpreds=self.defpreds, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms, equality=self.equality)
+        return Context(vars=vars, formulas=formulas, templates=templates, primpreds=self.primpreds, axioms=self.axioms, theorems=self.theorems, defpreds=self.defpreds, defcons=self.defcons, defconexists=self.defconexists, defconuniqs=self.defconuniqs, deffuns=self.deffuns, deffunexists=self.deffunexists, deffununiqs=self.deffununiqs, deffunterms=self.deffunterms, equality=self.equality)
 
     def has_reference(self, name: str) -> bool:
-        return name in self.axioms or name in self.theorems or self.has_defcon_existence(name) or self.has_defcon_uniqueness(name) or self.has_deffun_existence(name) or self.has_deffun_uniqueness(name)
+        return name in self.axioms or name in self.theorems or name in self.defconexists or name in self.defconuniqs or name in self.deffunexists or name in self.deffununiqs
 
     def get_reference(self, name: str) -> Formula:
         if name in self.axioms:
             return self.axioms[name].conclusion
         elif name in self.theorems:
             return self.theorems[name].conclusion
-        elif self.has_defcon_existence(name):
-            return self.get_defcon_existence(name).formula
-        elif self.has_defcon_uniqueness(name):
-            return self.get_defcon_uniqueness(name).formula
-        elif self.has_deffun_existence(name):
-            return self.get_deffun_existence(name).formula
-        elif self.has_deffun_uniqueness(name):
-            return self.get_deffun_uniqueness(name).formula
+        elif name in self.defconexists:
+            return self.defconexists[name].formula
+        elif name in self.defconuniqs:
+            return self.defconuniqs[name].formula
+        elif name in self.deffunexists:
+            return self.deffunexists[name].formula
+        elif name in self.deffununiqs:
+            return self.deffununiqs[name].formula
         else:
             raise Exception(f"Unexpected name: {name}")
-
-    def has_defcon_existence(self, existence_name: str) -> bool:
-        for defcon in self.defcons.values():
-            if defcon.existence is not None and defcon.existence.name == existence_name:
-                return True
-        return False
-
-    def get_defcon_existence(self, existence_name: str):
-        for defcon in self.defcons.values():
-            if defcon.existence is not None and defcon.existence.name == existence_name:
-                return defcon.existence
-        raise KeyError(f"Unexpected existence_name: {existence_name}")
-
-    def has_defcon_uniqueness(self, uniqueness_name: str) -> bool:
-        for defcon in self.defcons.values():
-            if defcon.uniqueness is not None and defcon.uniqueness.name == uniqueness_name:
-                return True
-        return False
-
-    def get_defcon_uniqueness(self, uniqueness_name: str):
-        for defcon in self.defcons.values():
-            if defcon.uniqueness is not None and defcon.uniqueness.name == uniqueness_name:
-                return defcon.uniqueness
-        raise KeyError(f"Unexpected uniqueness_name: {uniqueness_name}")
-
-    def has_deffun_existence(self, existence_name: str) -> bool:
-        for deffun in self.deffuns.values():
-            if deffun.existence is not None and deffun.existence.name == existence_name:
-                return True
-        return False
-
-    def get_deffun_existence(self, existence_name: str):
-        for deffun in self.deffuns.values():
-            if deffun.existence is not None and deffun.existence.name == existence_name:
-                return deffun.existence
-        raise KeyError(f"Unexpected existence_name: {existence_name}")
-
-    def has_deffun_uniqueness(self, uniqueness_name: str) -> bool:
-        for deffun in self.deffuns.values():
-            if deffun.uniqueness is not None and deffun.uniqueness.name == uniqueness_name:
-                return True
-        return False
-
-    def get_deffun_uniqueness(self, uniqueness_name: str):
-        for deffun in self.deffuns.values():
-            if deffun.uniqueness is not None and deffun.uniqueness.name == uniqueness_name:
-                return deffun.uniqueness
-        raise KeyError(f"Unexpected uniqueness_name: {uniqueness_name}")
 
 OP_PRECEDENCE = {
     "Lowest": 0,

@@ -38,6 +38,10 @@ class Parser:
                 ast.append(self.parse_theorem())
             elif tok.type == "DEFINITION":
                 ast.append(self.parse_definition())
+            elif tok.type == "EXISTENCE":
+                ast.append(self.parse_existence())
+            elif tok.type == "UNIQUENESS":
+                ast.append(self.parse_uniqueness())
             elif tok.type == "EQUALITY":
                 ast.append(self.parse_equality())
             elif tok.type == "EOF":
@@ -126,16 +130,7 @@ class Parser:
             tex = self.parse_tex()
             if len(tex) != 1:
                 raise SyntaxError("arity is different")
-            self.context.defcons[name] = DefCon(name=name, theorem=theorem, tex=tex, existence=None, uniqueness=None)
-            self.consume("EXISTENCE")
-            existence_name = self.consume("IDENT").value
-            existence_formula = self.parse_formula()
-            existence = DefConExist(name=existence_name, formula=existence_formula)
-            self.consume("UNIQUENESS")
-            uniqueness_name = self.consume("IDENT").value
-            uniqueness_formula = self.parse_formula()
-            uniqueness = DefConUniq(name=uniqueness_name, formula=uniqueness_formula)
-            defcon = DefCon(name=name, theorem=theorem, tex=tex, existence=existence, uniqueness=uniqueness)
+            defcon = DefCon(name=name, theorem=theorem, tex=tex)
             self.context.defcons[name] = defcon
             logger.debug(f"[defcon] {name}")
             return defcon
@@ -152,16 +147,7 @@ class Parser:
                 tex = self.parse_tex()
                 if len(tex) != arity + 1:
                     raise SyntaxError("arity is different")
-                self.context.deffuns[name] = DefFun(name=name, arity=arity, theorem=theorem, tex=tex, existence=None, uniqueness=None)
-                self.consume("EXISTENCE")
-                existence_name = self.consume("IDENT").value
-                existence_formula = self.parse_formula()
-                existence = DefFunExist(name=existence_name, formula=existence_formula)
-                self.consume("UNIQUENESS")
-                uniqueness_name = self.consume("IDENT").value
-                uniqueness_formula = self.parse_formula()
-                uniqueness = DefFunUniq(name=uniqueness_name, formula=uniqueness_formula)
-                deffun = DefFun(name=name, arity=arity, theorem=theorem, tex=tex, existence=existence, uniqueness=uniqueness)
+                deffun = DefFun(name=name, arity=arity, theorem=theorem, tex=tex)
                 self.context.deffuns[name] = deffun
                 logger.debug(f"[deffun] {name}")
                 return deffun
@@ -190,6 +176,40 @@ class Parser:
                 return deffunterm
         else:
             raise SyntaxError(f"Unexpected token {tok}")
+
+    def parse_existence(self) -> DefConExist | DefFunExist:
+        self.consume("EXISTENCE")
+        existence_name = self.consume("IDENT").value
+        existence_formula = self.parse_formula()
+        self.consume("BY")
+        name = self.consume("IDENT").value
+        if name in self.context.defcons:
+            defconexist = DefConExist(name=existence_name, formula=existence_formula, con_name=name)
+            self.context.defconexists[existence_name] = defconexist
+            return defconexist
+        elif name in self.context.deffuns:
+            deffunexist = DefFunExist(name=existence_name, formula=existence_formula, fun_name=name)
+            self.context.deffunexists[existence_name] = deffunexist
+            return deffunexist
+        else:
+            raise Exception(f"Unexpected name: {name}")
+
+    def parse_uniqueness(self) -> DefConUniq | DefFunUniq:
+        self.consume("UNIQUENESS")
+        uniqueness_name = self.consume("IDENT").value
+        uniqueness_formula = self.parse_formula()
+        self.consume("BY")
+        name = self.consume("IDENT").value
+        if name in self.context.defcons:
+            defconuniq = DefConUniq(name=uniqueness_name, formula=uniqueness_formula, con_name=name)
+            self.context.defconuniqs[uniqueness_name] = defconuniq
+            return defconuniq
+        elif name in self.context.deffuns:
+            deffununiq = DefFunUniq(name=uniqueness_name, formula=uniqueness_formula, fun_name=name)
+            self.context.deffununiqs[uniqueness_name] = deffununiq
+            return deffununiq
+        else:
+            raise Exception(f"Unexpected name: {name}")
 
     def parse_equality(self) -> Equality:
         self.consume("EQUALITY")

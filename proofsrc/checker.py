@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, Lambda, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, Lambda, DefConExist, DefConUniq, DefFunExist, DefFunUniq, pretty_expr
 from logic_utils import expr_in_context, collect_quantifier_vars, substitute_formula, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs
 from copy import deepcopy
 
@@ -75,82 +75,112 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
 
     if isinstance(node, DefCon):
         logger.debug(f"{sp}[DefCon] name: {node.name}, theorem: {node.theorem}")
-        if node.existence is None:
-            logger.error(f"{sp}❌ [DefCon] node.existence is None")
-            node.proofinfo.status = "ERROR"
-            return False
-        if node.uniqueness is None:
-            logger.error(f"{sp}❌ [DefCon] node.uniqueness is None")
-            node.proofinfo.status = "ERROR"
-            return False
-        context.defcons[node.name] = DefCon(node.name, node.theorem, node.tex, None, None)
         existsuniq = context.theorems[node.theorem].conclusion
         if not isinstance(existsuniq, ExistsUniq):
-            logger.error(f"{sp}❌ [DefCon] Theorem conclusion is not ExistsUniq object: {pretty_expr(existsuniq, context)}")
+            logger.error(f"{sp}❌ [DefCon] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
             node.proofinfo.status = "ERROR"
             return False
-        logger.debug(f"{sp}[DefCon] Theorem conclusion is ExistsUniq object: {pretty_expr(existsuniq, context)}")
-        existence_formula = substitute_formula(existsuniq.body, {existsuniq.var: Con(node.name)})
-        if not alpha_equiv_with_defs(node.existence.formula, existence_formula, context):
-            logger.error(f"{sp}❌ [DefCon] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula, context)}")
+        logger.debug(f"{sp}[DefCon] ExistsUniq object: {pretty_expr(existsuniq, context)}")
+        context.defcons[node.name] = node
+        node.proofinfo.status = "OK"
+        return True
+
+    if isinstance(node, DefConExist):
+        logger.debug(f"{sp}[DefConExist] name: {node.name}, con_name: {node.con_name}")
+        existsuniq = context.theorems[context.defcons[node.con_name].theorem].conclusion
+        if not isinstance(existsuniq, ExistsUniq):
+            logger.error(f"{sp}❌ [DefConExist] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
             node.proofinfo.status = "ERROR"
             return False
-        logger.debug(f"{sp}[DefCon] existence_formula is matched with theorem: {pretty_expr(node.existence.formula, context)}")
+        logger.debug(f"{sp}[DefConExist] ExistsUniq object: {pretty_expr(existsuniq, context)}")
+        existence_formula = substitute_formula(existsuniq.body, {existsuniq.var: Con(node.con_name)})
+        if not alpha_equiv_with_defs(node.formula, existence_formula, context):
+            logger.error(f"{sp}❌ [DefConExist] existence_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
+            node.proofinfo.status = "ERROR"
+            return False
+        logger.debug(f"{sp}[DefConExist] existence_formula is matched with theorem: {pretty_expr(node.formula, context)}")
+        context.defconexists[node.name] = node
+        node.proofinfo.status = "OK"
+        return True
+
+    if isinstance(node, DefConUniq):
+        logger.debug(f"{sp}[DefConUniq] name: {node.name}, con_name: {node.con_name}")
+        existsuniq = context.theorems[context.defcons[node.con_name].theorem].conclusion
+        if not isinstance(existsuniq, ExistsUniq):
+            logger.error(f"{sp}❌ [DefConUniq] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
+            node.proofinfo.status = "ERROR"
+            return False
+        logger.debug(f"{sp}[DefConUniq] ExistsUniq object: {pretty_expr(existsuniq, context)}")
         free, bound = collect_vars(existsuniq.body)
         var = fresh_var(existsuniq.var, free | bound)
         body = substitute_formula(existsuniq.body, {existsuniq.var: var})
         if context.equality is None:
-            logger.error(f"{sp}❌ [DefCon] equality has not been declared yet")
+            logger.error(f"{sp}❌ [DefConUniq] equality has not been declared yet")
             node.proofinfo.status = "ERROR"
             return False
-        uniqueness_formula = Forall(var, Implies(body, Symbol(Pred(context.equality.equal.name), (var, Con(node.name)))))
-        if not alpha_equiv_with_defs(node.uniqueness.formula, uniqueness_formula, context):
-            logger.error(f"{sp}❌ [DefCon] uniqueness_formula is not matched with theorem: {pretty_expr(node.uniqueness.formula, context)}")
+        uniqueness_formula = Forall(var, Implies(body, Symbol(Pred(context.equality.equal.name), (var, Con(node.con_name)))))
+        if not alpha_equiv_with_defs(node.formula, uniqueness_formula, context):
+            logger.error(f"{sp}❌ [DefConUniq] uniqueness_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
             node.proofinfo.status = "ERROR"
             return False
-        logger.debug(f"{sp}[DefCon] uniqueness_formula is matched with theorem: {pretty_expr(node.uniqueness.formula, context)}")
-        context.defcons[node.name] = node
+        logger.debug(f"{sp}[DefConUniq] uniqueness_formula is matched with theorem: {pretty_expr(node.formula, context)}")
+        context.defconuniqs[node.name] = node
         node.proofinfo.status = "OK"
         return True
 
     if isinstance(node, DefFun):
         logger.debug(f"{sp}[DefFun] name: {node.name}, theorem: {node.theorem}")
-        if node.existence is None:
-            logger.error(f"{sp}❌ [DefCon] node.existence is None")
-            node.proofinfo.status = "ERROR"
-            return False
-        if node.uniqueness is None:
-            logger.error(f"{sp}❌ [DefCon] node.uniqueness is None")
-            node.proofinfo.status = "ERROR"
-            return False
-        context.deffuns[node.name] = DefFun(node.name, node.arity, node.theorem, node.tex, None, None)
         args, existsuniq = collect_quantifier_vars(context.theorems[node.theorem].conclusion, Forall)
         if not isinstance(existsuniq, ExistsUniq):
             logger.error(f"{sp}❌ [DefFun] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
             node.proofinfo.status = "ERROR"
             return False
         logger.debug(f"{sp}[DefFun] ExistsUniq object: {pretty_expr(existsuniq, context)}")
-        existence_formula = substitute_formula(existsuniq.body, {existsuniq.var: Compound(Fun(node.name), tuple(args))})
-        for arg in reversed(args):
-            existence_formula = Forall(arg, existence_formula)
-        if not alpha_equiv_with_defs(node.existence.formula, existence_formula, context):
-            logger.error(f"{sp}❌ [DefFun] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula, context)}")
+        context.deffuns[node.name] = node
+        node.proofinfo.status = "OK"
+        return True
+
+    if isinstance(node, DefFunExist):
+        logger.debug(f"{sp}[DefFunExist] name: {node.name}, fun_name: {node.fun_name}")
+        args, existsuniq = collect_quantifier_vars(context.theorems[context.deffuns[node.fun_name].theorem].conclusion, Forall)
+        if not isinstance(existsuniq, ExistsUniq):
+            logger.error(f"{sp}❌ [DefFunExists] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
             node.proofinfo.status = "ERROR"
             return False
-        logger.debug(f"{sp}[DefFun] existence_formula is matched with theorem: {pretty_expr(node.existence.formula, context)}")
+        logger.debug(f"{sp}[DefFunExist] ExistsUniq object: {pretty_expr(existsuniq, context)}")
+        existence_formula = substitute_formula(existsuniq.body, {existsuniq.var: Compound(Fun(node.fun_name), tuple(args))})
+        for arg in reversed(args):
+            existence_formula = Forall(arg, existence_formula)
+        if not alpha_equiv_with_defs(node.formula, existence_formula, context):
+            logger.error(f"{sp}❌ [DefFunExist] existence_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
+            node.proofinfo.status = "ERROR"
+            return False
+        logger.debug(f"{sp}[DefFunExist] existence_formula is matched with theorem: {pretty_expr(node.formula, context)}")
+        context.deffunexists[node.name] = node
+        node.proofinfo.status = "OK"
+        return True
+
+    if isinstance(node, DefFunUniq):
+        logger.debug(f"{sp}[DefFunUniq] name: {node.name}, fun_name: {node.fun_name}")
+        args, existsuniq = collect_quantifier_vars(context.theorems[context.deffuns[node.fun_name].theorem].conclusion, Forall)
+        if not isinstance(existsuniq, ExistsUniq):
+            logger.error(f"{sp}❌ [DefFunExists] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
+            node.proofinfo.status = "ERROR"
+            return False
+        logger.debug(f"{sp}[DefFunUniq] ExistsUniq object: {pretty_expr(existsuniq, context)}")
         if context.equality is None:
             logger.error(f"{sp}❌ [DefFun] equality has not been declared yet")
             node.proofinfo.status = "ERROR"
             return False
-        uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(Pred(context.equality.equal.name), (Var(existsuniq.var.name), Compound(Fun(node.name), tuple(args))))))
+        uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(Pred(context.equality.equal.name), (Var(existsuniq.var.name), Compound(Fun(node.fun_name), tuple(args))))))
         for arg in reversed(args):
             uniqueness_formula = Forall(arg, uniqueness_formula)
-        if not alpha_equiv_with_defs(node.uniqueness.formula, uniqueness_formula, context):
-            logger.error(f"{sp}❌ [DefFun] uniqueness_formula is not matched with theorem: {pretty_expr(node.uniqueness.formula, context)}")
+        if not alpha_equiv_with_defs(node.formula, uniqueness_formula, context):
+            logger.error(f"{sp}❌ [DefFun] uniqueness_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
             node.proofinfo.status = "ERROR"
             return False
-        logger.debug(f"{sp}[DefFun] uniqueness_formula is matched with theorem: {pretty_expr(node.uniqueness.formula, context)}")
-        context.deffuns[node.name] = node
+        logger.debug(f"{sp}[DefFun] uniqueness_formula is matched with theorem: {pretty_expr(node.formula, context)}")
+        context.deffununiqs[node.name] = node
         node.proofinfo.status = "OK"
         return True
 

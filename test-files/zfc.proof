@@ -253,8 +253,8 @@ theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {
 }
 
 definition constant emptyset by emptyset_exists_uniquely tex "\emptyset"
-  existence emptyset_existence \forall y(notin(y,emptyset))
-  uniqueness emptyset_uniqueness \forall x(\forall y(notin(y,x))\to equal(x,emptyset))
+existence emptyset_existence \forall y(notin(y,emptyset)) by emptyset
+uniqueness emptyset_uniqueness \forall x(\forall y(notin(y,x))\to equal(x,emptyset)) by emptyset
 
 theorem not_emptyset_has_a_member \forall x(neq(x, emptyset)\to\exists y(in(y,x))) {
   any x {
@@ -339,8 +339,8 @@ theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftri
 }
 
 definition function pair by pair_exists_uniquely tex "\{",",","\}"
-  existence pair_existence \forall x\forall y\forall w(in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y))
-  uniqueness pair_uniqueness \forall x\forall y\forall z(\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z,pair(x,y)))
+existence pair_existence \forall x\forall y\forall w(in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y)) by pair
+uniqueness pair_uniqueness \forall x\forall y\forall z(\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z,pair(x,y))) by pair
 
 theorem pair_cor1 \forall x\forall y(in(x,pair(x,y))) {
   any x,y {
@@ -611,8 +611,8 @@ theorem union_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightarrow
 }
 
 definition function bigcup by union_exists_uniquely tex "\bigcup",""
-  existence bigcup_existence \forall x\forall z(in(z,bigcup(x))\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))
-  uniqueness bigcup_uniqueness \forall x(\forall y(\forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\to equal(y,bigcup(x))))
+existence bigcup_existence \forall x\forall z(in(z,bigcup(x))\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) by bigcup
+uniqueness bigcup_uniqueness \forall x(\forall y(\forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\to equal(y,bigcup(x)))) by bigcup
 
 theorem bigcup_cor1 \forall x\forall y(in(y,x)\to subset(y,bigcup(x))) {
   any x,y {
@@ -830,8 +830,8 @@ theorem powerset_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightar
 }
 
 definition function powerset by powerset_exists_uniquely tex "\mathcal{P}(",")"
-  existence powerset_existence \forall x\forall z(in(z,powerset(x))\leftrightarrow subset(z,x))
-  uniqueness powerset_uniqueness \forall x\forall y(\forall z(in(z,y)\leftrightarrow subset(z,x))\to equal(y,powerset(x)))
+existence powerset_existence \forall x\forall z(in(z,powerset(x))\leftrightarrow subset(z,x)) by powerset
+uniqueness powerset_uniqueness \forall x\forall y(\forall z(in(z,y)\leftrightarrow subset(z,x))\to equal(y,powerset(x))) by powerset
 
 theorem powerset_cor1 \forall x(in(x,powerset(x))) {
   any x {
@@ -893,8 +893,8 @@ theorem separation_is_unique \forall x\forall^T\phi[1]\exists!y\forall z(in(z,y)
 }
 
 definition function sep by separation_is_unique tex "\mathrm{sep}(",",",")"
-  existence sep_existence \forall x\forall^T\phi[1]\forall z(in(z,sep(x,\phi))\leftrightarrow in(z,x)\wedge\phi(z))
-  uniqueness sep_uniqueness \forall x\forall^T\phi[1]\forall y(\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z))\to equal(y,sep(x,\phi)))
+existence sep_existence \forall x\forall^T\phi[1]\forall z(in(z,sep(x,\phi))\leftrightarrow in(z,x)\wedge\phi(z)) by sep
+uniqueness sep_uniqueness \forall x\forall^T\phi[1]\forall y(\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z))\to equal(y,sep(x,\phi))) by sep
 
 theorem sep_cor1 \forall x\forall^T\phi[1](subset(sep(x,\phi),x)) {
   any x, template \phi[1] {

@@ -167,79 +167,85 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
                         render_expr(node.formula, context),
                         "により定める。"]
     elif isinstance(node, DefCon):
-        header_parts = [toggle,
+        header_parts = [bullet,
                         render_keyword("definition constant"),
                         render_identifier(node.name),
                         render_tex(node.tex),
                         render_keyword("by"),
                         render_identifier(node.theorem)]
-        header_parts_jp = [toggle,
+        header_parts_jp = [bullet,
                            render_keyword("定数記号定義"),
                            render_identifier(node.name),
                            render_tex(node.tex),
                            "存在と一意性は",
                            render_identifier(node.theorem),
                            "により示された。"]
-        if node.existence is None:
-            raise Exception("node.existence is None")
-        if node.uniqueness is None:
-            raise Exception("node.uniqueness is None")
-        body_html = render_node(node.existence, context, mode) + render_node(node.uniqueness, context, mode)
     elif isinstance(node, DefConExist):
         header_parts = [bullet,
                         render_keyword("existence"),
                         render_identifier(node.name),
-                        render_expr(node.formula, context)]
+                        render_expr(node.formula, context),
+                        render_keyword("by"),
+                        render_identifier(node.con_name)]
         header_parts_jp = [bullet,
                            render_keyword("存在"),
                            render_identifier(node.name),
-                           render_expr(node.formula, context)]
+                           render_expr(node.formula, context),
+                           render_identifier(node.con_name),
+                           "の定義による。"]
     elif isinstance(node, DefConUniq):
         header_parts = [bullet,
                         render_keyword("uniqueness"),
                         render_identifier(node.name),
-                        render_expr(node.formula, context)]
+                        render_expr(node.formula, context),
+                        render_keyword("by"),
+                        render_identifier(node.con_name)]
         header_parts_jp = [bullet,
                            render_keyword("一意性"),
                            render_identifier(node.name),
-                           render_expr(node.formula, context)]
+                           render_expr(node.formula, context),
+                           render_identifier(node.con_name),
+                           "の定義による。"]
     elif isinstance(node, DefFun):
-        header_parts = [toggle,
+        header_parts = [bullet,
                         render_keyword("definition function"),
                         render_identifier(node.name),
                         render_tex(node.tex),
                         render_keyword("by"),
                         render_identifier(node.theorem)]
-        header_parts_jp = [toggle,
+        header_parts_jp = [bullet,
                            render_keyword("関数記号定義"),
                            render_identifier(node.name),
                            render_tex(node.tex),
                            "存在と一意性は",
                            render_identifier(node.theorem),
                            "により示された。"]
-        if node.existence is None:
-            raise Exception("node.existence is None")
-        if node.uniqueness is None:
-            raise Exception("node.uniqueness is None")
-        body_html = render_node(node.existence, context, mode) + render_node(node.uniqueness, context, mode)
     elif isinstance(node, DefFunExist):
         header_parts = [bullet,
                         render_keyword("existence"),
                         render_identifier(node.name),
-                        render_expr(node.formula, context)]
+                        render_expr(node.formula, context),
+                        render_keyword("by"),
+                        render_identifier(node.fun_name)]
         header_parts_jp = [bullet,
                            render_keyword("存在"),
                            render_identifier(node.name),
-                           render_expr(node.formula, context)]
+                           render_expr(node.formula, context),
+                           render_identifier(node.fun_name),
+                           "の定義による。"]
     elif isinstance(node, DefFunUniq):
         header_parts = [bullet,
                         render_keyword("uniqueness"),
                         render_identifier(node.name),
-                        render_expr(node.formula, context)]
+                        render_expr(node.formula, context),
+                        render_keyword("by"),
+                        render_identifier(node.fun_name)]
         header_parts_jp = [bullet,
                            render_keyword("一意性"),
                            render_identifier(node.name),
-                           render_expr(node.formula, context)]
+                           render_expr(node.formula, context),
+                           render_identifier(node.fun_name),
+                           "の定義による。"]
     elif isinstance(node, DefFunTerm):
         header_parts = [bullet,
                         render_keyword("definition function"),
