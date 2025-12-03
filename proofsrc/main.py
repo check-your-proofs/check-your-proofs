@@ -27,14 +27,20 @@ file_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
-from lexer import lex
-tokens = lex(src)
-from parser import Parser
-parser = Parser(tokens)
-ast, _ = parser.parse_file()
-from checker import check_ast
-result, ast, context = check_ast(ast)
-if result:
-    print("All theorems proved")
-else:
-    print("❌ Not all theorems proved")
+from dependency import DependencyResolver
+resolver = DependencyResolver()
+resolver.resolve(path)
+resolved_files, tokens_cache = resolver.get_result()
+from ast_types import Context
+parser_context = Context.init()
+checker_context = Context.init()
+for file in resolved_files:
+    from parser import Parser
+    parser = Parser(tokens_cache[file])
+    ast, parser_context = parser.parse_file(parser_context)
+    from checker import check_ast
+    result, _, checker_context = check_ast(ast, checker_context)
+    if result:
+        print("All theorems proved")
+    else:
+        print("❌ Not all theorems proved")

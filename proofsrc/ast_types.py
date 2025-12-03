@@ -344,6 +344,10 @@ class Context:
         else:
             raise Exception(f"Unexpected name: {name}")
 
+@dataclass
+class Include:
+    file: str
+
 OP_PRECEDENCE = {
     "Lowest": 0,
     "Iff": 1,

@@ -1,5 +1,5 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, TemplateCall
-from lexer import Token, lex
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, TemplateCall, Include
+from lexer import Token
 from logic_utils import collect_quantifier_vars
 
 import logging
@@ -25,12 +25,14 @@ class Parser:
         self.pos += 1
         return tok
 
-    def parse_file(self) -> tuple[list[Declaration], Context]:
-        ast: list[Declaration] = []
-        self.context = Context.init()
+    def parse_file(self, context: Context) -> tuple[list[Include | Declaration], Context]:
+        ast: list[Include | Declaration] = []
+        self.context = context
         while True:
             tok = self.peek()
-            if tok.type == "PRIMITIVE":
+            if tok.type == "INCLUDE":
+                ast.append(self.parse_include())
+            elif tok.type == "PRIMITIVE":
                 ast.append(self.parse_primitive())
             elif tok.type == "AXIOM":
                 ast.append(self.parse_axiom())
@@ -263,6 +265,11 @@ class Parser:
             else:
                 break
         return EqualityReplacement(equal=equal, evidence=replacement_evidence)
+
+    def parse_include(self) -> Include:
+        self.consume("INCLUDE")
+        file = self.consume("STRING").value
+        return Include(file)
 
     def parse_block(self) -> list[Control]:
         body: list[Control] = []
@@ -739,9 +746,6 @@ class Parser:
 if __name__ == "__main__":
     import sys
     path = sys.argv[1]
-    f = open(path)
-    src = f.read()
-    f.close()
 
     import os
     import logging
@@ -766,6 +770,11 @@ if __name__ == "__main__":
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
-    tokens = lex(src)
-    parser = Parser(tokens)
-    parser.parse_file()
+    from dependency import DependencyResolver
+    resolver = DependencyResolver()
+    resolver.resolve(path)
+    resolved_files, tokens_cache = resolver.get_result()
+    parser_context = Context.init()
+    for file in resolved_files:
+        parser = Parser(tokens_cache[file])
+        _, parser_context = parser.parse_file(parser_context)

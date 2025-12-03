@@ -67,7 +67,11 @@ function updateInfoPanel(header) {
     local_conclusion_label = "この文のブロック内で導く結論"
   }
 
-  const status = header.nextElementSibling
+  const status = header.nextElementSibling;
+  if (!status) {
+      infoContent.innerHTML = "";
+      return;
+  }
   const context_vars = status.nextElementSibling;
   const context_formulas = context_vars.nextElementSibling;
   const context_templates = context_formulas.nextElementSibling;

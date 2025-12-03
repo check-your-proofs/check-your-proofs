@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, pretty_expr
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, pretty_expr
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 
@@ -98,7 +98,7 @@ def render_tex_svg(tex: list[str]):
     svg_path = output_svg(latex_code)
     return img_tag(svg_path, latex_code)
 
-def render_node(node: Declaration | DeclarationSupport | Control, context: Context, mode: str) -> str:
+def render_node(node: Include | Declaration | DeclarationSupport | Control, context: Context, mode: str) -> str:
     if mode == "mathjax":
         render_expr = render_expr_mathjax
         render_expr_list = render_expr_list_mathjax
@@ -117,6 +117,18 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
     body_html = ""
     bullet = "<button class='bullet'>•</button>"
     toggle = "<button class='toggle'>▼</button>"
+
+    if isinstance(node, Include):
+        header_parts = [bullet,
+                        render_keyword("include"),
+                        node.file]
+        header_parts_jp = [bullet,
+                           render_keyword("読み込み"),
+                           node.file]
+        header_syntax_html = f"<div class='syntax-view'>{' '.join(header_parts)}</div>"
+        header_jp_html = f"<div class='jp-view'>{' '.join(header_parts_jp)}</div>"
+        header_html = f"<div class='block-header'>{header_syntax_html}{header_jp_html}</div>"
+        return f"  <div class='block'>{header_html}</div>"
 
     if isinstance(node, PrimPred):
         header_parts = [bullet,
@@ -503,7 +515,7 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
     local_conclusion_html = f"<div class='local_conclusion' hidden>{local_conclusion}</div>"
     return f"  <div class='block'>{header_html}{status_html}{context_vars_html}{context_formulas_html}{context_templates_html}{premises_html}{conclusions_html}{local_vars_html}{local_premise_html}{local_conclusion_html}{content_html}</div>"
 
-def to_html(ast: list[Declaration], context: Context, title: str, mode: str):
+def to_html(ast: list[Include | Declaration], context: Context, title: str, mode: str):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     parts: list[str] = []
     for i, node in enumerate(ast):
@@ -525,23 +537,31 @@ if __name__ == "__main__":
     import sys
     path = sys.argv[1]
     mode = sys.argv[2]
-    f = open(path)
-    src = f.read()
-    f.close()
-    from lexer import lex
-    tokens = lex(src)
-    from parser import Parser
-    parser = Parser(tokens)
-    ast, _ = parser.parse_file()
-    from checker import check_ast
-    result, ast, context = check_ast(ast)
-    if result:
-        print("All theorems proved")
-    else:
-        print("❌ Not all theorems proved")
-    import os
-    title = os.path.splitext(os.path.basename(path))[0]
-    html = to_html(ast, context, title, mode)
-    f = open(os.path.join("html", f"{title}_{mode}.html"), 'w', encoding='utf-8')
-    f.write(html)
-    f.close()
+    from dependency import DependencyResolver
+    resolver = DependencyResolver()
+    resolver.resolve(path)
+    resolved_files, tokens_cache = resolver.get_result()
+    parser_context = Context.init()
+    checker_context = Context.init()
+    for file in resolved_files:
+        import os
+        name = os.path.splitext(os.path.basename(file))[0]
+        from parser import Parser
+        parser = Parser(tokens_cache[file])
+        ast, parser_context = parser.parse_file(parser_context)
+        title = f"{name}_parser_{mode}"
+        parser_html = to_html(ast, parser_context, title, mode)
+        f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
+        f.write(parser_html)
+        f.close()
+        from checker import check_ast
+        result, ast, checker_context = check_ast(ast, checker_context)
+        if result:
+            print("All theorems proved")
+        else:
+            print("❌ Not all theorems proved")
+        title = f"{name}_checker_{mode}"
+        checker_html = to_html(ast, checker_context, title, mode)
+        f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
+        f.write(checker_html)
+        f.close()

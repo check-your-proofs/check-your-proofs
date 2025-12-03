@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, Lambda, DefConExist, DefConUniq, DefFunExist, DefFunUniq, DeclarationSupport, EqualityReflection, EqualityReplacement, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, Lambda, DefConExist, DefConUniq, DefFunExist, DefFunUniq, DeclarationSupport, EqualityReflection, EqualityReplacement, Include, pretty_expr
 from logic_utils import expr_in_context, collect_quantifier_vars, substitute_formula, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs
 from copy import deepcopy
 
@@ -24,9 +24,8 @@ def get_fact(fact: str | Formula, context: Context) -> Formula:
 def add_conclusion(context: Context, conclusion: Bottom | Formula) -> None:
     context.formulas.append(conclusion)
 
-def check_ast(ast: list[Declaration]) -> tuple[bool, list[Declaration], Context]:
-    context = Context.init()
-    return all(check_proof(node, context) for node in ast), ast, context
+def check_ast(ast: list[Include | Declaration], context: Context) -> tuple[bool, list[Include | Declaration], Context]:
+    return all(check_proof(node, context) for node in ast if isinstance(node, Declaration)), ast, context
 
 # === 証明チェッカー ===
 def check_proof(node: Declaration | DeclarationSupport | Control, context: Context, indent: int = 0) -> bool:
@@ -837,9 +836,6 @@ def check_proof(node: Declaration | DeclarationSupport | Control, context: Conte
 if __name__ == "__main__":
     import sys
     path = sys.argv[1]
-    f = open(path)
-    src = f.read()
-    f.close()
 
     import os
     import logging
@@ -852,7 +848,7 @@ if __name__ == "__main__":
     console_handler.setLevel(logging.DEBUG)
 
     # ファイル出力用ハンドラ
-    file_handler = logging.FileHandler(os.path.join("logs", os.path.basename(path).replace(".proof", ".log")), mode='w', encoding='utf-8')
+    file_handler = logging.FileHandler(os.path.join("logs", os.path.basename(path).replace(".proof", "_checker.log")), mode='w', encoding='utf-8')
     file_handler.setLevel(logging.DEBUG)
 
     # 共通フォーマット
@@ -864,13 +860,18 @@ if __name__ == "__main__":
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
-    from lexer import lex
-    tokens = lex(src)
-    from parser import Parser
-    parser = Parser(tokens)
-    ast, _ = parser.parse_file()
-    result, _, _ = check_ast(ast)
-    if result:
-        print("All theorems proved")
-    else:
-        print("❌ Not all theorems proved")
+    from dependency import DependencyResolver
+    resolver = DependencyResolver()
+    resolver.resolve(path)
+    resolved_files, tokens_cache = resolver.get_result()
+    parser_context = Context.init()
+    checker_context = Context.init()
+    for file in resolved_files:
+        from parser import Parser
+        parser = Parser(tokens_cache[file])
+        ast, parser_context = parser.parse_file(parser_context)
+        result, _, checker_context = check_ast(ast, checker_context)
+        if result:
+            print("All theorems proved")
+        else:
+            print("❌ Not all theorems proved")
