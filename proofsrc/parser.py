@@ -91,13 +91,7 @@ class Parser:
                 autoexpand =False
             name = self.stream.consume("IDENT").value
             self.stream.consume("LPAREN")
-            args: list[Var] = []
-            while True:
-                args.append(self.parse_var())
-                if self.stream.peek().type == "COMMA":
-                    self.stream.consume("COMMA")
-                else:
-                    break
+            args = self.parse_vars()
             self.stream.consume("RPAREN")
             self.stream.consume("AS")
             for arg in args:
@@ -143,13 +137,7 @@ class Parser:
                 return deffun
             else:
                 self.stream.consume("LPAREN")
-                args: list[Var] = []
-                while True:
-                    args.append(self.parse_var())
-                    if self.stream.peek().type == "COMMA":
-                        self.stream.consume("COMMA")
-                    else:
-                        break
+                args = self.parse_vars()
                 self.stream.consume("RPAREN")
                 self.stream.consume("AS")
                 for arg in args:
@@ -592,20 +580,14 @@ class Parser:
                 if not isinstance(template, Template):
                     raise Exception(f"Template object is required, but {template} is not Template object at {tok}")
                 if template.arity == 0:
-                    args: list[Term] = []
+                    vars: list[Var] = []
                 else:
                     self.stream.consume("LPAREN")
-                    args: list[Term] = []
-                    while True:
-                        args.append(self.parse_var())
-                        if self.stream.peek().type == "COMMA":
-                            self.stream.consume("COMMA")
-                        else:
-                            break
+                    vars = self.parse_vars()
                     self.stream.consume("RPAREN")
-                    if len(args) != template.arity:
-                        raise SyntaxError(f"arity of {template.name} is {template.arity}, but length of args is {len(args)} at {tok}")
-                return TemplateCall(template, tuple(args))
+                    if len(vars) != template.arity:
+                        raise SyntaxError(f"arity of {template.name} is {template.arity}, but length of args is {len(vars)} at {tok}")
+                return TemplateCall(template, tuple(vars))
             elif name in self.context.primpreds or name in self.context.defpreds:
                 if name in self.context.primpreds:
                     arity = self.context.primpreds[name].arity
@@ -700,13 +682,7 @@ class Parser:
                 raise SyntaxError(f"Term object is required, but {name} is unknown at {tok}")
         elif tok.type == "LAMBDA":
             self.stream.consume("LAMBDA")
-            vars: list[Var] = []
-            while True:
-                vars.append(self.parse_var())
-                if self.stream.peek().type == "COMMA":
-                    self.stream.consume("COMMA")
-                else:
-                    break
+            vars = self.parse_vars()
             for var in vars:
                 self.free_items[var.name] = var
             self.stream.consume("DOT")
@@ -727,6 +703,16 @@ class Parser:
             else:
                 break
         return tex
+
+    def parse_vars(self) -> list[Var]:
+        vars: list[Var] = []
+        while True:
+            vars.append(self.parse_var())
+            if self.stream.peek().type == "COMMA":
+                self.stream.consume("COMMA")
+            else:
+                break
+        return vars
 
     def parse_var(self) -> Var:
         var_name = self.stream.consume("IDENT").value
