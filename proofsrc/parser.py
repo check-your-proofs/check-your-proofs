@@ -11,7 +11,6 @@ class Parser:
     def __init__(self, tokens: list[Token]):
         self.stream = TokenStream(tokens)
         self.bound_items: dict[str, Var | Template] = {}
-        self.free_items: dict[str, Var | Template] = {}
 
     def parse_file(self, context: Context) -> tuple[list[Include | Declaration], Context]:
         ast: list[Include | Declaration] = []
@@ -94,10 +93,10 @@ class Parser:
             self.stream.consume("RPAREN")
             self.stream.consume("AS")
             for arg in args:
-                self.free_items[arg.name] = arg
+                self.bound_items[arg.name] = arg
             formula = self.parse_formula(context)
             for arg in args:
-                self.free_items.pop(arg.name)
+                self.bound_items.pop(arg.name)
             tex = self.parse_tex()
             if len(tex) != len(args) + 1:
                 raise SyntaxError(f"arity of {name} is {len(args)}, but length of tex is {len(tex)} at {tok}")
@@ -140,10 +139,10 @@ class Parser:
                 self.stream.consume("RPAREN")
                 self.stream.consume("AS")
                 for arg in args:
-                    self.free_items[arg.name] = arg
+                    self.bound_items[arg.name] = arg
                 term = self.parse_term(context)
                 for arg in args:
-                    self.free_items.pop(arg.name)
+                    self.bound_items.pop(arg.name)
                 tex = self.parse_tex()
                 if len(tex) != len(args) + 1:
                     raise SyntaxError(f"arity of {name} is {len(args)}, but length of tex is {len(tex)} at {tok}")
@@ -299,32 +298,32 @@ class Parser:
     def parse_any(self, context: Context) -> Any:
         self.stream.consume("ANY")
         items: list[Var | Template] = []
+        local_vars: list[Var] = []
+        local_templates: list[Template] = []
         while True:
             if self.stream.peek().type == "TEMPLATE":
                 self.stream.consume("TEMPLATE")
                 template = self.parse_template()
                 items.append(template)
+                local_templates.append(template)
             else:
                 var = self.parse_var()
                 items.append(var)
+                local_vars.append(var)
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
             else:
                 break
-        for item in items:
-            self.free_items[item.name] = item
         self.stream.consume("LBRACE")
-        body = self.parse_block(context)
+        body = self.parse_block(context.copy(list(context.vars + local_vars), list(context.formulas), list(context.templates + local_templates)))
         self.stream.consume("RBRACE")
-        for item in items:
-            self.free_items.pop(item.name)
         return Any(items=items, body=body)
 
     def parse_assume(self, context: Context) -> Assume:
         self.stream.consume("ASSUME")
         premise = self.parse_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context)
+        body = self.parse_block(context.copy(list(context.vars), list(context.formulas), list(context.templates)))
         self.stream.consume("RBRACE")
         return Assume(premise=premise, body=body)
     
@@ -333,7 +332,7 @@ class Parser:
         fact = self.parse_reference_or_formula(context)
         cases: list[Case] = []
         while self.stream.peek().type == "CASE":
-            cases.append(self.parse_case(context))
+            cases.append(self.parse_case(context.copy(list(context.vars), list(context.formulas), list(context.templates))))
         if len(cases) < 2:
             raise SyntaxError(f"At least two cases are required at {tok}")
         return Divide(fact=fact, cases=cases)
@@ -342,7 +341,7 @@ class Parser:
         self.stream.consume("CASE")
         premise = self.parse_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context)
+        body = self.parse_block(context.copy(list(context.vars), list(context.formulas), list(context.templates)))
         self.stream.consume("RBRACE")
         return Case(premise=premise, body=body)
     
@@ -360,20 +359,16 @@ class Parser:
             break
         self.stream.consume("SUCH")
         fact = self.parse_reference_or_formula(context)
-        for item in env.values():
-            self.free_items[item.name] = item
         self.stream.consume("LBRACE")
-        body = self.parse_block(context)
+        body = self.parse_block(context.copy(list(context.vars + list(env.values())), list(context.formulas), list(context.templates)))
         self.stream.consume("RBRACE")
-        for item in env.values():
-            self.free_items.pop(item.name)
         return Some(env=env, fact=fact, body=body)
     
     def parse_deny(self, context: Context) -> Deny:
         self.stream.consume("DENY")
         premise = self.parse_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context)
+        body = self.parse_block(context.copy(list(context.vars), list(context.formulas), list(context.templates)))
         self.stream.consume("RBRACE")
         return Deny(premise=premise, body=body)
     
@@ -523,7 +518,7 @@ class Parser:
         self.stream.consume("SHOW")
         conclusion = self.parse_bot_or_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context)
+        body = self.parse_block(context.copy(list(context.vars), list(context.formulas), list(context.templates)))
         self.stream.consume("RBRACE")
         return Show(conclusion=conclusion, body=body)
 
@@ -571,11 +566,11 @@ class Parser:
         tok = self.stream.peek()
         if tok.type == "IDENT":
             name = self.stream.consume("IDENT").value
-            if name in self.bound_items or name in self.free_items:
+            if name in self.bound_items or any(template.name == name for template in context.templates):
                 if name in self.bound_items:
                     template = self.bound_items[name]
                 else:
-                    template = self.free_items[name]
+                    template = next((template for template in context.templates if template.name == name))
                 if not isinstance(template, Template):
                     raise Exception(f"Template object is required, but {template} is not Template object at {tok}")
                 if template.arity == 0:
@@ -656,8 +651,10 @@ class Parser:
             name = self.stream.consume("IDENT").value
             if name in self.bound_items:
                 return self.bound_items[name]
-            elif name in self.free_items:
-                return self.free_items[name]
+            elif any(var.name == name for var in context.vars):
+                return next((var for var in context.vars if var.name == name))
+            elif any(template.name == name for template in context.templates):
+                return next((template for template in context.templates if template.name == name))
             elif name in context.defcons:
                 return Con(name)
             elif name in context.deffuns or name in context.deffunterms:
@@ -683,11 +680,11 @@ class Parser:
             self.stream.consume("LAMBDA")
             vars = self.parse_vars()
             for var in vars:
-                self.free_items[var.name] = var
+                self.bound_items[var.name] = var
             self.stream.consume("DOT")
             formula = self.parse_formula(context)
             for var in vars:
-                self.free_items.pop(var.name)
+                self.bound_items.pop(var.name)
             return Lambda(tuple(vars), formula)
         else:
             raise SyntaxError(f"Term object is required, but unknown token is found at {tok}")
