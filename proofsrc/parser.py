@@ -15,32 +15,31 @@ class Parser:
 
     def parse_file(self, context: Context) -> tuple[list[Include | Declaration], Context]:
         ast: list[Include | Declaration] = []
-        self.context = context
         while True:
             tok = self.stream.peek()
             if tok.type == "INCLUDE":
                 ast.append(self.parse_include())
             elif tok.type == "PRIMITIVE":
-                ast.append(self.parse_primitive())
+                ast.append(self.parse_primitive(context))
             elif tok.type == "AXIOM":
-                ast.append(self.parse_axiom())
+                ast.append(self.parse_axiom(context))
             elif tok.type == "THEOREM":
-                ast.append(self.parse_theorem())
+                ast.append(self.parse_theorem(context))
             elif tok.type == "DEFINITION":
-                ast.append(self.parse_definition())
+                ast.append(self.parse_definition(context))
             elif tok.type == "EXISTENCE":
-                ast.append(self.parse_existence())
+                ast.append(self.parse_existence(context))
             elif tok.type == "UNIQUENESS":
-                ast.append(self.parse_uniqueness())
+                ast.append(self.parse_uniqueness(context))
             elif tok.type == "EQUALITY":
-                ast.append(self.parse_equality())
+                ast.append(self.parse_equality(context))
             elif tok.type == "EOF":
                 break
             else:
                 raise SyntaxError(f"Include, Declaration or EOF is required at {tok}")
-        return ast, self.context
+        return ast, context
 
-    def parse_primitive(self) -> PrimPred:
+    def parse_primitive(self, context: Context) -> PrimPred:
         self.stream.consume("PRIMITIVE")
         tok = self.stream.peek()
         if tok.type == "PREDICATE":
@@ -52,34 +51,34 @@ class Parser:
             if len(tex) != arity + 1:
                 raise SyntaxError(f"arity of {name} is {arity}, but length of tex is {len(tex)}, at {tok}")
             primpred = PrimPred(name=name, arity=arity, tex=tex)
-            self.context.primpreds[name] = primpred
+            context.primpreds[name] = primpred
             logger.debug(f"[primpred] {name}")
             return primpred
         else:
             raise SyntaxError(f"predicate is required at {tok}")
 
-    def parse_axiom(self) -> Axiom:
+    def parse_axiom(self, context: Context) -> Axiom:
         self.stream.consume("AXIOM")
         name = self.stream.consume("IDENT").value
-        conclusion = self.parse_formula()
+        conclusion = self.parse_formula(context)
         axiom = Axiom(name=name, conclusion=conclusion)
-        self.context.axioms[name] = axiom
+        context.axioms[name] = axiom
         logger.debug(f"[axiom] {name}")
         return axiom
 
-    def parse_theorem(self) -> Theorem:
+    def parse_theorem(self, context: Context) -> Theorem:
         self.stream.consume("THEOREM")
         name = self.stream.consume("IDENT").value
-        conclusion = self.parse_formula()
+        conclusion = self.parse_formula(context)
         self.stream.consume("LBRACE")
-        proof = self.parse_block()
+        proof = self.parse_block(context.copy([], [], []))
         self.stream.consume("RBRACE")
         theorem = Theorem(name=name, conclusion=conclusion, proof=proof)
-        self.context.theorems[name] = theorem
+        context.theorems[name] = theorem
         logger.debug(f"[theorem] {name}")
         return theorem
 
-    def parse_definition(self) -> DefPred | DefCon | DefFun | DefFunTerm:
+    def parse_definition(self, context: Context) -> DefPred | DefCon | DefFun | DefFunTerm:
         self.stream.consume("DEFINITION")
         tok = self.stream.peek()
         if tok.type == "PREDICATE":
@@ -96,14 +95,14 @@ class Parser:
             self.stream.consume("AS")
             for arg in args:
                 self.free_items[arg.name] = arg
-            formula = self.parse_formula()
+            formula = self.parse_formula(context)
             for arg in args:
                 self.free_items.pop(arg.name)
             tex = self.parse_tex()
             if len(tex) != len(args) + 1:
                 raise SyntaxError(f"arity of {name} is {len(args)}, but length of tex is {len(tex)} at {tok}")
             defpred = DefPred(name=name, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
-            self.context.defpreds[name] = defpred
+            context.defpreds[name] = defpred
             logger.debug(f"[defpred] {name}")
             return defpred
         elif tok.type == "CONSTANT":
@@ -115,7 +114,7 @@ class Parser:
             if len(tex) != 1:
                 raise SyntaxError(f"{name} is constant, but length of tex is {len(tex)} at {tok}")
             defcon = DefCon(name=name, theorem=theorem, tex=tex)
-            self.context.defcons[name] = defcon
+            context.defcons[name] = defcon
             logger.debug(f"[defcon] {name}")
             return defcon
         elif tok.type == "FUNCTION":
@@ -124,7 +123,7 @@ class Parser:
             if self.stream.peek().type == "BY":
                 self.stream.consume("BY")
                 theorem = self.stream.consume("IDENT").value
-                vars_, body = collect_quantifier_vars(self.context.theorems[theorem].conclusion, Forall)
+                vars_, body = collect_quantifier_vars(context.theorems[theorem].conclusion, Forall)
                 if not (len(vars_) > 0 and isinstance(body, ExistsUniq)):
                     raise SyntaxError(f"conclusion of {theorem} cannot be used for function definition at {tok}")
                 arity = len(vars_)
@@ -132,7 +131,7 @@ class Parser:
                 if len(tex) != arity + 1:
                     raise SyntaxError(f"arity or {name} is {arity}, but length of tex is {len(tex)} at {tok}")
                 deffun = DefFun(name=name, arity=arity, theorem=theorem, tex=tex)
-                self.context.deffuns[name] = deffun
+                context.deffuns[name] = deffun
                 logger.debug(f"[deffun] {name}")
                 return deffun
             else:
@@ -142,103 +141,103 @@ class Parser:
                 self.stream.consume("AS")
                 for arg in args:
                     self.free_items[arg.name] = arg
-                term = self.parse_term()
+                term = self.parse_term(context)
                 for arg in args:
                     self.free_items.pop(arg.name)
                 tex = self.parse_tex()
                 if len(tex) != len(args) + 1:
                     raise SyntaxError(f"arity of {name} is {len(args)}, but length of tex is {len(tex)} at {tok}")
                 deffunterm = DefFunTerm(name=name, args=args, term=term, tex=tex)
-                self.context.deffunterms[name] = deffunterm
+                context.deffunterms[name] = deffunterm
                 logger.debug(f"[deffunterm] {name}")
                 return deffunterm
         else:
             raise SyntaxError(f"predicate, constant or function is required after definition at {tok}")
 
-    def parse_existence(self) -> DefConExist | DefFunExist:
+    def parse_existence(self, context: Context) -> DefConExist | DefFunExist:
         self.stream.consume("EXISTENCE")
         existence_name = self.stream.consume("IDENT").value
-        existence_formula = self.parse_formula()
+        existence_formula = self.parse_formula(context)
         self.stream.consume("BY")
         tok = self.stream.consume("IDENT")
         name = tok.value
-        if name in self.context.defcons:
+        if name in context.defcons:
             defconexist = DefConExist(name=existence_name, formula=existence_formula, con_name=name)
-            self.context.defconexists[existence_name] = defconexist
+            context.defconexists[existence_name] = defconexist
             return defconexist
-        elif name in self.context.deffuns:
+        elif name in context.deffuns:
             deffunexist = DefFunExist(name=existence_name, formula=existence_formula, fun_name=name)
-            self.context.deffunexists[existence_name] = deffunexist
+            context.deffunexists[existence_name] = deffunexist
             return deffunexist
         else:
             raise Exception(f"defcon or deffun is required, but {name} is unknown at {tok}")
 
-    def parse_uniqueness(self) -> DefConUniq | DefFunUniq:
+    def parse_uniqueness(self, context: Context) -> DefConUniq | DefFunUniq:
         self.stream.consume("UNIQUENESS")
         uniqueness_name = self.stream.consume("IDENT").value
-        uniqueness_formula = self.parse_formula()
+        uniqueness_formula = self.parse_formula(context)
         self.stream.consume("BY")
         tok = self.stream.consume("IDENT")
         name = tok.value
-        if name in self.context.defcons:
+        if name in context.defcons:
             defconuniq = DefConUniq(name=uniqueness_name, formula=uniqueness_formula, con_name=name)
-            self.context.defconuniqs[uniqueness_name] = defconuniq
+            context.defconuniqs[uniqueness_name] = defconuniq
             return defconuniq
-        elif name in self.context.deffuns:
+        elif name in context.deffuns:
             deffununiq = DefFunUniq(name=uniqueness_name, formula=uniqueness_formula, fun_name=name)
-            self.context.deffununiqs[uniqueness_name] = deffununiq
+            context.deffununiqs[uniqueness_name] = deffununiq
             return deffununiq
         else:
             raise Exception(f"defcon or deffun is required, but {name} is unknown at {tok}")
 
-    def parse_equality(self) -> Equality:
+    def parse_equality(self, context: Context) -> Equality:
         self.stream.consume("EQUALITY")
         tok = self.stream.consume("IDENT")
         name = tok.value
-        if name in self.context.primpreds:
-            equal = self.context.primpreds[name]
+        if name in context.primpreds:
+            equal = context.primpreds[name]
             if equal.arity != 2:
                 raise Exception(f"arity is required to be 2, but arity of {name} is {equal.arity} at {tok}")
-        elif name in self.context.defpreds:
-            equal = self.context.defpreds[name]
+        elif name in context.defpreds:
+            equal = context.defpreds[name]
             if len(equal.args) != 2:
                 raise Exception(f"arity is required to be 2, but arity of {name} is {len(equal.args)} at {tok}")
         else:
             raise Exception(f"primpred or defpred is required, but {name} is unknown at {tok}")
-        reflection = self.parse_equality_reflection(equal)
-        replacement = self.parse_equality_replacement(equal)
+        reflection = self.parse_equality_reflection(equal, context)
+        replacement = self.parse_equality_replacement(equal, context)
         equality = Equality(equal=equal, reflection=reflection, replacement=replacement)
-        self.context.equality = equality
+        context.equality = equality
         logger.debug(f"[equality] {type(equal)}: {equal.name}")
         return equality
 
-    def parse_equality_reflection(self, equal: PrimPred | DefPred) -> EqualityReflection:
+    def parse_equality_reflection(self, equal: PrimPred | DefPred, context: Context) -> EqualityReflection:
         self.stream.consume("REFLECTION")
         tok = self.stream.consume("IDENT")
         name = tok.value
-        if name in self.context.axioms:
-            reflection_evidence = self.context.axioms[name]
-        elif name in self.context.theorems:
-            reflection_evidence = self.context.theorems[name]
+        if name in context.axioms:
+            reflection_evidence = context.axioms[name]
+        elif name in context.theorems:
+            reflection_evidence = context.theorems[name]
         else:
             raise Exception(f"axiom or theorem is required, but {name} is unknown at {tok}")
         return EqualityReflection(equal=equal, evidence=reflection_evidence)
 
-    def parse_equality_replacement(self, equal: PrimPred | DefPred) -> EqualityReplacement:
+    def parse_equality_replacement(self, equal: PrimPred | DefPred, context: Context) -> EqualityReplacement:
         self.stream.consume("REPLACEMENT")
         replacement_evidence: dict[str, Axiom | Theorem] = {}
         while True:
             tok = self.stream.consume("IDENT")
             predicate = tok.value
-            if not (predicate == equal.name or predicate in self.context.primpreds):
+            if not (predicate == equal.name or predicate in context.primpreds):
                 raise Exception(f"{equal.name} or primpred is required, but {predicate} is unknown at {tok}")
             self.stream.consume("COLON")
             tok = self.stream.consume("IDENT")
             name = tok.value
-            if name in self.context.axioms:
-                formula = self.context.axioms[name]
-            elif name in self.context.theorems:
-                formula = self.context.theorems[name]
+            if name in context.axioms:
+                formula = context.axioms[name]
+            elif name in context.theorems:
+                formula = context.theorems[name]
             else:
                 raise Exception(f"axiom or theorem is required, but {name} is unknown at {tok}")
             replacement_evidence[predicate] = formula
@@ -253,51 +252,51 @@ class Parser:
         file = self.stream.consume("STRING").value
         return Include(file)
 
-    def parse_block(self) -> list[Control]:
+    def parse_block(self, context: Context) -> list[Control]:
         body: list[Control] = []
         while True:
             tok = self.stream.peek()
             if not tok or tok.type == "RBRACE":
                 break
             if tok.type == "ANY":
-                body.append(self.parse_any())
+                body.append(self.parse_any(context))
             elif tok.type == "ASSUME":
-                body.append(self.parse_assume())
+                body.append(self.parse_assume(context))
             elif tok.type == "DIVIDE":
-                body.append(self.parse_divide())
+                body.append(self.parse_divide(context))
             elif tok.type == "SOME":
-                body.append(self.parse_some())
+                body.append(self.parse_some(context))
             elif tok.type == "DENY":
-                body.append(self.parse_deny())
+                body.append(self.parse_deny(context))
             elif tok.type == "CONTRADICT":
-                body.append(self.parse_contradict())
+                body.append(self.parse_contradict(context))
             elif tok.type == "EXPLODE":
-                body.append(self.parse_explode())
+                body.append(self.parse_explode(context))
             elif tok.type == "APPLY":
-                body.append(self.parse_apply())
+                body.append(self.parse_apply(context))
             elif tok.type == "LIFT":
-                body.append(self.parse_lift())
+                body.append(self.parse_lift(context))
             elif tok.type == "CHARACTERIZE":
-                body.append(self.parse_characterize())
+                body.append(self.parse_characterize(context))
             elif tok.type == "INVOKE":
-                body.append(self.parse_invoke())
+                body.append(self.parse_invoke(context))
             elif tok.type == "EXPAND":
-                body.append(self.parse_expand())
+                body.append(self.parse_expand(context))
             elif tok.type == "PAD":
-                body.append(self.parse_pad())
+                body.append(self.parse_pad(context))
             elif tok.type == "SPLIT":
-                body.append(self.parse_split())
+                body.append(self.parse_split(context))
             elif tok.type == "CONNECT":
-                body.append(self.parse_connect())
+                body.append(self.parse_connect(context))
             elif tok.type == "SUBSTITUTE":
-                body.append(self.parse_substitute())
+                body.append(self.parse_substitute(context))
             elif tok.type == "SHOW":
-                body.append(self.parse_show())
+                body.append(self.parse_show(context))
             else:
                 raise SyntaxError(f"Control is reqiured at {tok}")
         return body
 
-    def parse_any(self) -> Any:
+    def parse_any(self, context: Context) -> Any:
         self.stream.consume("ANY")
         items: list[Var | Template] = []
         while True:
@@ -315,39 +314,39 @@ class Parser:
         for item in items:
             self.free_items[item.name] = item
         self.stream.consume("LBRACE")
-        body = self.parse_block()
+        body = self.parse_block(context)
         self.stream.consume("RBRACE")
         for item in items:
             self.free_items.pop(item.name)
         return Any(items=items, body=body)
 
-    def parse_assume(self) -> Assume:
+    def parse_assume(self, context: Context) -> Assume:
         self.stream.consume("ASSUME")
-        premise = self.parse_formula()
+        premise = self.parse_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block()
+        body = self.parse_block(context)
         self.stream.consume("RBRACE")
         return Assume(premise=premise, body=body)
     
-    def parse_divide(self) -> Divide:
+    def parse_divide(self, context: Context) -> Divide:
         tok = self.stream.consume("DIVIDE")
-        fact = self.parse_reference_or_formula()
+        fact = self.parse_reference_or_formula(context)
         cases: list[Case] = []
         while self.stream.peek().type == "CASE":
-            cases.append(self.parse_case())
+            cases.append(self.parse_case(context))
         if len(cases) < 2:
             raise SyntaxError(f"At least two cases are required at {tok}")
         return Divide(fact=fact, cases=cases)
     
-    def parse_case(self) -> Case:
+    def parse_case(self, context: Context) -> Case:
         self.stream.consume("CASE")
-        premise = self.parse_formula()
+        premise = self.parse_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block()
+        body = self.parse_block(context)
         self.stream.consume("RBRACE")
         return Case(premise=premise, body=body)
     
-    def parse_some(self) -> Some:
+    def parse_some(self, context: Context) -> Some:
         self.stream.consume("SOME")
         env: dict[Var, Var] = {}
         while True:
@@ -360,43 +359,43 @@ class Parser:
                 continue
             break
         self.stream.consume("SUCH")
-        fact = self.parse_reference_or_formula()
+        fact = self.parse_reference_or_formula(context)
         for item in env.values():
             self.free_items[item.name] = item
         self.stream.consume("LBRACE")
-        body = self.parse_block()
+        body = self.parse_block(context)
         self.stream.consume("RBRACE")
         for item in env.values():
             self.free_items.pop(item.name)
         return Some(env=env, fact=fact, body=body)
     
-    def parse_deny(self) -> Deny:
+    def parse_deny(self, context: Context) -> Deny:
         self.stream.consume("DENY")
-        premise = self.parse_formula()
+        premise = self.parse_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block()
+        body = self.parse_block(context)
         self.stream.consume("RBRACE")
         return Deny(premise=premise, body=body)
     
-    def parse_contradict(self) -> Contradict:
+    def parse_contradict(self, context: Context) -> Contradict:
         self.stream.consume("CONTRADICT")
-        contradiction = self.parse_formula()
+        contradiction = self.parse_formula(context)
         return Contradict(contradiction=contradiction)
     
-    def parse_explode(self) -> Explode:
+    def parse_explode(self, context: Context) -> Explode:
         self.stream.consume("EXPLODE")
-        conclusion = self.parse_formula()
+        conclusion = self.parse_formula(context)
         return Explode(conclusion=conclusion)
 
-    def parse_apply(self) -> Apply:
+    def parse_apply(self, context: Context) -> Apply:
         self.stream.consume("APPLY")
-        fact = self.parse_reference_or_formula()
+        fact = self.parse_reference_or_formula(context)
         self.stream.consume("FOR")
         env: dict[str, Term] = {}
         while True:
             bound = self.stream.consume("IDENT").value
             self.stream.consume("COLON")
-            term = self.parse_term()
+            term = self.parse_term(context)
             env[bound] = term
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
@@ -404,39 +403,39 @@ class Parser:
                 break
         return Apply(fact=fact, env=env)
 
-    def parse_lift(self) -> Lift:
+    def parse_lift(self, context: Context) -> Lift:
         self.stream.consume("LIFT")
         self.stream.consume("FOR")
         env: dict[Var, Term] = {}
         while True:
             bound = self.parse_var()
             self.stream.consume("COLON")
-            term = self.parse_term()
+            term = self.parse_term(context)
             env[bound] = term
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
                 continue
             break
         tok = self.stream.consume("CONCLUDE")
-        conclusion = self.parse_formula()
+        conclusion = self.parse_formula(context)
         if not isinstance(conclusion, Exists):
             raise Exception(f"Exists object is required at {tok}")
         return Lift(env=env, conclusion=conclusion)
 
-    def parse_characterize(self) -> Characterize:
+    def parse_characterize(self, context: Context) -> Characterize:
         self.stream.consume("CHARACTERIZE")
         self.stream.consume("FOR")
         bound = self.parse_var()
         self.stream.consume("COLON")
-        term = self.parse_term()
+        term = self.parse_term(context)
         env = {bound: term}
         tok = self.stream.consume("CONCLUDE")
-        conclusion = self.parse_formula()
+        conclusion = self.parse_formula(context)
         if not isinstance(conclusion, ExistsUniq):
             raise Exception(f"ExistsUniq object is required at {tok}")
         return Characterize(env=env, conclusion=conclusion)
 
-    def parse_invoke(self) -> Invoke:
+    def parse_invoke(self, context: Context) -> Invoke:
         tok = self.stream.consume("INVOKE")
         if self.stream.peek().type == "RIGHTWARD":
             self.stream.consume("RIGHTWARD")
@@ -446,7 +445,7 @@ class Parser:
             direction = "leftward"
         else:
             direction = "none"
-        fact = self.parse_implies()
+        fact = self.parse_formula(context)
         if direction == "none":
             if not isinstance(fact, Implies):
                 raise Exception(f"Implies object is required at {tok}")
@@ -455,9 +454,9 @@ class Parser:
                 raise Exception(f"Iff object is required at {tok}")
         return Invoke(direction=direction, fact=fact)
 
-    def parse_expand(self) -> Expand:
+    def parse_expand(self, context: Context) -> Expand:
         self.stream.consume("EXPAND")
-        fact = self.parse_formula()
+        fact = self.parse_formula(context)
         self.stream.consume("FOR")
         defs: list[str] = []
         while True:
@@ -467,46 +466,46 @@ class Parser:
             else:
                 break
         self.stream.consume("CONCLUDE")
-        conclusion = self.parse_formula()
+        conclusion = self.parse_formula(context)
         return Expand(fact=fact, defs=defs, conclusion=conclusion)
 
-    def parse_pad(self) -> Pad:
+    def parse_pad(self, context: Context) -> Pad:
         tok = self.stream.consume("PAD")
-        fact = self.parse_formula()
+        fact = self.parse_formula(context)
         self.stream.consume("CONCLUDE")
-        conclusion = self.parse_formula()
+        conclusion = self.parse_formula(context)
         if not isinstance(conclusion, Or):
             raise Exception(f"Or object is required at {tok}")
         return Pad(fact=fact, conclusion=conclusion)
 
-    def parse_split(self) -> Split:
+    def parse_split(self, context: Context) -> Split:
         tok = self.stream.consume("SPLIT")
         if self.stream.peek().type == "NUMBER":
             index = int(self.stream.consume("NUMBER").value)
         else:
             index = None
-        fact = self.parse_reference_or_formula()
+        fact = self.parse_reference_or_formula(context)
         if not isinstance(fact, (And, Iff)):
             raise Exception(f"And or Iff object is required at {tok}")
         return Split(index=index, fact=fact)
 
-    def parse_connect(self):
+    def parse_connect(self, context: Context) -> Connect:
         tok = self.stream.consume("CONNECT")
-        conclusion = self.parse_formula()
+        conclusion = self.parse_formula(context)
         if not isinstance(conclusion, (And, Iff)):
             raise Exception(f"And or Iff object is required at {tok}")
         return Connect(conclusion=conclusion)
 
-    def parse_substitute(self) -> Substitute:
+    def parse_substitute(self, context: Context) -> Substitute:
         self.stream.consume("SUBSTITUTE")
-        fact = self.parse_reference_or_formula()
+        fact = self.parse_reference_or_formula(context)
         self.stream.consume("FOR")
         env: dict[Term, Term] = {}
         evidence: dict[Term, str] = {}
         while True:
-            key = self.parse_term()
+            key = self.parse_term(context)
             self.stream.consume("COLON")
-            value = self.parse_term()
+            value = self.parse_term(context)
             env[key] = value
             if self.stream.peek().type == "BY":
                 self.stream.consume("BY")
@@ -517,58 +516,58 @@ class Parser:
             else:
                 break
         self.stream.consume("CONCLUDE")
-        conclusion = self.parse_formula()
+        conclusion = self.parse_formula(context)
         return Substitute(fact=fact, env=env, evidence=evidence, conclusion=conclusion)
 
-    def parse_show(self) -> Show:
+    def parse_show(self, context: Context) -> Show:
         self.stream.consume("SHOW")
-        conclusion = self.parse_bot_or_formula()
+        conclusion = self.parse_bot_or_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block()
+        body = self.parse_block(context)
         self.stream.consume("RBRACE")
         return Show(conclusion=conclusion, body=body)
 
-    def parse_reference_or_formula(self) -> str | Formula:
-        if self.stream.peek().type == "IDENT" and self.context.has_reference(self.stream.peek().value):
+    def parse_reference_or_formula(self, context: Context) -> str | Formula:
+        if self.stream.peek().type == "IDENT" and context.has_reference(self.stream.peek().value):
             return self.stream.consume("IDENT").value
         else:
-            return self.parse_formula()
+            return self.parse_formula(context)
 
-    def parse_bot_or_formula(self) -> Bottom | Formula:
+    def parse_bot_or_formula(self, context: Context) -> Bottom | Formula:
         if self.stream.peek().type == "BOT":
             self.stream.consume("BOT")
             return Bottom()
         else:
-            return self.parse_formula()
+            return self.parse_formula(context)
 
-    def parse_formula(self) -> Formula:
-        return self.parse_implies()
+    def parse_formula(self, context: Context) -> Formula:
+        return self.parse_implies(context)
 
-    def parse_implies(self) -> Formula:
-        left = self.parse_and()
+    def parse_implies(self, context: Context) -> Formula:
+        left = self.parse_and(context)
         while self.stream.peek().type in ("IMPLIES", "IFF"):
             op = self.stream.peek().type
             self.stream.consume(op)
-            right = self.parse_and()
+            right = self.parse_and(context)
             if op == "IMPLIES":
                 left = Implies(left, right)
             elif op == "IFF":
                 left = Iff(left, right)
         return left
 
-    def parse_and(self) -> Formula:
-        left = self.parse_primary()
+    def parse_and(self, context: Context) -> Formula:
+        left = self.parse_primary(context)
         while self.stream.peek().type in ("AND", "OR"):
             op = self.stream.peek().type
             self.stream.consume(op)
-            right = self.parse_primary()
+            right = self.parse_primary(context)
             if op == "AND":
                 left = And(left, right)
             elif op == "OR":
                 left = Or(left, right)
         return left
 
-    def parse_primary(self) -> Formula:
+    def parse_primary(self, context: Context) -> Formula:
         tok = self.stream.peek()
         if tok.type == "IDENT":
             name = self.stream.consume("IDENT").value
@@ -588,16 +587,16 @@ class Parser:
                     if len(vars) != template.arity:
                         raise SyntaxError(f"arity of {template.name} is {template.arity}, but length of args is {len(vars)} at {tok}")
                 return TemplateCall(template, tuple(vars))
-            elif name in self.context.primpreds or name in self.context.defpreds:
-                if name in self.context.primpreds:
-                    arity = self.context.primpreds[name].arity
+            elif name in context.primpreds or name in context.defpreds:
+                if name in context.primpreds:
+                    arity = context.primpreds[name].arity
                 else:
-                    arity = len(self.context.defpreds[name].args)
+                    arity = len(context.defpreds[name].args)
                 self.stream.consume("LPAREN")
-                args = [self.parse_term()]
+                args = [self.parse_term(context)]
                 while self.stream.peek().type == "COMMA":
                     self.stream.consume("COMMA")
-                    args.append(self.parse_term())
+                    args.append(self.parse_term(context))
                 if len(args) != arity:
                     raise SyntaxError(f"arity of {name} is {arity}, but length of args is {len(args)} at {tok}")
                 self.stream.consume("RPAREN")
@@ -607,14 +606,14 @@ class Parser:
 
         elif tok.type == "LPAREN":
             self.stream.consume("LPAREN")
-            expr = self.parse_formula()
+            expr = self.parse_formula(context)
             self.stream.consume("RPAREN")
             return expr
         
         elif tok.type == "NOT":
             self.stream.consume("NOT")
             self.stream.consume("LPAREN")
-            body = self.parse_formula()
+            body = self.parse_formula(context)
             self.stream.consume("RPAREN")
             return Not(body)
 
@@ -635,7 +634,7 @@ class Parser:
                     self.bound_items[template.name] = template
                     tok = self.stream.peek()
             self.stream.consume("LPAREN")
-            body = self.parse_formula()
+            body = self.parse_formula(context)
             self.stream.consume("RPAREN")
             for item in items:
                 self.bound_items.pop(item.name)
@@ -651,7 +650,7 @@ class Parser:
         else:
             raise SyntaxError(f"Formula objct is required, but unknown token is found at {tok}")
 
-    def parse_term(self) -> Term:
+    def parse_term(self, context: Context) -> Term:
         tok = self.stream.peek()
         if tok.type == "IDENT":
             name = self.stream.consume("IDENT").value
@@ -659,22 +658,22 @@ class Parser:
                 return self.bound_items[name]
             elif name in self.free_items:
                 return self.free_items[name]
-            elif name in self.context.defcons:
+            elif name in context.defcons:
                 return Con(name)
-            elif name in self.context.deffuns or name in self.context.deffunterms:
+            elif name in context.deffuns or name in context.deffunterms:
                 self.stream.consume("LPAREN")
-                args = [self.parse_term()]
+                args = [self.parse_term(context)]
                 while self.stream.peek().type == "COMMA":
                     self.stream.consume("COMMA")
-                    args.append(self.parse_term())
+                    args.append(self.parse_term(context))
                 self.stream.consume("RPAREN")
                 args = tuple(args)
-                if name in self.context.deffuns:
-                    arity = self.context.deffuns[name].arity
+                if name in context.deffuns:
+                    arity = context.deffuns[name].arity
                     if len(args) != arity:
                         raise SyntaxError(f"arity of {name} is {arity}, but length of args is {len(args)}, at {tok}")
                 else:
-                    arity = len(self.context.deffunterms[name].args)
+                    arity = len(context.deffunterms[name].args)
                     if len(args) != arity:
                         raise SyntaxError(f"arity of {name} is {arity}, but lenfth of args is {len(args)}, at {tok}")
                 return Compound(Fun(name), args)
@@ -686,7 +685,7 @@ class Parser:
             for var in vars:
                 self.free_items[var.name] = var
             self.stream.consume("DOT")
-            formula = self.parse_formula()
+            formula = self.parse_formula(context)
             for var in vars:
                 self.free_items.pop(var.name)
             return Lambda(tuple(vars), formula)
