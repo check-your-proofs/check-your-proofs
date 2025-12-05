@@ -69,7 +69,7 @@ class Parser:
         name = self.stream.consume("IDENT").value
         conclusion = self.parse_formula(context)
         self.stream.consume("LBRACE")
-        proof = self.parse_block(context.copy([], [], []))
+        proof = self.parse_block(context.copy_ctrl())
         self.stream.consume("RBRACE")
         theorem = Theorem(name=name, conclusion=conclusion, proof=proof)
         context.decl.theorems[name] = theorem
@@ -306,7 +306,7 @@ class Parser:
             else:
                 break
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.copy(list(context.ctrl.vars + local_vars), list(context.ctrl.formulas), list(context.ctrl.templates + local_templates)))
+        body = self.parse_block(context.add_ctrl(local_vars, [], local_templates))
         self.stream.consume("RBRACE")
         return Any(items=items, body=body)
 
@@ -314,7 +314,7 @@ class Parser:
         self.stream.consume("ASSUME")
         premise = self.parse_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.copy(list(context.ctrl.vars), list(context.ctrl.formulas), list(context.ctrl.templates)))
+        body = self.parse_block(context.copy_ctrl())
         self.stream.consume("RBRACE")
         return Assume(premise=premise, body=body)
     
@@ -323,7 +323,7 @@ class Parser:
         fact = self.parse_reference_or_formula(context)
         cases: list[Case] = []
         while self.stream.peek().type == "CASE":
-            cases.append(self.parse_case(context.copy(list(context.ctrl.vars), list(context.ctrl.formulas), list(context.ctrl.templates))))
+            cases.append(self.parse_case(context.copy_ctrl()))
         if len(cases) < 2:
             raise SyntaxError(f"At least two cases are required at {tok}")
         return Divide(fact=fact, cases=cases)
@@ -332,7 +332,7 @@ class Parser:
         self.stream.consume("CASE")
         premise = self.parse_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.copy(list(context.ctrl.vars), list(context.ctrl.formulas), list(context.ctrl.templates)))
+        body = self.parse_block(context.copy_ctrl())
         self.stream.consume("RBRACE")
         return Case(premise=premise, body=body)
     
@@ -351,7 +351,7 @@ class Parser:
         self.stream.consume("SUCH")
         fact = self.parse_reference_or_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.copy(list(context.ctrl.vars + list(env.values())), list(context.ctrl.formulas), list(context.ctrl.templates)))
+        body = self.parse_block(context.add_ctrl(list(env.values()), [], []))
         self.stream.consume("RBRACE")
         return Some(env=env, fact=fact, body=body)
     
@@ -359,7 +359,7 @@ class Parser:
         self.stream.consume("DENY")
         premise = self.parse_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.copy(list(context.ctrl.vars), list(context.ctrl.formulas), list(context.ctrl.templates)))
+        body = self.parse_block(context.copy_ctrl())
         self.stream.consume("RBRACE")
         return Deny(premise=premise, body=body)
     
@@ -509,7 +509,7 @@ class Parser:
         self.stream.consume("SHOW")
         conclusion = self.parse_bot_or_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.copy(list(context.ctrl.vars), list(context.ctrl.formulas), list(context.ctrl.templates)))
+        body = self.parse_block(context.copy_ctrl())
         self.stream.consume("RBRACE")
         return Show(conclusion=conclusion, body=body)
 

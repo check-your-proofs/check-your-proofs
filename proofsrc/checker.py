@@ -78,7 +78,7 @@ def check_axiom(node: Axiom, context: Context, indent: int):
 def check_theorem(node: Theorem, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[Theorem] {node.name}: {pretty_expr(node.conclusion, context)}")
-    local_ctx = context.copy([], [], [])
+    local_ctx = context.copy_ctrl()
     for stmt in node.proof:
         if not check_control(stmt, local_ctx, indent+1):
             logger.error(f"{sp}❌ [Theorem] {node.name} not proved: {pretty_expr(node.conclusion, context)}")
@@ -350,7 +350,7 @@ def check_any(node: Any, context: Context, indent: int):
             node.proofinfo.status = "ERROR"
             return False
     logger.debug(f"{sp}[Any] Taking {node.items}")
-    local_ctx = context.copy(list(context.ctrl.vars + local_vars), list(context.ctrl.formulas), list(context.ctrl.templates + local_templates))
+    local_ctx = context.add_ctrl(local_vars, [], local_templates)
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
@@ -381,7 +381,7 @@ def check_any(node: Any, context: Context, indent: int):
 def check_assume(node: Assume, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[Assume] premise={pretty_expr(node.premise, context)}")
-    local_ctx = context.copy(list(context.ctrl.vars), list(context.ctrl.formulas + [node.premise]), list(context.ctrl.templates))
+    local_ctx = context.add_ctrl([], [node.premise], [])
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
@@ -426,7 +426,7 @@ def check_divide(node: Divide, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[Divide] fact={pretty_expr(fact, context)}")
-    local_ctx = context.copy(list(context.ctrl.vars), list(context.ctrl.formulas), list(context.ctrl.templates))
+    local_ctx = context.copy_ctrl()
     goals: list[Bottom | Formula] = []
     for stmt in node.cases:
         if not check_case(stmt, local_ctx, indent+1):
@@ -452,7 +452,7 @@ def check_divide(node: Divide, context: Context, indent: int):
 def check_case(node: Case, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[Case] premise={pretty_expr(node.premise, context)}")
-    local_ctx = context.copy(list(context.ctrl.vars), list(context.ctrl.formulas + [node.premise]), list(context.ctrl.templates))
+    local_ctx = context.add_ctrl([], [node.premise], [])
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
@@ -496,7 +496,7 @@ def check_some(node: Some, context: Context, indent: int):
             logger.error(f"{sp}❌ [Some] {pretty_expr(var, context)} is already used")
     premise = substitute_formula(body, node.env)
     logger.debug(f"{sp}[Some] Taking {node.env.values()}, premise={pretty_expr(premise, context)}")
-    local_ctx = context.copy(list(context.ctrl.vars + list(node.env.values())), list(context.ctrl.formulas + [premise]), list(context.ctrl.templates))
+    local_ctx = context.add_ctrl(list(node.env.values()), [premise], [])
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
@@ -520,7 +520,7 @@ def check_some(node: Some, context: Context, indent: int):
 def check_deny(node: Deny, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[Deny] premise={pretty_expr(node.premise, context)}")
-    local_ctx = context.copy(list(context.ctrl.vars), list(context.ctrl.formulas + [node.premise]), list(context.ctrl.templates))
+    local_ctx = context.add_ctrl([], [node.premise], [])
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
@@ -902,7 +902,7 @@ def check_substitute(node: Substitute, context: Context, indent: int):
 def check_show(node: Show, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[Show] Target conclusion: {pretty_expr(node.conclusion, context)}")
-    local_ctx = context.copy(list(context.ctrl.vars), list(context.ctrl.formulas), list(context.ctrl.templates))
+    local_ctx = context.copy_ctrl()
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"

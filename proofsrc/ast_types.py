@@ -125,8 +125,11 @@ class ControlContext:
     def init() -> "ControlContext":
         return ControlContext(vars=[], formulas=[], templates=[])
 
-    def copy(self, vars: list[Var], formulas: list[Bottom | Formula], templates: list[Template]) -> "ControlContext":
-        return ControlContext(vars=vars, formulas=formulas, templates=templates)
+    def copy(self) -> "ControlContext":
+        return ControlContext(list(self.vars), list(self.formulas), list(self.templates))
+
+    def add(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_templates: list[Template]) -> "ControlContext":
+        return ControlContext(list(self.vars + new_vars), list(self.formulas + new_formulas), list(self.templates + new_templates))
 
 @dataclass
 class ProofInfo:
@@ -374,8 +377,11 @@ class Context:
     def init() -> "Context":
         return Context(DeclarationContext.init(), ControlContext.init(), FormulaContext.init())
 
-    def copy(self, vars: list[Var], formulas: list[Bottom | Formula], templates: list[Template]) -> "Context":
-        return Context(self.decl, self.ctrl.copy(vars, formulas, templates), self.form)
+    def copy_ctrl(self):
+        return Context(self.decl, self.ctrl.copy(), self.form)
+
+    def add_ctrl(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_templates: list[Template]):
+        return Context(self.decl, self.ctrl.add(new_vars, new_formulas, new_templates), self.form)
 
     def copy_form(self):
         return Context(self.decl, self.ctrl, self.form.copy())
