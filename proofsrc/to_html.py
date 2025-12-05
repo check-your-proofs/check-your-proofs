@@ -496,11 +496,11 @@ def render_node(node: Include | Declaration | DeclarationSupport | Control, cont
     header_html = f"<div class='block-header'>{header_syntax_html}{header_jp_html}</div>"
     status = node.proofinfo.status
     status_html = f"<div class='status' hidden>{status}</div>"
-    context_vars = render_expr_list(node.proofinfo.context_vars, context)
+    context_vars = render_expr_list(node.proofinfo.ctrl_ctx.vars, context)
     context_vars_html = f"<div class='context-vars' hidden>{context_vars}</div>"
-    context_formulas = render_expr_list(node.proofinfo.context_formulas, context)
+    context_formulas = render_expr_list(node.proofinfo.ctrl_ctx.formulas, context)
     context_formulas_html = f"<div class='context-formulas' hidden>{context_formulas}</div>"
-    context_templates = render_expr_list(node.proofinfo.context_templates, context)
+    context_templates = render_expr_list(node.proofinfo.ctrl_ctx.templates, context)
     context_templates_html = f"<div class='context-templates' hidden>{context_templates}</div>"
     premises = render_expr_list(node.proofinfo.premises, context)
     premises_html = f"<div class='premises' hidden>{premises}</div>"

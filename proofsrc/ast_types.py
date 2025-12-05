@@ -101,11 +101,22 @@ class Bottom:
     pass
 
 @dataclass
+class ControlContext:
+    vars: list[Var]
+    formulas: list[Bottom | Formula]
+    templates: list[Template]
+
+    @staticmethod
+    def init() -> "ControlContext":
+        return ControlContext(vars=[], formulas=[], templates=[])
+
+    def copy(self, vars: list[Var], formulas: list[Bottom | Formula], templates: list[Template]) -> "ControlContext":
+        return ControlContext(vars=vars, formulas=formulas, templates=templates)
+
+@dataclass
 class ProofInfo:
     status: Literal["UNCHECKED", "OK", "ERROR"] = field(init=False, default="UNCHECKED")
-    context_vars: Sequence[Var] = field(init=False, default_factory=list[Var])
-    context_formulas: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Bottom | Formula])
-    context_templates: Sequence[Template] = field(init=False, default_factory=list[Template])
+    ctrl_ctx: ControlContext = field(init=False, default_factory=ControlContext.init)
     premises: Sequence[str | Bottom | Formula] = field(init=False, default_factory=list[str | Bottom | Formula])
     conclusions: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Bottom | Formula])
     local_vars: Sequence[Var] = field(init=False, default_factory=list[Var])
@@ -337,19 +348,6 @@ class DeclarationContext:
             return self.deffununiqs[name].formula
         else:
             raise Exception(f"Unexpected name: {name}")
-
-@dataclass
-class ControlContext:
-    vars: list[Var]
-    formulas: list[Bottom | Formula]
-    templates: list[Template]
-
-    @staticmethod
-    def init() -> "ControlContext":
-        return ControlContext(vars=[], formulas=[], templates=[])
-
-    def copy(self, vars: list[Var], formulas: list[Bottom | Formula], templates: list[Template]) -> "ControlContext":
-        return ControlContext(vars=vars, formulas=formulas, templates=templates)
 
 @dataclass
 class Context:

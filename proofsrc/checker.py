@@ -31,9 +31,7 @@ def check_ast(ast: list[Include | Declaration], context: Context) -> tuple[bool,
 def check_declaration(node: Declaration, context: Context, indent: int = 0) -> bool:
     sp = "  " * indent
 
-    node.proofinfo.context_vars = deepcopy(context.ctrl.vars)
-    node.proofinfo.context_formulas = deepcopy(context.ctrl.formulas)
-    node.proofinfo.context_templates = deepcopy(context.ctrl.templates)
+    node.proofinfo.ctrl_ctx = deepcopy(context.ctrl)
 
     if isinstance(node, PrimPred):
         return check_primpred(node, context, indent)
@@ -297,9 +295,7 @@ def check_equality_replacement(node: EqualityReplacement, context: Context, inde
 def check_control(node: Control, context: Context, indent: int):
     sp = "  " * indent
 
-    node.proofinfo.context_vars = deepcopy(context.ctrl.vars)
-    node.proofinfo.context_formulas = deepcopy(context.ctrl.formulas)
-    node.proofinfo.context_templates = deepcopy(context.ctrl.templates)
+    node.proofinfo.ctrl_ctx = deepcopy(context.ctrl)
 
     if isinstance(node, Any):
         return check_any(node, context, indent)
