@@ -49,7 +49,7 @@ class Parser:
             if len(tex) != arity + 1:
                 raise SyntaxError(f"arity of {name} is {arity}, but length of tex is {len(tex)}, at {tok}")
             primpred = PrimPred(name=name, arity=arity, tex=tex)
-            context.decl.primpreds[name] = primpred
+            context.add_primpred(primpred)
             logger.debug(f"[primpred] {name}")
             return primpred
         else:
@@ -60,7 +60,7 @@ class Parser:
         name = self.stream.consume("IDENT").value
         conclusion = self.parse_formula(context)
         axiom = Axiom(name=name, conclusion=conclusion)
-        context.decl.axioms[name] = axiom
+        context.add_axiom(axiom)
         logger.debug(f"[axiom] {name}")
         return axiom
 
@@ -72,7 +72,7 @@ class Parser:
         proof = self.parse_block(context.copy_ctrl())
         self.stream.consume("RBRACE")
         theorem = Theorem(name=name, conclusion=conclusion, proof=proof)
-        context.decl.theorems[name] = theorem
+        context.add_theorem(theorem)
         logger.debug(f"[theorem] {name}")
         return theorem
 
@@ -96,7 +96,7 @@ class Parser:
             if len(tex) != len(args) + 1:
                 raise SyntaxError(f"arity of {name} is {len(args)}, but length of tex is {len(tex)} at {tok}")
             defpred = DefPred(name=name, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
-            context.decl.defpreds[name] = defpred
+            context.add_defpred(defpred)
             logger.debug(f"[defpred] {name}")
             return defpred
         elif tok.type == "CONSTANT":
@@ -108,7 +108,7 @@ class Parser:
             if len(tex) != 1:
                 raise SyntaxError(f"{name} is constant, but length of tex is {len(tex)} at {tok}")
             defcon = DefCon(name=name, theorem=theorem, tex=tex)
-            context.decl.defcons[name] = defcon
+            context.add_defcon(defcon)
             logger.debug(f"[defcon] {name}")
             return defcon
         elif tok.type == "FUNCTION":
@@ -125,7 +125,7 @@ class Parser:
                 if len(tex) != arity + 1:
                     raise SyntaxError(f"arity or {name} is {arity}, but length of tex is {len(tex)} at {tok}")
                 deffun = DefFun(name=name, arity=arity, theorem=theorem, tex=tex)
-                context.decl.deffuns[name] = deffun
+                context.add_deffun(deffun)
                 logger.debug(f"[deffun] {name}")
                 return deffun
             else:
@@ -138,7 +138,7 @@ class Parser:
                 if len(tex) != len(args) + 1:
                     raise SyntaxError(f"arity of {name} is {len(args)}, but length of tex is {len(tex)} at {tok}")
                 deffunterm = DefFunTerm(name=name, args=args, term=term, tex=tex)
-                context.decl.deffunterms[name] = deffunterm
+                context.add_deffunterm(deffunterm)
                 logger.debug(f"[deffunterm] {name}")
                 return deffunterm
         else:
@@ -153,11 +153,11 @@ class Parser:
         name = tok.value
         if name in context.decl.defcons:
             defconexist = DefConExist(name=existence_name, formula=existence_formula, con_name=name)
-            context.decl.defconexists[existence_name] = defconexist
+            context.add_defconexist(defconexist)
             return defconexist
         elif name in context.decl.deffuns:
             deffunexist = DefFunExist(name=existence_name, formula=existence_formula, fun_name=name)
-            context.decl.deffunexists[existence_name] = deffunexist
+            context.add_deffunexist(deffunexist)
             return deffunexist
         else:
             raise Exception(f"defcon or deffun is required, but {name} is unknown at {tok}")
@@ -171,11 +171,11 @@ class Parser:
         name = tok.value
         if name in context.decl.defcons:
             defconuniq = DefConUniq(name=uniqueness_name, formula=uniqueness_formula, con_name=name)
-            context.decl.defconuniqs[uniqueness_name] = defconuniq
+            context.add_defconuniq(defconuniq)
             return defconuniq
         elif name in context.decl.deffuns:
             deffununiq = DefFunUniq(name=uniqueness_name, formula=uniqueness_formula, fun_name=name)
-            context.decl.deffununiqs[uniqueness_name] = deffununiq
+            context.add_deffununiq(deffununiq)
             return deffununiq
         else:
             raise Exception(f"defcon or deffun is required, but {name} is unknown at {tok}")

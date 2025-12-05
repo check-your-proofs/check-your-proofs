@@ -372,22 +372,94 @@ class Context:
     decl: DeclarationContext
     ctrl: ControlContext
     form: FormulaContext
+    used_names: set[str]
 
     @staticmethod
     def init() -> "Context":
-        return Context(DeclarationContext.init(), ControlContext.init(), FormulaContext.init())
+        return Context(DeclarationContext.init(), ControlContext.init(), FormulaContext.init(), set())
+
+    def add_primpred(self, primpred: PrimPred):
+        if primpred.name in self.used_names:
+            raise Exception(f"{primpred.name} is already used")
+        self.used_names.add(primpred.name)
+        self.decl.primpreds[primpred.name] = primpred
+
+    def add_axiom(self, axiom: Axiom):
+        if axiom.name in self.used_names:
+            raise Exception(f"{axiom.name} is already used")
+        self.used_names.add(axiom.name)
+        self.decl.axioms[axiom.name] = axiom
+
+    def add_theorem(self, theorem: Theorem):
+        if theorem.name in self.used_names:
+            raise Exception(f"{theorem.name} is already used")
+        self.used_names.add(theorem.name)
+        self.decl.theorems[theorem.name] = theorem
+
+    def add_defpred(self, defpred: DefPred):
+        if defpred.name in self.used_names:
+            raise Exception(f"{defpred.name} is already used")
+        self.used_names.add(defpred.name)
+        self.decl.defpreds[defpred.name] = defpred
+
+    def add_defcon(self, defcon: DefCon):
+        if defcon.name in self.used_names:
+            raise Exception(f"{defcon.name} is already used")
+        self.used_names.add(defcon.name)
+        self.decl.defcons[defcon.name] = defcon
+
+    def add_defconexist(self, defconexist: DefConExist):
+        if defconexist.name in self.used_names:
+            raise Exception(f"{defconexist.name} is already used")
+        self.used_names.add(defconexist.name)
+        self.decl.defconexists[defconexist.name] = defconexist
+
+    def add_defconuniq(self, defconuniq: DefConUniq):
+        if defconuniq.name in self.used_names:
+            raise Exception(f"{defconuniq.name} is already used")
+        self.used_names.add(defconuniq.name)
+        self.decl.defconuniqs[defconuniq.name] = defconuniq
+
+    def add_deffun(self, deffun: DefFun):
+        if deffun.name in self.used_names:
+            raise Exception(f"{deffun.name} is already used")
+        self.used_names.add(deffun.name)
+        self.decl.deffuns[deffun.name] = deffun
+
+    def add_deffunexist(self, deffunexist: DefFunExist):
+        if deffunexist.name in self.used_names:
+            raise Exception(f"{deffunexist.name} is already used")
+        self.used_names.add(deffunexist.name)
+        self.decl.deffunexists[deffunexist.name] = deffunexist
+
+    def add_deffununiq(self, deffununiq: DefFunUniq):
+        if deffununiq.name in self.used_names:
+            raise Exception(f"{deffununiq.name} is already used")
+        self.used_names.add(deffununiq.name)
+        self.decl.deffununiqs[deffununiq.name] = deffununiq
+
+    def add_deffunterm(self, deffunterm: DefFunTerm):
+        if deffunterm.name in self.used_names:
+            raise Exception(f"{deffunterm.name} is already used")
+        self.used_names.add(deffunterm.name)
+        self.decl.deffunterms[deffunterm.name] = deffunterm
 
     def copy_ctrl(self):
-        return Context(self.decl, self.ctrl.copy(), self.form)
+        return Context(self.decl, self.ctrl.copy(), self.form, self.used_names)
 
     def add_ctrl(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_templates: list[Template]):
-        return Context(self.decl, self.ctrl.add(new_vars, new_formulas, new_templates), self.form)
+        new_used_names = self.used_names.copy()
+        for item in new_vars + new_templates:
+            if item.name in new_used_names:
+                raise Exception(f"{item.name} is already used")
+            new_used_names.add(item.name)
+        return Context(self.decl, self.ctrl.add(new_vars, new_formulas, new_templates), self.form, new_used_names)
 
     def copy_form(self):
-        return Context(self.decl, self.ctrl, self.form.copy())
+        return Context(self.decl, self.ctrl, self.form.copy(), self.used_names)
 
     def add_form(self, new_vars: list[Var], new_templates: list[Template]):
-        return Context(self.decl, self.ctrl, self.form.add(new_vars, new_templates))
+        return Context(self.decl, self.ctrl, self.form.add(new_vars, new_templates), self.used_names)
 
 @dataclass
 class Include:
