@@ -213,7 +213,7 @@ theorem cartprod_characterization \forall X\forall Y\forall z(in(z,cartprod(X,Y)
   }
 }
 
-theorem cartprod_cor1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)\to in(op(x,y),cartprod(X,Y))) {
+theorem cartprod_cor1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)\leftrightarrow in(op(x,y),cartprod(X,Y))) {
   any X,Y,x,y {
     assume in(x,X)\wedge in(y,Y) {
       split in(x,X)\wedge in(y,Y)
@@ -222,6 +222,20 @@ theorem cartprod_cor1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)
       apply cartprod_characterization for X:X,Y:Y,z:op(x,y)
       invoke leftward in(op(x,y),cartprod(X,Y))\leftrightarrow\exists x'\exists y'(in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y')))
     }
+    assume in(op(x,y),cartprod(X,Y)) {
+      apply cartprod_characterization for X:X,Y:Y,z:op(x,y)
+      invoke rightward in(op(x,y),cartprod(X,Y))\leftrightarrow\exists x'\exists y'(in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y')))
+      some x':x',y':y' such \exists x'\exists y'(in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y'))) {
+        split in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y'))
+        apply op_characterization for x:x,y:y,x':x',y':y'
+        invoke equal(op(x,y),op(x',y'))\to equal(x,x')\wedge equal(y,y')
+        split equal(x,x')\wedge equal(y,y')
+        substitute in(x',X) for x':x conclude in(x,X)
+        substitute in(y',Y) for y':y conclude in(y,Y)
+        connect in(x,X)\wedge in(y,Y)
+      }
+    }
+    connect in(x,X)\wedge in(y,Y)\leftrightarrow in(op(x,y),cartprod(X,Y))
   }
 }
 
@@ -273,7 +287,7 @@ theorem cartprod_cor4 \forall X\forall Y(neq(X,emptyset)\wedge neq(Y,emptyset)\t
         some y:y such \exists y(in(y,Y)) {
           connect in(x,X)\wedge in(y,Y)
           apply cartprod_cor1 for X:X,Y:Y,x:x,y:y
-          invoke in(x,X)\wedge in(y,Y)\to in(op(x,y),cartprod(X,Y))
+          invoke rightward in(x,X)\wedge in(y,Y)\leftrightarrow in(op(x,y),cartprod(X,Y))
           lift for z:op(x,y) conclude \exists z(in(z,cartprod(X,Y)))
         }
       }
