@@ -394,3 +394,123 @@ def alpha_rename_formula(expr: Formula, rename_map: dict[Var | Template, Var | T
         return type(expr)(alpha_rename_var(expr.var, rename_map), alpha_rename_formula(expr.body, rename_map))
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
+
+OP_PRECEDENCE = {
+    "Lowest": 0,
+    "Iff": 1,
+    "Implies": 1,
+    "Or": 2,
+    "And": 2,
+    "Symbol": 3,
+    "Not": 4,
+    "Quantifier": 5,
+}
+
+def pretty_expr_fragments(expr: Pred | Fun, context: Context) -> list[str]:
+    if isinstance(expr, Pred):
+        if expr.name in context.decl.primpreds:
+            tex = context.decl.primpreds[expr.name].tex
+        elif expr.name in context.decl.defpreds:
+            tex = context.decl.defpreds[expr.name].tex
+        else:
+            raise Exception(f"{expr.name} is not in primpreds or defpreds")
+        return tex
+    elif isinstance(expr, Fun):
+        if expr.name in context.decl.deffuns:
+            tex = context.decl.deffuns[expr.name].tex
+        elif expr.name in context.decl.deffunterms:
+            tex = context.decl.deffunterms[expr.name].tex
+        else:
+            raise Exception(f"{expr.name} is not in deffuns or deffunterms")
+        return tex
+    else:
+        raise TypeError(f"Unsupported node type: {type(expr)}")
+
+def pretty_expr(expr: str | Bottom | Formula | Term, context: Context, parent_prec: int = OP_PRECEDENCE["Lowest"]) -> str:
+    if isinstance(expr, str):
+        return expr
+    elif isinstance(expr, Var):
+        return expr.name
+    elif isinstance(expr, Con):
+        if expr.name in context.decl.defcons:
+            tex = context.decl.defcons[expr.name].tex
+        else:
+            raise Exception(f"{expr.name} is not in context.defcons")
+        if len(tex) != 1:
+            raise Exception("arity is different")
+        return tex[0]
+    elif isinstance(expr, Compound):
+        tex = pretty_expr_fragments(expr.fun, context)
+        if len(tex) != len(expr.args) + 1:
+            raise Exception("arity is different")
+        text = ""
+        for i in range(len(expr.args)):
+            text += tex[i]
+            text += " "
+            text += pretty_expr(expr.args[i], context)
+            text += " "
+        text += tex[-1]
+        return text
+    elif isinstance(expr, Symbol):
+        tex = pretty_expr_fragments(expr.pred, context)
+        if len(tex) != len(expr.args) + 1:
+            raise Exception("arity is different")
+        text = ""
+        for i in range(len(expr.args)):
+            text += tex[i]
+            text += " "
+            text += pretty_expr(expr.args[i], context)
+            text += " "
+        text += tex[-1]
+        return text if OP_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
+    elif isinstance(expr, Not):
+        text = f"\\neg {pretty_expr(expr.body, context, OP_PRECEDENCE["Not"])}"
+        return text if OP_PRECEDENCE["Not"] > parent_prec else f"({text})"
+    elif isinstance(expr, And):
+        parts = flatten_op(expr, And)
+        text = " \\wedge ".join(pretty_expr(part, context, OP_PRECEDENCE["And"]) for part in parts)
+        return text if OP_PRECEDENCE["And"] > parent_prec else f"({text})"
+    elif isinstance(expr, Or):
+        parts = flatten_op(expr, Or)
+        text = " \\vee ".join(pretty_expr(part, context, OP_PRECEDENCE["Or"]) for part in parts)
+        return text if OP_PRECEDENCE["Or"] > parent_prec else f"({text})"
+    elif isinstance(expr, Implies):
+        text = f"{pretty_expr(expr.left, context, OP_PRECEDENCE["Implies"])} \\to {pretty_expr(expr.right, context, OP_PRECEDENCE["Implies"])}"
+        return text if OP_PRECEDENCE["Implies"] > parent_prec else f"({text})"
+    elif isinstance(expr, Iff):
+        text = f"{pretty_expr(expr.left, context, OP_PRECEDENCE["Iff"])} \\leftrightarrow {pretty_expr(expr.right, context, OP_PRECEDENCE["Iff"])}"
+        return text if OP_PRECEDENCE["Iff"] > parent_prec else f"({text})"
+    elif isinstance(expr, (Forall, Exists, ExistsUniq)):
+        body = expr
+        qvars_text = ""
+        while True:
+            if isinstance(body, Forall):
+                qvars_text += "\\forall"
+            elif isinstance(body, Exists):
+                qvars_text += "\\exists"
+            elif isinstance(body, ExistsUniq):
+                qvars_text += "\\exists!"
+            else:
+                break
+            if isinstance(body.var, Var):
+                qvars_text += f" {pretty_expr(body.var, context)}"
+            elif isinstance(body.var, Template):
+                qvars_text += f"^T {pretty_expr(body.var, context)}"
+            else:
+                raise Exception(f"Unexpected type: {type(body.var)}")
+            body = body.body
+        text = f"{qvars_text} {pretty_expr(body, context, OP_PRECEDENCE["Quantifier"])}"
+        return text if OP_PRECEDENCE["Quantifier"] > parent_prec else f"({text})"
+    elif isinstance(expr, Bottom):
+        return "\\bot"
+    elif isinstance(expr, Template):
+        return f"{expr.name}[{str(expr.arity)}]"
+    elif isinstance(expr, TemplateCall):
+        if expr.template.arity == 0:
+            return expr.template.name
+        else:
+            return f"{expr.template.name}({",".join([pretty_expr(arg, context) for arg in expr.args])})"
+    elif isinstance(expr, Lambda):
+        return f"\\lambda {",".join([var.name for var in expr.args])}. {pretty_expr(expr.body, context)}"
+    else:
+        raise TypeError(f"Unsupported node type: {type(expr)}")
