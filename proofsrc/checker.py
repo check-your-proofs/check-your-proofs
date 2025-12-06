@@ -592,17 +592,20 @@ def check_apply(node: Apply, context: Context, indent: int):
     fact = get_fact(node.fact, context)
     items, body = collect_quantifier_vars(fact, Forall)
     env: dict[Term, Term] = {}
-    for item in items:
-        for k, v in node.env.items():
-            if item.name == k:
-                env[item] = v
-                if isinstance(item, Template) and isinstance(v, Lambda):
-                    if item.arity != len(v.args):
-                        logger.error(f"{sp}❌ [Apply] arity of {item.name} is {item.arity}, args of Lambda are {",".join([arg.name for arg in v.args])}")
-                        node.proofinfo.status = "ERROR"
-                        return False
-                    logger.debug(f"{sp}[Apply] arity of {item.name} is {item.arity}, args of Lambda are {",".join([arg.name for arg in v.args])}")
-                break
+    for k, v in node.env.items():
+        if not any(item.name == k for item in items):
+            logger.error(f"{sp}❌ [Apply] Key {k} is not found in fact")
+            node.proofinfo.status = "ERROR"
+            return False
+        logger.debug(f"{sp}[Apply] Key {k} is found in fact")
+        item = next(item for item in items if item.name == k)
+        if isinstance(item, Template) and isinstance(v, Lambda):
+            if item.arity != len(v.args):
+                logger.error(f"{sp}❌ [Apply] arity of {item.name} is {item.arity}, args of Lambda are {",".join([arg.name for arg in v.args])}")
+                node.proofinfo.status = "ERROR"
+                return False
+            logger.debug(f"{sp}[Apply] arity of {item.name} is {item.arity}, args of Lambda are {",".join([arg.name for arg in v.args])}")
+        env[item] = v
     logger.debug(f"{sp}[Apply] Instantiable: env={env}")
     instantiation = substitute_formula(body, env)
     logger.debug(f"{sp}[Apply] \\forall-elimination is done: instantiation={pretty_expr(instantiation, context)}")

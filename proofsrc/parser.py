@@ -379,7 +379,10 @@ class Parser:
         self.stream.consume("FOR")
         env: dict[str, Term] = {}
         while True:
-            bound = self.stream.consume("IDENT").value
+            tok = self.stream.consume("IDENT")
+            bound = tok.value
+            if bound in env:
+                raise Exception(f"{bound} is duplicated at {tok}")
             self.stream.consume("COLON")
             term = self.parse_term(context)
             env[bound] = term
