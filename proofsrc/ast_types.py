@@ -252,6 +252,10 @@ class Show(Control):
     body: list[Control]
 
 @dataclass
+class Assert(Control):
+    reference: str
+
+@dataclass
 class Declaration:
     name: str
     token: Token

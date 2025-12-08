@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from logic_utils import pretty_expr
@@ -504,6 +504,13 @@ def render_node(node: Include | Declaration | DeclarationSupport | Control, cont
                            render_expr(node.conclusion, context),
                            "を示す。"]
         body_html = "".join(render_node(s, context, mode) for s in node.body)
+    elif isinstance(node, Assert):
+        header_parts = [bullet,
+                        render_keyword("assert"),
+                        render_identifier(node.reference)]
+        header_parts_jp = [bullet,
+                           render_identifier(node.reference),
+                           "を呼び出す。"]
     else:
         raise Exception(f"Unexpected node: {type(node)}")
 

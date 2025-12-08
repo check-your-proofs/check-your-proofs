@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, TemplateCall, Include
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, TemplateCall, Include, Assert
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import collect_quantifier_vars
@@ -276,6 +276,8 @@ class Parser:
                 body.append(self.parse_substitute(context))
             elif tok.type == "SHOW":
                 body.append(self.parse_show(context))
+            elif tok.type == "ASSERT":
+                body.append(self.parse_assert(context))
             else:
                 raise SyntaxError(f"{tok.info()} Control is reqiured")
         return body
@@ -520,6 +522,13 @@ class Parser:
         body = self.parse_block(context.copy_ctrl())
         self.stream.consume("RBRACE")
         return Show(token=start_token, conclusion=conclusion, body=body)
+
+    def parse_assert(self, context: Context) -> Assert:
+        start_token = self.stream.consume("ASSERT")
+        reference = self.stream.consume("IDENT").value
+        if not context.decl.has_reference(reference):
+            raise Exception(f"{start_token.info()} {reference} is unknown")
+        return Assert(token=start_token, reference=reference)
 
     def parse_reference_or_formula(self, context: Context) -> str | Formula:
         if self.stream.peek().type == "IDENT" and context.decl.has_reference(self.stream.peek().value):

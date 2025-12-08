@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, Lambda, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, Lambda, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert
 from logic_utils import expr_in_context, collect_quantifier_vars, substitute_formula, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr
 from copy import deepcopy
 
@@ -347,6 +347,8 @@ def check_control(node: Control, context: Context, indent: int):
         return check_substitute(node, context, indent)
     elif isinstance(node, Show):
         return check_show(node, context, indent)
+    elif isinstance(node, Assert):
+        return check_assert(node, context, indent)
     else:
         logger.error(f"{error_prefix}Unsupported node {node}")
         return False
@@ -1013,6 +1015,16 @@ def check_show(node: Show, context: Context, indent: int):
     node.proofinfo.local_conclusion = [goal]
     add_conclusion(context, goal)
     logger.debug(f"{debug_prefix}Added {pretty_expr(goal, context)}")
+    return True
+
+def check_assert(node: Assert, context: Context, indent: int):
+    debug_prefix = make_debug_prefix(node, indent)
+    formula = get_fact(node.reference, context)
+    node.proofinfo.status = "OK"
+    node.proofinfo.premises = []
+    node.proofinfo.conclusions = [formula]
+    add_conclusion(context, formula)
+    logger.debug(f"{debug_prefix}Added {node.reference}: {pretty_expr(formula, context)}")
     return True
 
 if __name__ == "__main__":
