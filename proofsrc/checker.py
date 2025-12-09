@@ -966,21 +966,12 @@ def check_substitute(node: Substitute, context: Context, indent: int):
     premises_equal: list[str | Symbol] = []
     for k, v in node.env.items():
         equation = Symbol(Pred(context.decl.equality.equal.name), (k, v))
-        if k in node.evidence:
-            evidence = get_fact(node.evidence[k], context)
-            if not alpha_equiv_with_defs(equation, evidence, context):
-                logger.error(f"{error_prefix}Not fact: {pretty_expr(equation, context)}")
-                node.proofinfo.status = "ERROR"
-                return False
-            logger.debug(f"{debug_prefix}Fact: {pretty_expr(equation, context)}")
-            premises_equal.append(node.evidence[k])
-        else:
-            if not goal_in_context(equation, context):
-                logger.error(f"{error_prefix}Not fact: {pretty_expr(equation, context)}")
-                node.proofinfo.status = "ERROR"
-                return False
-            logger.debug(f"{debug_prefix}Fact: {pretty_expr(equation, context)}")
-            premises_equal.append(equation)
+        if not goal_in_context(equation, context):
+            logger.error(f"{error_prefix}Not fact: {pretty_expr(equation, context)}")
+            node.proofinfo.status = "ERROR"
+            return False
+        logger.debug(f"{debug_prefix}Fact: {pretty_expr(equation, context)}")
+        premises_equal.append(equation)
     subst = Substitutor(node.env, node.indexes)
     fact_subst = subst.substitute_formula(fact)
     logger.debug(f"{debug_prefix}fact_subst: {pretty_expr(fact_subst, context)}")

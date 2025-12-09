@@ -498,7 +498,6 @@ class Parser:
         self.stream.consume("FOR")
         env: dict[Term, Term] = {}
         indexes: dict[Term, set[int]] = {}
-        evidence: dict[Term, str] = {}
         while True:
             key = self.parse_term(context)
             if self.stream.peek().type == "AT":
@@ -514,17 +513,13 @@ class Parser:
             self.stream.consume("COLON")
             value = self.parse_term(context)
             env[key] = value
-            if self.stream.peek().type == "BY":
-                self.stream.consume("BY")
-                evidence_name = self.stream.consume("IDENT").value
-                evidence[key] = evidence_name
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
             else:
                 break
         self.stream.consume("CONCLUDE")
         conclusion = self.parse_formula(context)
-        return Substitute(token=start_token, fact=fact, env=env, indexes=indexes, evidence=evidence, conclusion=conclusion)
+        return Substitute(token=start_token, fact=fact, env=env, indexes=indexes, conclusion=conclusion)
 
     def parse_show(self, context: Context) -> Show:
         start_token = self.stream.consume("SHOW")

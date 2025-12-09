@@ -78,7 +78,8 @@ theorem bigcap_characterization \forall u\forall z(in(z,bigcap(u))\leftrightarro
 theorem bigcap_cor1 equal(bigcap(emptyset),emptyset) {
   apply sep_cor1 for x:bigcup(emptyset), \phi: lambda z. \forall w(in(w,emptyset)\to in(z,w))
   expand subset(sep(bigcup(emptyset), lambda z. \forall w(in(w,emptyset)\to in(z,w))),bigcup(emptyset)) for bigcap conclude subset(bigcap(emptyset),bigcup(emptyset))
-  substitute subset(bigcap(emptyset),bigcup(emptyset)) for bigcup(emptyset):emptyset by bigcup_cor2 conclude subset(bigcap(emptyset),emptyset)
+  assert bigcup_cor2
+  substitute subset(bigcap(emptyset),bigcup(emptyset)) for bigcup(emptyset):emptyset conclude subset(bigcap(emptyset),emptyset)
   apply emptyset_subset_cor1 for x:bigcap(emptyset)
   invoke subset(bigcap(emptyset),emptyset)\to equal(bigcap(emptyset),emptyset)
 }

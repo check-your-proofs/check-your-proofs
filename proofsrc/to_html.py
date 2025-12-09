@@ -480,8 +480,6 @@ def render_node(node: Include | Declaration | DeclarationSupport | Control, cont
             if k in node.indexes:
                 env_parts += "@" + ",".join(f"{i}" for i in node.indexes[k])
             env_parts +=  ":" + render_expr(v, context)
-            if k in node.evidence:
-                env_parts += render_keyword("by") + render_identifier(node.evidence[k])
         header_parts = [bullet,
                         render_keyword("substitute"),
                         render_expr(node.fact, context),
