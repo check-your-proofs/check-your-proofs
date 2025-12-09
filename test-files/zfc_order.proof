@@ -165,9 +165,9 @@ theorem emptyset_is_ord ord(emptyset) {
   assert emptyset_is_trans
   assert mem_of_emptyset_is_emptyset
   assert emptyset_is_irrefrelon_on_emptyset
-  substitute irrefrelon(emptyset,emptyset) for emptyset@2:mem(emptyset)
+  substitute irrefrelon(emptyset,emptyset) for emptyset[2]:mem(emptyset)
   assert emptyset_is_wordon_emptyset
-  substitute wordon(emptyset,emptyset) for emptyset@2:mem(emptyset)
+  substitute wordon(emptyset,emptyset) for emptyset[2]:mem(emptyset)
   connect trans(emptyset)\wedge irrefrelon(emptyset,mem(emptyset))\wedge wordon(emptyset,mem(emptyset))
   fold for ord conclude ord(emptyset)
 }

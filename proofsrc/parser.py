@@ -540,8 +540,8 @@ class Parser:
         indexes: dict[Term, set[int]] = {}
         while True:
             key = self.parse_term(context)
-            if self.stream.peek().type == "AT":
-                self.stream.consume("AT")
+            if self.stream.peek().type == "LBRACKET":
+                self.stream.consume("LBRACKET")
                 indexes_: list[int] = []
                 while True:
                     indexes_.append(int(self.stream.consume("NUMBER").value))
@@ -549,6 +549,7 @@ class Parser:
                         self.stream.consume("COMMA")
                     else:
                         break
+                self.stream.consume("RBRACKET")
                 indexes[key] = indexes_
             self.stream.consume("COLON")
             value = self.parse_term(context)

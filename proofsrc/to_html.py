@@ -486,7 +486,7 @@ def render_node(node: Include | Declaration | DeclarationSupport | Control, cont
         for k, v in node.env.items():
             env_parts += render_expr(k, context)
             if k in node.indexes:
-                env_parts += "@" + ",".join(f"{i}" for i in node.indexes[k])
+                env_parts += "[" + ",".join(f"{i}" for i in node.indexes[k]) + "]"
             env_parts +=  ":" + render_expr(v, context)
         header_parts = [bullet,
                         render_keyword("substitute"),

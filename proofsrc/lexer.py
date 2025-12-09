@@ -25,8 +25,7 @@ SYMBOLS = {
     "[": "LBRACKET",
     "]": "RBRACKET",
     "|": "SLASH",
-    ".": "DOT",
-    "@": "AT"
+    ".": "DOT"
 }
 
 def lex(path: str) -> list[Token]:
@@ -118,7 +117,7 @@ def lex(path: str) -> list[Token]:
                     tokens.append(Token("NUMBER", text, path, i, line, column))
                     i += len(text)
                 else:
-                    raise SyntaxError(f"Unexpected character {c} at pos {i}, line {line}")
+                    raise SyntaxError(f"[{path}:{line}:{column}] Unexpected character {c}")
     tokens.append(Token("EOF", "", path, i, line, len(src) - line_start_pos + 1))
     return tokens
 
