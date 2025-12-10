@@ -45,7 +45,7 @@ class Parser:
             name = self.stream.consume("IDENT").value
             self.stream.consume("ARITY")
             arity = int(self.stream.consume("NUMBER").value)
-            tex = self.parse_tex()
+            tex = self.parse_or_create_tex(name, arity)
             if len(tex) != arity + 1:
                 raise SyntaxError(f"{start_token.info()} arity of {name} is {arity}, but length of tex is {len(tex)}")
             primpred = PrimPred(name=name, token=start_token, arity=arity, tex=tex)
@@ -92,7 +92,7 @@ class Parser:
             self.stream.consume("RPAREN")
             self.stream.consume("AS")
             formula = self.parse_formula(context.add_form(args, []))
-            tex = self.parse_tex()
+            tex = self.parse_or_create_tex(name, len(args))
             if len(tex) != len(args) + 1:
                 raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
             defpred = DefPred(name=name, token=start_token, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
@@ -104,7 +104,7 @@ class Parser:
             name = self.stream.consume("IDENT").value
             self.stream.consume("BY")
             theorem = self.stream.consume("IDENT").value
-            tex = self.parse_tex()
+            tex = self.parse_or_create_tex(name, 0)
             if len(tex) != 1:
                 raise SyntaxError(f"{start_token.info()} {name} is constant, but length of tex is {len(tex)}")
             defcon = DefCon(name=name, token=start_token, theorem=theorem, tex=tex)
@@ -121,7 +121,7 @@ class Parser:
                 if not (len(vars_) > 0 and isinstance(body, ExistsUniq)):
                     raise SyntaxError(f"{start_token.info()} conclusion of {theorem} cannot be used for function definition")
                 arity = len(vars_)
-                tex = self.parse_tex()
+                tex = self.parse_or_create_tex(name, arity)
                 if len(tex) != arity + 1:
                     raise SyntaxError(f"{start_token.info()} arity or {name} is {arity}, but length of tex is {len(tex)}")
                 deffun = DefFun(name=name, token=start_token, arity=arity, theorem=theorem, tex=tex)
@@ -134,7 +134,7 @@ class Parser:
                 self.stream.consume("RPAREN")
                 self.stream.consume("AS")
                 term = self.parse_term(context.add_form(args, []))
-                tex = self.parse_tex()
+                tex = self.parse_or_create_tex(name, len(args))
                 if len(tex) != len(args) + 1:
                     raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
                 deffunterm = DefFunTerm(name=name, token=start_token, args=args, term=term, tex=tex)
@@ -738,6 +738,12 @@ class Parser:
         else:
             raise SyntaxError(f"{tok.info()} Term object is required, but unknown token is found at")
 
+    def parse_or_create_tex(self, name: str, arity: int) -> list[str]:
+        if self.stream.peek().type == "TEX":
+            return self.parse_tex()
+        else:
+            return self.create_tex(name, arity)
+
     def parse_tex(self) -> list[str]:
         self.stream.consume("TEX")
         tex: list[str] = []
@@ -747,6 +753,15 @@ class Parser:
                 self.stream.consume("COMMA")
             else:
                 break
+        return tex
+
+    def create_tex(self, name: str, arity: int):
+        if arity == 0:
+            tex = [f"\\mathrm{{{name}}}"]
+        else:
+            tex = [f"\\mathrm{{{name}}}("]
+            tex.extend(["," for _ in range(arity - 1)])
+            tex.append(")")
         return tex
 
     def parse_vars(self) -> list[Var]:

@@ -1,6 +1,6 @@
 include "zfc_separation.proof"
 
-definition predicate rel(R) as \forall z(in(z,R)\to\exists x\exists y(equal(z,op(x,y)))) tex "\mathrm{rel}(",")"
+definition predicate rel(R) as \forall z(in(z,R)\to\exists x\exists y(equal(z,op(x,y))))
 
 theorem emptyset_is_relation rel(emptyset) {
   any z {
@@ -28,7 +28,7 @@ theorem cartprod_is_relation \forall X\forall Y(rel(cartprod(X,Y))) {
   }
 }
 
-definition function dom(R) as sep(bigcup(bigcup(R)),lambda x.\exists y(in(op(x,y),R))) tex "\mathrm{dom}(",")"
+definition function dom(R) as sep(bigcup(bigcup(R)),lambda x.\exists y(in(op(x,y),R)))
 
 theorem dom_lem1 \forall R\forall x(\exists y(in(op(x,y),R))\to in(x,bigcup(bigcup(R)))) {
   any R,x {
@@ -113,7 +113,7 @@ theorem domain_of_cartprod \forall X\forall Y(neq(Y,emptyset)\to equal(dom(cartp
   }
 }
 
-definition function ran(R) as sep(bigcup(bigcup(R)),lambda y.\exists x(in(op(x,y),R))) tex "\mathrm{ran}(",")"
+definition function ran(R) as sep(bigcup(bigcup(R)),lambda y.\exists x(in(op(x,y),R)))
 
 theorem ran_lem1 \forall R\forall y(\exists x(in(op(x,y),R))\to in(y,bigcup(bigcup(R)))) {
   any R,y {
@@ -198,7 +198,7 @@ theorem range_of_cartprod \forall X\forall Y(neq(X,emptyset)\to equal(ran(cartpr
   }
 }
 
-definition function id(X) as sep(cartprod(X,X),lambda z.\exists x(equal(z,op(x,x)))) tex "\mathrm{id}(",")"
+definition function id(X) as sep(cartprod(X,X),lambda z.\exists x(equal(z,op(x,x))))
 
 theorem id_characterization \forall X\forall z(in(z,id(X))\leftrightarrow\exists x(in(x,X)\wedge equal(z,op(x,x)))) {
   any X,z {
