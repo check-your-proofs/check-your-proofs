@@ -98,14 +98,14 @@ theorem emptyset_is_wordon_emptyset wordon(emptyset,emptyset) {
   fold for wordon conclude wordon(emptyset,emptyset)
 }
 
-definition predicate trans(X) as \forall x(in(x,X)\to\forall y(in(y,x)\to in(x,X)))
+definition predicate trans(x) as \forall y(in(y,x)\to\forall z(in(z,y)\to in(z,x)))
 
 theorem emptyset_is_trans trans(emptyset) {
   any x {
     assume in(x,emptyset) {
       apply emptyset_existence for y:x
       contradict in(x,emptyset)
-      explode \forall y(in(y,x)\to in(x,emptyset))
+      explode \forall y(in(y,x)\to in(y,emptyset))
     }
   }
   fold for trans conclude trans(emptyset)

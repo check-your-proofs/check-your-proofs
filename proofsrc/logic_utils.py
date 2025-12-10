@@ -112,16 +112,6 @@ def alpha_equiv(e1: Formula | Term | Pred | Fun, e2: Formula | Term | Pred | Fun
             if len(vars1) != len(vars2):
                 return False
 
-            free_vars2, _ = collect_vars(e2)
-            for v1 in vars1:
-                if v1 in free_vars2:
-                    return False
-
-            free_vars1, _ = collect_vars(e1)
-            for v2 in vars2:
-                if v2 in free_vars1:
-                    return False
-
             for perm in permutations(vars2):
                 newenv = env.copy()
                 skip_perm = False
