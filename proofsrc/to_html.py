@@ -52,502 +52,663 @@ SVG_HEAD = """
 <link rel="stylesheet" href="style_svg.css">
 """
 
-def render_keyword(keyword: str) -> str:
-    return f"<span class='keyword'>{keyword}</span>"
+class Renderer:
+    def __init__(self, context: Context, mode: str):
+        self.context = context
+        self.mode = mode
+        if mode == "mathjax":
+            self.render_expr = self.render_expr_mathjax
+            self.render_expr_list = self.render_expr_list_mathjax
+            self.render_expr_dict = self.render_expr_dict_mathjax
+            self.render_tex = self.render_tex_mathjax
+        elif mode == "svg":
+            self.render_expr = self.render_expr_svg
+            self.render_expr_list = self.render_expr_list_svg
+            self.render_expr_dict = self.render_expr_dict_svg
+            self.render_tex = self.render_tex_svg
+        else:
+            raise Exception(f"Unexpected mode: {mode}")
+        self.bullet = "<button class='bullet'>•</button>"
+        self.toggle = "<button class='toggle'>▼</button>"
 
-def render_identifier(name: str) -> str:
-    return f"<span class='identifier'>{escape(name)}</span>"
+    def render_keyword(self, keyword: str) -> str:
+        return f"<span class='keyword'>{keyword}</span>"
 
-def render_expr_mathjax(node: str | Bottom | Formula | Term, context: Context) -> str:
-    if isinstance(node, str):
-        return render_identifier(node)
-    else:
-        return escape(f"\\({pretty_expr(node, context)}\\)")
+    def render_identifier(self, name: str) -> str:
+        return f"<span class='identifier'>{escape(name)}</span>"
 
-def render_expr_list_mathjax(expr_list: Sequence[str | Bottom | Formula | Term], context: Context) -> str:
-    return ",".join(render_expr_mathjax(expr, context) for expr in expr_list)
+    def render_expr_mathjax(self, node: str | Bottom | Formula | Term) -> str:
+        if isinstance(node, str):
+            return self.render_identifier(node)
+        else:
+            return escape(f"\\({pretty_expr(node, self.context)}\\)")
 
-T_Key = TypeVar("T_Key", str, Var)
+    def render_expr_list_mathjax(self, expr_list: Sequence[str | Bottom | Formula | Term]) -> str:
+        return ",".join(self.render_expr_mathjax(expr) for expr in expr_list)
 
-def render_expr_dict_mathjax(expr_dict: Mapping[T_Key, Term], context: Context) -> str:
-    parts = [f"{escape(f"\\({pretty_expr(k, context)}\\)")}:{escape(f"\\({pretty_expr(v, context)}\\)")}" for k, v in expr_dict.items()]
-    return ",".join(parts)
+    T_Key = TypeVar("T_Key", str, Var)
 
-def render_tex_mathjax(tex: list[str]):
-    return escape(f"\\({"".join(tex)}\\)")
+    def render_expr_dict_mathjax(self, expr_dict: Mapping[T_Key, Term]) -> str:
+        parts = [f"{escape(f"\\({pretty_expr(k, self.context)}\\)")}:{escape(f"\\({pretty_expr(v, self.context)}\\)")}" for k, v in expr_dict.items()]
+        return ",".join(parts)
 
-def img_tag(svg_path: str, latex_code: str) -> str:
-    return f"<img src='{escape(svg_path)}' alt='{escape(latex_code)}'>"
+    def render_tex_mathjax(self, tex: list[str]):
+        return escape(f"\\({"".join(tex)}\\)")
 
-def render_expr_svg(node: str | Bottom | Formula | Term, context: Context) -> str:
-    if isinstance(node, str):
-        return render_identifier(node)
-    else:
-        latex_code = pretty_expr(node, context)
+    def img_tag(self, svg_path: str, latex_code: str) -> str:
+        return f"<img src='{escape(svg_path)}' alt='{escape(latex_code)}'>"
+
+    def render_expr_svg(self, node: str | Bottom | Formula | Term) -> str:
+        if isinstance(node, str):
+            return self.render_identifier(node)
+        else:
+            latex_code = pretty_expr(node, self.context)
+            svg_path = output_svg(latex_code)
+            return self.img_tag(svg_path, latex_code)
+
+    def render_expr_list_svg(self, expr_list: Sequence[str | Bottom | Formula | Term]) -> str:
+        return ",".join((self.render_expr_svg(expr) for expr in expr_list))
+
+    def render_expr_dict_svg(self, expr_dict: Mapping[T_Key, Term]) -> str:
+        parts = [f"{self.render_expr_svg(k)}:{self.render_expr_svg(v)}" for k, v in expr_dict.items()]
+        return f"{",".join(parts)}"
+
+    def render_tex_svg(self, tex: list[str]):
+        latex_code = "".join(tex)
         svg_path = output_svg(latex_code)
-        return img_tag(svg_path, latex_code)
+        return self.img_tag(svg_path, latex_code)
 
-def render_expr_list_svg(expr_list: Sequence[str | Bottom | Formula | Term], context: Context) -> str:
-    return ",".join((render_expr_svg(expr, context) for expr in expr_list))
-
-def render_expr_dict_svg(expr_dict: Mapping[T_Key, Term], context: Context) -> str:
-    parts = [f"{render_expr_svg(k, context)}:{render_expr_svg(v, context)}" for k, v in expr_dict.items()]
-    return f"{",".join(parts)}"
-
-def render_tex_svg(tex: list[str]):
-    latex_code = "".join(tex)
-    svg_path = output_svg(latex_code)
-    return img_tag(svg_path, latex_code)
-
-def render_node(node: Include | Declaration | DeclarationSupport | Control, context: Context, mode: str) -> str:
-    if mode == "mathjax":
-        render_expr = render_expr_mathjax
-        render_expr_list = render_expr_list_mathjax
-        render_expr_dict = render_expr_dict_mathjax
-        render_tex = render_tex_mathjax
-    elif mode == "svg":
-        render_expr = render_expr_svg
-        render_expr_list = render_expr_list_svg
-        render_expr_dict = render_expr_dict_svg
-        render_tex = render_tex_svg
-    else:
-        raise Exception(f"Unexpected mode: {mode}")
-
-    header_parts = []
-    header_parts_jp = []
-    body_html = ""
-    bullet = "<button class='bullet'>•</button>"
-    toggle = "<button class='toggle'>▼</button>"
-
-    if isinstance(node, Include):
-        header_parts = [bullet,
-                        render_keyword("include"),
+    def render_include(self, node: Include):
+        header_parts = [self.bullet,
+                        self.render_keyword("include"),
                         node.file]
-        header_parts_jp = [bullet,
-                           render_keyword("読み込み"),
-                           node.file]
-        header_syntax_html = f"<div class='syntax-view'>{' '.join(header_parts)}</div>"
-        header_jp_html = f"<div class='jp-view'>{' '.join(header_parts_jp)}</div>"
-        header_html = f"<div class='block-header'>{header_syntax_html}{header_jp_html}</div>"
-        return f"  <div class='block'>{header_html}</div>"
+        header_parts_jp = [self.bullet,
+                            self.render_keyword("読み込み"),
+                            node.file]
+        return header_parts, header_parts_jp, ""
 
-    if isinstance(node, PrimPred):
-        header_parts = [bullet,
-                        render_keyword("primitive predicate"),
-                        render_identifier(node.name),
-                        render_tex(node.tex),
-                        render_keyword("arity"),
+    def render_primpred(self, node: PrimPred):
+        header_parts = [self.bullet,
+                        self.render_keyword("primitive predicate"),
+                        self.render_identifier(node.name),
+                        self.render_tex(node.tex),
+                        self.render_keyword("arity"),
                         f"{str(node.arity)}"]
-        header_parts_jp = [bullet,
-                           render_keyword("原始述語記号"),
-                           render_identifier(node.name),
-                           render_tex(node.tex),
-                           render_keyword("arity"),
+        header_parts_jp = [self.bullet,
+                           self.render_keyword("原始述語記号"),
+                           self.render_identifier(node.name),
+                           self.render_tex(node.tex),
+                           self.render_keyword("arity"),
                            str(node.arity)]
-    elif isinstance(node, Axiom):
-        header_parts = [bullet,
-                        render_keyword("axiom"),
-                        render_identifier(node.name),
-                        render_expr(node.conclusion, context)]
-        header_parts_jp = [bullet,
-                           render_keyword("公理"),
-                           render_identifier(node.name),
-                           render_expr(node.conclusion, context)]
-    elif isinstance(node, Theorem):
-        header_parts = [toggle,
-                        render_keyword("theorem"),
-                        render_identifier(node.name),
-                        render_expr(node.conclusion, context)]
-        header_parts_jp = [toggle,
-                           render_keyword("定理"),
-                           render_identifier(node.name),
-                           render_expr(node.conclusion, context)]
-        body_html = "".join(render_node(s, context, mode) for s in node.proof)
-    elif isinstance(node, DefPred):
-        header_parts = [bullet,
-                        render_keyword("definition predicate"),
-                        render_keyword("autoexpand") if node.autoexpand else "",
-                        render_identifier(node.name),
-                        render_expr(Symbol(Pred(node.name), tuple(node.args)), context),
-                        render_keyword("as"),
-                        render_expr(node.formula, context)]
-        header_parts_jp = [bullet,
-                        render_keyword("述語記号定義"),
-                        render_keyword("autoexpand") if node.autoexpand else "",
-                        render_identifier(node.name),
-                        render_expr(Symbol(Pred(node.name), tuple(node.args)), context),
-                        "を",
-                        render_expr(node.formula, context),
-                        "により定める。"]
-    elif isinstance(node, DefCon):
-        header_parts = [bullet,
-                        render_keyword("definition constant"),
-                        render_identifier(node.name),
-                        render_tex(node.tex),
-                        render_keyword("by"),
-                        render_identifier(node.theorem)]
-        header_parts_jp = [bullet,
-                           render_keyword("定数記号定義"),
-                           render_identifier(node.name),
-                           render_tex(node.tex),
-                           "存在と一意性は",
-                           render_identifier(node.theorem),
-                           "により示された。"]
-    elif isinstance(node, DefConExist):
-        header_parts = [bullet,
-                        render_keyword("existence"),
-                        render_identifier(node.name),
-                        render_expr(node.formula, context),
-                        render_keyword("by"),
-                        render_identifier(node.con_name)]
-        header_parts_jp = [bullet,
-                           render_keyword("存在"),
-                           render_identifier(node.name),
-                           render_expr(node.formula, context),
-                           render_identifier(node.con_name),
-                           "の定義による。"]
-    elif isinstance(node, DefConUniq):
-        header_parts = [bullet,
-                        render_keyword("uniqueness"),
-                        render_identifier(node.name),
-                        render_expr(node.formula, context),
-                        render_keyword("by"),
-                        render_identifier(node.con_name)]
-        header_parts_jp = [bullet,
-                           render_keyword("一意性"),
-                           render_identifier(node.name),
-                           render_expr(node.formula, context),
-                           render_identifier(node.con_name),
-                           "の定義による。"]
-    elif isinstance(node, DefFun):
-        header_parts = [bullet,
-                        render_keyword("definition function"),
-                        render_identifier(node.name),
-                        render_tex(node.tex),
-                        render_keyword("by"),
-                        render_identifier(node.theorem)]
-        header_parts_jp = [bullet,
-                           render_keyword("関数記号定義"),
-                           render_identifier(node.name),
-                           render_tex(node.tex),
-                           "存在と一意性は",
-                           render_identifier(node.theorem),
-                           "により示された。"]
-    elif isinstance(node, DefFunExist):
-        header_parts = [bullet,
-                        render_keyword("existence"),
-                        render_identifier(node.name),
-                        render_expr(node.formula, context),
-                        render_keyword("by"),
-                        render_identifier(node.fun_name)]
-        header_parts_jp = [bullet,
-                           render_keyword("存在"),
-                           render_identifier(node.name),
-                           render_expr(node.formula, context),
-                           render_identifier(node.fun_name),
-                           "の定義による。"]
-    elif isinstance(node, DefFunUniq):
-        header_parts = [bullet,
-                        render_keyword("uniqueness"),
-                        render_identifier(node.name),
-                        render_expr(node.formula, context),
-                        render_keyword("by"),
-                        render_identifier(node.fun_name)]
-        header_parts_jp = [bullet,
-                           render_keyword("一意性"),
-                           render_identifier(node.name),
-                           render_expr(node.formula, context),
-                           render_identifier(node.fun_name),
-                           "の定義による。"]
-    elif isinstance(node, DefFunTerm):
-        header_parts = [bullet,
-                        render_keyword("definition function"),
-                        render_identifier(node.name),
-                        render_expr(Compound(Fun(node.name), tuple(node.args)), context),
-                        render_keyword("as"),
-                        render_expr(node.term, context)]
-        header_parts_jp = [bullet,
-                           render_keyword("関数記号定義"),
-                           render_identifier(node.name),
-                           render_expr(Compound(Fun(node.name), tuple(node.args)), context),
+        return header_parts, header_parts_jp, ""
+
+    def render_axiom(self, node: Axiom):
+        header_parts = [self.bullet,
+                        self.render_keyword("axiom"),
+                        self.render_identifier(node.name),
+                        self.render_expr(node.conclusion)]
+        header_parts_jp = [self.bullet,
+                           self.render_keyword("公理"),
+                           self.render_identifier(node.name),
+                           self.render_expr(node.conclusion)]
+        return header_parts, header_parts_jp, ""
+
+    def render_theorem(self, node: Theorem):
+        header_parts = [self.toggle,
+                        self.render_keyword("theorem"),
+                        self.render_identifier(node.name),
+                        self.render_expr(node.conclusion)]
+        header_parts_jp = [self.toggle,
+                           self.render_keyword("定理"),
+                           self.render_identifier(node.name),
+                           self.render_expr(node.conclusion)]
+        body_html = "".join(self.render_node(s) for s in node.proof)
+        return header_parts, header_parts_jp, body_html
+
+    def render_defpred(self, node: DefPred):
+        header_parts = [self.bullet,
+                        self.render_keyword("definition predicate"),
+                        self.render_keyword("autoexpand") if node.autoexpand else "",
+                        self.render_identifier(node.name),
+                        self.render_expr(Symbol(Pred(node.name), tuple(node.args))),
+                        self.render_keyword("as"),
+                        self.render_expr(node.formula)]
+        header_parts_jp = [self.bullet,
+                           self.render_keyword("述語記号定義"),
+                           self.render_keyword("autoexpand") if node.autoexpand else "",
+                           self.render_identifier(node.name),
+                           self.render_expr(Symbol(Pred(node.name), tuple(node.args))),
                            "を",
-                           render_expr(node.term, context),
+                           self.render_expr(node.formula),
                            "により定める。"]
-    elif isinstance(node, Equality):
-        header_parts = [toggle,
-                        render_keyword("equality"),
-                        render_identifier(node.equal.name)]
-        header_parts_jp = [toggle,
-                           render_keyword("等号宣言"),
-                           render_identifier(node.equal.name),
-                           "は等号である。"]
-        body_html = render_node(node.reflection, context, mode) + render_node(node.replacement, context, mode)
-    elif isinstance(node, EqualityReflection):
-        header_parts = [bullet,
-                        render_keyword("reflection"),
-                        render_identifier(node.evidence.name)]
-        header_parts_jp = [bullet,
+        return header_parts, header_parts_jp, ""
+
+    def render_defcon(self, node: DefCon):
+        header_parts = [self.bullet,
+                        self.render_keyword("definition constant"),
+                        self.render_identifier(node.name),
+                        self.render_tex(node.tex),
+                        self.render_keyword("by"),
+                        self.render_identifier(node.theorem)]
+        header_parts_jp = [self.bullet,
+                           self.render_keyword("定数記号定義"),
+                           self.render_identifier(node.name),
+                           self.render_tex(node.tex),
+                           "存在と一意性は",
+                           self.render_identifier(node.theorem),
+                           "により示された。"]
+        return header_parts, header_parts_jp, ""
+
+    def render_defconexist(self, node: DefConExist):
+        header_parts = [self.bullet,
+                        self.render_keyword("existence"),
+                        self.render_identifier(node.name),
+                        self.render_expr(node.formula),
+                        self.render_keyword("by"),
+                        self.render_identifier(node.con_name)]
+        header_parts_jp = [self.bullet,
+                           self.render_keyword("存在"),
+                           self.render_identifier(node.name),
+                           self.render_expr(node.formula),
+                           self.render_identifier(node.con_name),
+                           "の定義による。"]
+        return header_parts, header_parts_jp, ""
+    
+    def render_defconuniq(self, node: DefConUniq):
+        header_parts = [self.bullet,
+                        self.render_keyword("uniqueness"),
+                        self.render_identifier(node.name),
+                        self.render_expr(node.formula),
+                        self.render_keyword("by"),
+                        self.render_identifier(node.con_name)]
+        header_parts_jp = [self.bullet,
+                           self.render_keyword("一意性"),
+                           self.render_identifier(node.name),
+                           self.render_expr(node.formula),
+                           self.render_identifier(node.con_name),
+                           "の定義による。"]
+        return header_parts, header_parts_jp, ""
+
+    def render_deffun(self, node: DefFun):
+        header_parts = [self.bullet,
+                        self.render_keyword("definition function"),
+                        self.render_identifier(node.name),
+                        self.render_tex(node.tex),
+                        self.render_keyword("by"),
+                        self.render_identifier(node.theorem)]
+        header_parts_jp = [self.bullet,
+                           self.render_keyword("関数記号定義"),
+                           self.render_identifier(node.name),
+                           self.render_tex(node.tex),
+                           "存在と一意性は",
+                           self.render_identifier(node.theorem),
+                           "により示された。"]
+        return header_parts, header_parts_jp, ""
+
+    def render_deffunexist(self, node: DefFunExist):
+        header_parts = [self.bullet,
+                        self.render_keyword("existence"),
+                        self.render_identifier(node.name),
+                        self.render_expr(node.formula),
+                        self.render_keyword("by"),
+                        self.render_identifier(node.fun_name)]
+        header_parts_jp = [self.bullet,
+                           self.render_keyword("存在"),
+                           self.render_identifier(node.name),
+                           self.render_expr(node.formula),
+                           self.render_identifier(node.fun_name),
+                           "の定義による。"]
+        return header_parts, header_parts_jp, ""
+
+    def render_deffununiq(self, node: DefFunUniq):
+        header_parts = [self.bullet,
+                        self.render_keyword("uniqueness"),
+                        self.render_identifier(node.name),
+                        self.render_expr(node.formula),
+                        self.render_keyword("by"),
+                        self.render_identifier(node.fun_name)]
+        header_parts_jp = [self.bullet,
+                           self.render_keyword("一意性"),
+                           self.render_identifier(node.name),
+                           self.render_expr(node.formula),
+                           self.render_identifier(node.fun_name),
+                           "の定義による。"]
+        return header_parts, header_parts_jp, ""
+
+    def render_deffunterm(self, node: DefFunTerm):
+        header_parts = [self.bullet,
+                        self.render_keyword("definition function"),
+                        self.render_identifier(node.name),
+                        self.render_expr(Compound(Fun(node.name), tuple(node.args))),
+                        self.render_keyword("as"),
+                        self.render_expr(node.term)]
+        header_parts_jp = [self.bullet,
+                           self.render_keyword("関数記号定義"),
+                           self.render_identifier(node.name),
+                           self.render_expr(Compound(Fun(node.name), tuple(node.args))),
+                           "を",
+                           self.render_expr(node.term),
+                           "により定める。"]
+        return header_parts, header_parts_jp, ""
+
+    def render_equality(self, node: Equality):
+        header_parts = [self.toggle,
+                        self.render_keyword("equality"),
+                        self.render_identifier(node.equal.name)]
+        header_parts_jp = [self.toggle,
+                        self.render_keyword("等号宣言"),
+                        self.render_identifier(node.equal.name),
+                        "は等号である。"]
+        body_html = self.render_node(node.reflection) + self.render_node(node.replacement)
+        return header_parts, header_parts_jp, body_html
+
+    def render_declaration(self, node: Declaration):
+        if isinstance(node, PrimPred):
+            return self.render_primpred(node)
+        elif isinstance(node, Axiom):
+            return self.render_axiom(node)
+        elif isinstance(node, Theorem):
+            return self.render_theorem(node)
+        elif isinstance(node, DefPred):
+            return self.render_defpred(node)
+        elif isinstance(node, DefCon):
+            return self.render_defcon(node)
+        elif isinstance(node, DefConExist):
+            return self.render_defconexist(node)
+        elif isinstance(node, DefConUniq):
+            return self.render_defconuniq(node)
+        elif isinstance(node, DefFun):
+            return self.render_deffun(node)
+        elif isinstance(node, DefFunExist):
+            return self.render_deffunexist(node)
+        elif isinstance(node, DefFunUniq):
+            return self.render_deffununiq(node)
+        elif isinstance(node, DefFunTerm):
+            return self.render_deffunterm(node)
+        elif isinstance(node, Equality):
+            return self.render_equality(node)
+        else:
+            raise Exception(f"Unexpected type: {type(node)}")
+
+    def render_equality_reflection(self, node: EqualityReflection):
+        header_parts = [self.bullet,
+                        self.render_keyword("reflection"),
+                        self.render_identifier(node.evidence.name)]
+        header_parts_jp = [self.bullet,
                            "反射律は",
-                           render_identifier(node.evidence.name),
+                           self.render_identifier(node.evidence.name),
                            "で示された。"]
-    elif isinstance(node, EqualityReplacement):
-        header_parts = [bullet,
-                        render_keyword("replacement"),
-                        ",".join([render_identifier(k) + ":" + render_identifier(v.name) for k, v in node.evidence.items()])]
-        header_parts_jp = [bullet,
-                           "、".join([render_identifier(k) + "の置換律は" + render_identifier(v.name) + "で" for k, v in node.evidence.items()]),
+        return header_parts, header_parts_jp, ""
+
+    def render_equality_replacement(self, node: EqualityReplacement):
+        header_parts = [self.bullet,
+                        self.render_keyword("replacement"),
+                        ",".join([self.render_identifier(k) + ":" + self.render_identifier(v.name) for k, v in node.evidence.items()])]
+        header_parts_jp = [self.bullet,
+                           "、".join([self.render_identifier(k) + "の置換律は" + self.render_identifier(v.name) + "で" for k, v in node.evidence.items()]),
                            "示された。"]
-    elif isinstance(node, Any):
-        header_parts = [toggle,
-                        render_keyword("any"),
-                        render_expr_list(node.items, context)]
-        header_parts_jp = [toggle,
+        return header_parts, header_parts_jp, ""
+
+    def render_declaration_support(self, node: DeclarationSupport):
+        if isinstance(node, EqualityReflection):
+            return self.render_equality_reflection(node)
+        elif isinstance(node, EqualityReplacement):
+            return self.render_equality_replacement(node)
+        else:
+            raise Exception(f"Unexpected type: {type(node)}")
+
+    def render_any(self, node: Any):
+        header_parts = [self.toggle,
+                        self.render_keyword("any"),
+                        self.render_expr_list(node.items)]
+        header_parts_jp = [self.toggle,
                            "任意の",
-                           render_expr_list(node.items, context),
+                           self.render_expr_list(node.items),
                            "をとる。"]
-        body_html = "".join(render_node(s, context, mode) for s in node.body)
-    elif isinstance(node, Assume):
-        header_parts = [toggle,
-                        render_keyword("assume"),
-                        render_expr(node.premise, context)]
-        header_parts_jp = [toggle,
-                           render_expr(node.premise, context),
+        body_html = "".join(self.render_node(s) for s in node.body)
+        return header_parts, header_parts_jp, body_html
+
+    def render_assume(self, node: Assume):
+        header_parts = [self.toggle,
+                        self.render_keyword("assume"),
+                        self.render_expr(node.premise)]
+        header_parts_jp = [self.toggle,
+                           self.render_expr(node.premise),
                            "を仮定する。"]
-        body_html = "".join(render_node(s, context, mode) for s in node.body)
-    elif isinstance(node, Connect):
-        header_parts = [bullet,
-                        render_keyword("connect"),
-                        render_expr(node.conclusion, context)]
-        header_parts_jp = [bullet,
+        body_html = "".join(self.render_node(s) for s in node.body)
+        return header_parts, header_parts_jp, body_html
+
+    def render_connect(self, node: Connect):
+        header_parts = [self.bullet,
+                        self.render_keyword("connect"),
+                        self.render_expr(node.conclusion)]
+        header_parts_jp = [self.bullet,
                            "結合により",
-                           render_expr(node.conclusion, context),
+                           self.render_expr(node.conclusion),
                            "を得る。"]
-    elif isinstance(node, Expand):
-        defs = ",".join([render_identifier(definition) for definition in node.defs])
-        header_parts = [bullet,
-                        render_keyword("expand"),
-                        render_expr(node.fact, context),
-                        render_keyword("for"),
+        return header_parts, header_parts_jp, ""
+
+    def render_expand(self, node: Expand):
+        defs = ",".join([self.render_identifier(definition) for definition in node.defs])
+        header_parts = [self.bullet,
+                        self.render_keyword("expand"),
+                        self.render_expr(node.fact),
+                        self.render_keyword("for"),
                         defs]
-        header_parts_jp = [bullet,
-                           render_expr(node.fact, context),
+        header_parts_jp = [self.bullet,
+                           self.render_expr(node.fact),
                            f"を{defs}の定義により言い換える。"]
-    elif isinstance(node, Fold):
-        defs = ",".join([render_identifier(definition) for definition in node.defs])
-        header_parts = [bullet,
-                        render_keyword("fold"),
-                        render_keyword("for"),
+        return header_parts, header_parts_jp, ""
+
+    def render_fold(self, node: Fold):
+        defs = ",".join([self.render_identifier(definition) for definition in node.defs])
+        header_parts = [self.bullet,
+                        self.render_keyword("fold"),
+                        self.render_keyword("for"),
                         defs,
-                        render_keyword("conclude"),
-                        render_expr(node.conclusion, context)]
-        header_parts_jp = [bullet,
+                        self.render_keyword("conclude"),
+                        self.render_expr(node.conclusion)]
+        header_parts_jp = [self.bullet,
                            f"{defs}の定義により言い換えて",
-                           render_expr(node.conclusion, context),
-                           "を得る。"]
-    elif isinstance(node, Split):
-        header_parts = [bullet,
-                        render_keyword("split")]
+                           self.render_expr(node.conclusion),
+                        "を得る。"]
+        return header_parts, header_parts_jp, ""
+
+    def render_split(self, node: Split):
+        header_parts = [self.bullet,
+                        self.render_keyword("split")]
         if node.index is not None:
             header_parts.append(str(node.index))
-        header_parts.append(render_expr(node.fact, context))
-        header_parts_jp = [bullet,
-                           render_expr(node.fact, context),
+        header_parts.append(self.render_expr(node.fact))
+        header_parts_jp = [self.bullet,
+                           self.render_expr(node.fact),
                            "を分解する。" if node.index is None else f"を分解して{node.index}番目を得る。"]
-    elif isinstance(node, Apply):
-        fact = render_expr(node.fact, context)
+        return header_parts, header_parts_jp, ""
+
+    def render_apply(self, node: Apply):
+        fact = self.render_expr(node.fact)
         if node.invoke == "none":
             invoke = []
             invoke_jp = "適用する。"
         elif node.invoke == "invoke":
-            invoke = [render_keyword("invoke")]
+            invoke = [self.render_keyword("invoke")]
             invoke_jp = "適用し、左側が成り立つので右側を得る。"
         elif node.invoke == "invoke-rightward":
-            invoke = [render_keyword("invoke"), render_keyword("rightward")]
+            invoke = [self.render_keyword("invoke"), self.render_keyword("rightward")]
             invoke_jp = "適用し、左側が成り立つので右側を得る。"
         elif node.invoke == "invoke-leftward":
-            invoke = [render_keyword("invoke"), render_keyword("leftward")]
+            invoke = [self.render_keyword("invoke"), self.render_keyword("leftward")]
             invoke_jp = "適用し、右側が成り立つので左側を得る。"
         else:
             raise Exception(f"Unexpected invoke option {node.invoke}")
-        header_parts = [bullet,
-                        render_keyword("apply")]
+        header_parts = [self.bullet,
+                        self.render_keyword("apply")]
         header_parts.extend(invoke)
         header_parts.extend([fact,
-                             render_keyword("for"),
-                             render_expr_dict(node.env, context)])
-        header_parts_jp = [bullet,
+                             self.render_keyword("for"),
+                             self.render_expr_dict(node.env)])
+        header_parts_jp = [self.bullet,
                            fact,
                            "の",
-                           "、".join([render_expr(k, context) + "を" + render_expr(v, context) + "に" for k, v in node.env.items()]),
+                           "、".join([self.render_expr(k) + "を" + self.render_expr(v) + "に" for k, v in node.env.items()]),
                            invoke_jp]
-    elif isinstance(node, Invoke):
+        return header_parts, header_parts_jp, ""
+
+    def render_invoke(self, node: Invoke):
         if node.direction == "none" or node.direction == "rightward":
             premise = "左側"
             conclusion = "右側"
         else:
             premise = "右側"
             conclusion = "左側"
-        header_parts = [bullet,
-                        render_keyword("invoke"),
-                        "" if node.direction == "none" else render_keyword(node.direction),
-                        render_expr(node.fact, context)]
-        header_parts_jp = [bullet,
-                           render_expr(node.fact, context),
+        header_parts = [self.bullet,
+                        self.render_keyword("invoke"),
+                        "" if node.direction == "none" else self.render_keyword(node.direction),
+                        self.render_expr(node.fact)]
+        header_parts_jp = [self.bullet,
+                           self.render_expr(node.fact),
                            f"の{premise}が成り立つので{conclusion}を得る。"]
-    elif isinstance(node, Deny):
-        header_parts = [toggle,
-                        render_keyword("deny"),
-                        render_expr(node.premise, context)]
-        header_parts_jp = [toggle,
+        return header_parts, header_parts_jp, ""
+
+    def render_deny(self, node: Deny):
+        header_parts = [self.toggle,
+                        self.render_keyword("deny"),
+                        self.render_expr(node.premise)]
+        header_parts_jp = [self.toggle,
                            "背理法を用いる。",
-                           render_expr(node.premise, context),
-                           "を仮定する。"]
-        body_html = "".join(render_node(s, context, mode) for s in node.body)
-    elif isinstance(node, Some):
-        header_parts = [toggle,
-                        render_keyword("some"),
-                        render_expr_dict(node.env, context),
-                        render_keyword("such"),
-                        render_expr(node.fact, context)]
-        header_parts_jp = [toggle,
-                           render_expr(node.fact, context),
+                           self.render_expr(node.premise),
+                        "を仮定する。"]
+        body_html = "".join(self.render_node(s) for s in node.body)
+        return header_parts, header_parts_jp, body_html
+
+    def render_some(self, node: Some):
+        header_parts = [self.toggle,
+                        self.render_keyword("some"),
+                        self.render_expr_dict(node.env),
+                        self.render_keyword("such"),
+                        self.render_expr(node.fact)]
+        header_parts_jp = [self.toggle,
+                           self.render_expr(node.fact),
                            "の",
-                           "、".join([render_expr(k, context) + "を" + render_expr(v, context) + "として" for k, v in node.env.items()]),
+                           "、".join([self.render_expr(k) + "を" + self.render_expr(v) + "として" for k, v in node.env.items()]),
                            "とる。"]
-        body_html = "".join(render_node(s, context, mode) for s in node.body)
-    elif isinstance(node, Contradict):
-        header_parts = [bullet,
-                        render_keyword("contradict"),
-                        render_expr(node.contradiction, context)]
-        header_parts_jp = [bullet,
-                          render_expr(node.contradiction, context),
-                          "とその否定が成り立つので矛盾する。"]
-    elif isinstance(node, Lift):
-        header_parts = [bullet,
-                        render_keyword("lift"),
-                        render_keyword("for"),
-                        render_expr_dict(node.env, context),
-                        render_keyword("conclude"),
-                        render_expr(node.conclusion, context)]
-        header_parts_jp = [bullet,
-                           "、".join([render_expr(v, context) + "を" + render_expr(k, context) + "に" for k, v in node.env.items()]),
+        body_html = "".join(self.render_node(s) for s in node.body)
+        return header_parts, header_parts_jp, body_html
+
+    def render_contradict(self, node: Contradict):
+        header_parts = [self.bullet,
+                        self.render_keyword("contradict"),
+                        self.render_expr(node.contradiction)]
+        header_parts_jp = [self.bullet,
+                           self.render_expr(node.contradiction),
+                           "とその否定が成り立つので矛盾する。"]
+        return header_parts, header_parts_jp, ""
+
+    def render_lift(self, node: Lift):
+        header_parts = [self.bullet,
+                        self.render_keyword("lift"),
+                        self.render_keyword("for"),
+                        self.render_expr_dict(node.env),
+                        self.render_keyword("conclude"),
+                        self.render_expr(node.conclusion)]
+        header_parts_jp = [self.bullet,
+                           "、".join([self.render_expr(v) + "を" + self.render_expr(k) + "に" for k, v in node.env.items()]),
                            "置き換えて",
-                           render_expr(node.conclusion, context),
+                           self.render_expr(node.conclusion),
                            "を得る。"]
-    elif isinstance(node, Pad):
-        header_parts = [bullet,
-                        render_keyword("pad"),
-                        render_expr(node.fact, context),
-                        render_keyword("conclude"),
-                        render_expr(node.conclusion, context)]
-        header_parts_jp = [bullet,
-                           render_expr(node.fact, context),
+        return header_parts, header_parts_jp, ""
+
+    def render_pad(self, node: Pad):
+        header_parts = [self.bullet,
+                        self.render_keyword("pad"),
+                        self.render_expr(node.fact),
+                        self.render_keyword("conclude"),
+                        self.render_expr(node.conclusion)]
+        header_parts_jp = [self.bullet,
+                           self.render_expr(node.fact),
                            "を水増しして",
-                           render_expr(node.conclusion, context),
+                           self.render_expr(node.conclusion),
                            "を得る。"]
-    elif isinstance(node, Divide):
-        header_parts = [toggle,
-                        render_keyword("divide"),
-                        render_expr(node.fact, context)]
-        header_parts_jp = [toggle,
-                           render_expr(node.fact, context),
+        return header_parts, header_parts_jp, ""
+
+    def render_divide(self, node: Divide):
+        header_parts = [self.toggle,
+                        self.render_keyword("divide"),
+                        self.render_expr(node.fact)]
+        header_parts_jp = [self.toggle,
+                           self.render_expr(node.fact),
                            "を場合分けする。"]
-        body_html = "".join(render_node(s, context, mode) for s in node.cases)
-    elif isinstance(node, Case):
-        header_parts = [toggle,
-                        render_keyword("case"),
-                        render_expr(node.premise, context)]
-        header_parts_jp = [toggle,
-                           render_expr(node.premise, context),
+        body_html = "".join(self.render_node(s) for s in node.cases)
+        return header_parts, header_parts_jp, body_html
+
+    def render_case(self, node: Case):
+        header_parts = [self.toggle,
+                        self.render_keyword("case"),
+                        self.render_expr(node.premise)]
+        header_parts_jp = [self.toggle,
+                           self.render_expr(node.premise),
                            "のとき"]
-        body_html = "".join(render_node(s, context, mode) for s in node.body)
-    elif isinstance(node, Explode):
-        header_parts = [bullet,
-                        render_keyword("explode"),
-                        render_expr(node.conclusion, context)]
-        header_parts_jp = [bullet,
+        body_html = "".join(self.render_node(s) for s in node.body)
+        return header_parts, header_parts_jp, body_html
+
+    def render_explode(self, node: Explode):
+        header_parts = [self.bullet,
+                        self.render_keyword("explode"),
+                        self.render_expr(node.conclusion)]
+        header_parts_jp = [self.bullet,
                            "矛盾から任意に結論を導けるので",
-                           render_expr(node.conclusion, context),
+                           self.render_expr(node.conclusion),
                            "を得る。"]
-    elif isinstance(node, Characterize):
-        header_parts = [bullet,
-                        render_keyword("characterize"),
-                        render_keyword("for"),
-                        render_expr_dict(node.env, context),
-                        render_keyword("conclude"),
-                        render_expr(node.conclusion, context)]
-        header_parts_jp = [bullet,
-                           "、".join([render_expr(v, context) + "を" + render_expr(k, context) + "に" for k, v in node.env.items()]),
+        return header_parts, header_parts_jp, ""
+
+    def render_characterize(self, node: Characterize):
+        header_parts = [self.bullet,
+                        self.render_keyword("characterize"),
+                        self.render_keyword("for"),
+                        self.render_expr_dict(node.env),
+                        self.render_keyword("conclude"),
+                        self.render_expr(node.conclusion)]
+        header_parts_jp = [self.bullet,
+                           "、".join([self.render_expr(v) + "を" + self.render_expr(k) + "に" for k, v in node.env.items()]),
                            "置き換えて",
-                           render_expr(node.conclusion, context),
+                           self.render_expr(node.conclusion),
                            "を得る。"]
-    elif isinstance(node, Substitute):
+        return header_parts, header_parts_jp, ""
+
+    def render_substitute(self, node: Substitute):
         env_parts = ""
         for k, v in node.env.items():
-            env_parts += render_expr(k, context)
+            env_parts += self.render_expr(k)
             if k in node.indexes:
                 env_parts += "[" + ",".join(f"{i}" for i in node.indexes[k]) + "]"
-            env_parts +=  ":" + render_expr(v, context)
-        header_parts = [bullet,
-                        render_keyword("substitute"),
-                        render_expr(node.fact, context),
-                        render_keyword("for"),
+            env_parts +=  ":" + self.render_expr(v)
+        header_parts = [self.bullet,
+                        self.render_keyword("substitute"),
+                        self.render_expr(node.fact),
+                        self.render_keyword("for"),
                         env_parts]
-        if context.decl.equality is None:
+        if self.context.decl.equality is None:
             raise Exception("context.equality is None")
-        header_parts_jp = [bullet,
-                           render_expr(node.fact, context),
-                           "に",
-                           ",".join([render_expr(Symbol(Pred(context.decl.equality.equal.name), (k, v)), context) for k, v in node.env.items()]),
-                           "を代入する。"]
-    elif isinstance(node, Show):
-        header_parts = [toggle,
-                        render_keyword("show"),
-                        render_expr(node.conclusion, context)]
-        header_parts_jp = [toggle,
-                           render_expr(node.conclusion, context),
-                           "を示す。"]
-        body_html = "".join(render_node(s, context, mode) for s in node.body)
-    elif isinstance(node, Assert):
-        header_parts = [bullet,
-                        render_keyword("assert"),
-                        render_identifier(node.reference)]
-        header_parts_jp = [bullet,
-                           render_identifier(node.reference),
-                           "を呼び出す。"]
-    else:
-        raise Exception(f"Unexpected node: {type(node)}")
+        header_parts_jp = [self.bullet,
+                        self.render_expr(node.fact),
+                        "に",
+                        ",".join([self.render_expr(Symbol(Pred(self.context.decl.equality.equal.name), (k, v))) for k, v in node.env.items()]),
+                        "を代入する。"]
+        return header_parts, header_parts_jp, ""
 
-    header_syntax_html = f"<div class='syntax-view'>{' '.join(header_parts)}</div>"
-    header_jp_html = f"<div class='jp-view'>{' '.join(header_parts_jp)}</div>"
-    header_html = f"<div class='block-header'>{header_syntax_html}{header_jp_html}</div>"
-    status = node.proofinfo.status
-    status_html = f"<div class='status' hidden>{status}</div>"
-    context_vars = render_expr_list(node.proofinfo.ctrl_ctx.vars, context)
-    context_vars_html = f"<div class='context-vars' hidden>{context_vars}</div>"
-    context_formulas = render_expr_list(node.proofinfo.ctrl_ctx.formulas, context)
-    context_formulas_html = f"<div class='context-formulas' hidden>{context_formulas}</div>"
-    context_templates = render_expr_list(node.proofinfo.ctrl_ctx.templates, context)
-    context_templates_html = f"<div class='context-templates' hidden>{context_templates}</div>"
-    premises = render_expr_list(node.proofinfo.premises, context)
-    premises_html = f"<div class='premises' hidden>{premises}</div>"
-    conclusions = render_expr_list(node.proofinfo.conclusions, context)
-    conclusions_html = f"<div class='conclusions' hidden>{conclusions}</div>"
-    content_html = f"<div class='block-content'>{body_html}</div>"
-    local_vars = render_expr_list(node.proofinfo.local_vars, context)
-    local_vars_html = f"<div class='local_vars' hidden>{local_vars}</div>"
-    local_premise = render_expr_list(node.proofinfo.local_premise, context)
-    local_premise_html = f"<div class='local_premise' hidden>{local_premise}</div>"
-    local_conclusion = render_expr_list(node.proofinfo.local_conclusion, context)
-    local_conclusion_html = f"<div class='local_conclusion' hidden>{local_conclusion}</div>"
-    return f"  <div class='block'>{header_html}{status_html}{context_vars_html}{context_formulas_html}{context_templates_html}{premises_html}{conclusions_html}{local_vars_html}{local_premise_html}{local_conclusion_html}{content_html}</div>"
+    def render_show(self, node: Show):
+        header_parts = [self.toggle,
+                        self.render_keyword("show"),
+                        self.render_expr(node.conclusion)]
+        header_parts_jp = [self.toggle,
+                           self.render_expr(node.conclusion),
+                           "を示す。"]
+        body_html = "".join(self.render_node(s) for s in node.body)
+        return header_parts, header_parts_jp, body_html
+
+    def render_assert(self, node: Assert):
+        header_parts = [self.bullet,
+                        self.render_keyword("assert"),
+                        self.render_identifier(node.reference)]
+        header_parts_jp = [self.bullet,
+                           self.render_identifier(node.reference),
+                           "を呼び出す。"]
+        return header_parts, header_parts_jp, ""
+
+    def render_control(self, node: Control) -> tuple[list[str], list[str], str]:
+        if isinstance(node, Any):
+            return self.render_any(node)
+        elif isinstance(node, Assume):
+            return self.render_assume(node)
+        elif isinstance(node, Connect):
+            return self.render_connect(node)
+        elif isinstance(node, Expand):
+            return self.render_expand(node)
+        elif isinstance(node, Fold):
+            return self.render_fold(node)
+        elif isinstance(node, Split):
+            return self.render_split(node)
+        elif isinstance(node, Apply):
+            return self.render_apply(node)
+        elif isinstance(node, Invoke):
+            return self.render_invoke(node)
+        elif isinstance(node, Deny):
+            return self.render_deny(node)
+        elif isinstance(node, Some):
+            return self.render_some(node)
+        elif isinstance(node, Contradict):
+            return self.render_contradict(node)
+        elif isinstance(node, Lift):
+            return self.render_lift(node)
+        elif isinstance(node, Pad):
+            return self.render_pad(node)
+        elif isinstance(node, Divide):
+            return self.render_divide(node)
+        elif isinstance(node, Case):
+            return self.render_case(node)
+        elif isinstance(node, Explode):
+            return self.render_explode(node)
+        elif isinstance(node, Characterize):
+            return self.render_characterize(node)
+        elif isinstance(node, Substitute):
+            return self.render_substitute(node)
+        elif isinstance(node, Show):
+            return self.render_show(node)
+        elif isinstance(node, Assert):
+            return self.render_assert(node)
+        else:
+            raise Exception(f"Unexpected type: {type(node)}")
+
+    def render_proofinfo(self, node: Declaration | DeclarationSupport | Control):
+        status = node.proofinfo.status
+        status_html = f"<div class='status' hidden>{status}</div>"
+        context_vars = self.render_expr_list(node.proofinfo.ctrl_ctx.vars)
+        context_vars_html = f"<div class='context-vars' hidden>{context_vars}</div>"
+        context_formulas = self.render_expr_list(node.proofinfo.ctrl_ctx.formulas)
+        context_formulas_html = f"<div class='context-formulas' hidden>{context_formulas}</div>"
+        context_templates = self.render_expr_list(node.proofinfo.ctrl_ctx.templates)
+        context_templates_html = f"<div class='context-templates' hidden>{context_templates}</div>"
+        premises = self.render_expr_list(node.proofinfo.premises)
+        premises_html = f"<div class='premises' hidden>{premises}</div>"
+        conclusions = self.render_expr_list(node.proofinfo.conclusions)
+        conclusions_html = f"<div class='conclusions' hidden>{conclusions}</div>"
+        local_vars = self.render_expr_list(node.proofinfo.local_vars)
+        local_vars_html = f"<div class='local_vars' hidden>{local_vars}</div>"
+        local_premise = self.render_expr_list(node.proofinfo.local_premise)
+        local_premise_html = f"<div class='local_premise' hidden>{local_premise}</div>"
+        local_conclusion = self.render_expr_list(node.proofinfo.local_conclusion)
+        local_conclusion_html = f"<div class='local_conclusion' hidden>{local_conclusion}</div>"
+        return f"{status_html}{context_vars_html}{context_formulas_html}{context_templates_html}{premises_html}{conclusions_html}{local_vars_html}{local_premise_html}{local_conclusion_html}"
+
+    def render_node(self, node: Include | Declaration | DeclarationSupport | Control) -> str:
+        if isinstance(node, Include):
+            header_parts, header_parts_jp, body_html = self.render_include(node)
+            header_syntax_html = f"<div class='syntax-view'>{' '.join(header_parts)}</div>"
+            header_jp_html = f"<div class='jp-view'>{' '.join(header_parts_jp)}</div>"
+            header_html = f"<div class='block-header'>{header_syntax_html}{header_jp_html}</div>"
+            return f"  <div class='block'>{header_html}</div>"
+        if isinstance(node, Declaration):
+            header_parts, header_parts_jp, body_html = self.render_declaration(node)
+        elif isinstance(node, DeclarationSupport):
+            header_parts, header_parts_jp, body_html = self.render_declaration_support(node)
+        elif isinstance(node, Control):
+            header_parts, header_parts_jp, body_html = self.render_control(node)
+        else:
+            raise Exception(f"Unexpected type: {type(node)}")
+
+        header_syntax_html = f"<div class='syntax-view'>{' '.join(header_parts)}</div>"
+        header_jp_html = f"<div class='jp-view'>{' '.join(header_parts_jp)}</div>"
+        header_html = f"<div class='block-header'>{header_syntax_html}{header_jp_html}</div>"
+        proofinfo_html = self.render_proofinfo(node)
+        content_html = f"<div class='block-content'>{body_html}</div>"
+        return f"  <div class='block'>{header_html}{proofinfo_html}{content_html}</div>"
 
 def to_html(ast: list[Include | Declaration], context: Context, title: str, mode: str):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     parts: list[str] = []
     for i, node in enumerate(ast):
         print(f"\rRendering node {i + 1} / {len(ast)} finished", end="")
-        parts.append(render_node(node, context, mode))
+        parts.append(Renderer(context, mode).render_node(node))
     print()
     body_html = "\n".join(parts)
     if mode == "mathjax":
