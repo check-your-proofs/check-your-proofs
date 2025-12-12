@@ -100,6 +100,30 @@ theorem emptyset_is_wordon_emptyset wordon(emptyset,emptyset) {
 
 definition predicate trans(x) as \forall y(in(y,x)\to\forall z(in(z,y)\to in(z,x)))
 
+theorem trans_cor1 \forall x(trans(x)\leftrightarrow\forall y(in(y,x)\to subset(y,x))) {
+  any x {
+    assume trans(x) {
+      expand trans(x) for trans
+      fold for subset conclude \forall y(in(y,x)\to subset(y,x))
+    }
+    assume \forall y(in(y,x)\to subset(y,x)) {
+      any y {
+        assume in(y,x) {
+          any z {
+            assume in(z,y) {
+              apply invoke \forall y(in(y,x)\to subset(y,x)) for y:y
+              connect in(z,y)\wedge subset(y,x)
+              apply invoke subset_cor1 for z:z,x:y,y:x
+            }
+          }
+        }
+      }
+      fold for trans conclude trans(x)
+    }
+    connect trans(x)\leftrightarrow\forall y(in(y,x)\to subset(y,x))
+  }
+}
+
 theorem emptyset_is_trans trans(emptyset) {
   any x {
     assume in(x,emptyset) {
@@ -145,6 +169,30 @@ theorem mem_characterization \forall X\forall z(in(z,mem(X))\leftrightarrow\exis
   }
 }
 
+theorem mem_cor1 \forall X\forall x\forall y(in(op(x,y),mem(X))\leftrightarrow in(x,X)\wedge in(y,X)\wedge in(x,y)) {
+  any X,x,y {
+    assume in(op(x,y),mem(X)) {
+      apply invoke rightward mem_characterization for X:X,z:op(x,y)
+      some x':x',y':y' such \exists x'\exists y'(in(x',X)\wedge in(y',X)\wedge equal(op(x,y),op(x',y'))\wedge in(x',y')) {
+        split in(x',X)\wedge in(y',X)\wedge equal(op(x,y),op(x',y'))\wedge in(x',y')
+        apply invoke op_characterization for x:x,y:y,x':x',y':y'
+        split equal(x,x')\wedge equal(y,y')
+        substitute in(x',X) for x':x
+        substitute in(y',X) for y':y
+        substitute in(x',y') for x':x,y':y
+        connect in(x,X)\wedge in(y,X)\wedge in(x,y)
+      }
+    }
+    assume in(x,X)\wedge in(y,X)\wedge in(x,y) {
+      split in(x,X)\wedge in(y,X)\wedge in(x,y)
+      connect in(x,X)\wedge in(y,X)\wedge equal(op(x,y),op(x,y))\wedge in(x,y)
+      lift for x:x,y:y conclude \exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(op(x,y),op(x,y))\wedge in(x,y))
+      apply invoke leftward mem_characterization for X:X,z:op(x,y)
+    }
+    connect in(op(x,y),mem(X))\leftrightarrow in(x,X)\wedge in(y,X)\wedge in(x,y)
+  }
+}
+
 theorem mem_of_emptyset_is_emptyset equal(mem(emptyset),emptyset) {
   any z {
     deny in(z,mem(emptyset)) {
@@ -170,4 +218,45 @@ theorem emptyset_is_ord ord(emptyset) {
   substitute wordon(emptyset,emptyset) for emptyset[2]:mem(emptyset)
   connect trans(emptyset)\wedge irrefrelon(emptyset,mem(emptyset))\wedge wordon(emptyset,mem(emptyset))
   fold for ord conclude ord(emptyset)
+}
+
+theorem element_of_ordianl_is_trans \forall\alpha(ord(\alpha)\to\forall\beta(in(\beta,\alpha)\to trans(\beta))) {
+  any \alpha {
+    assume ord(\alpha) {
+      any \beta {
+        assume in(\beta,\alpha) {
+          any \gamma {
+            assume in(\gamma,\beta) {
+              any \delta {
+                assume in(\delta,\gamma) {
+                  expand ord(\alpha) for ord
+                  split trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge wordon(\alpha,mem(\alpha))
+                  expand trans(\alpha) for trans
+                  apply invoke \forall y(in(y,\alpha)\to\forall z(in(z,y)\to in(z,\alpha))) for y:\beta
+                  apply invoke \forall z(in(z,\beta)\to in(z,\alpha)) for z:\gamma
+                  apply invoke \forall y(in(y,\alpha)\to\forall z(in(z,y)\to in(z,\alpha))) for y:\gamma
+                  apply invoke \forall z(in(z,\gamma)\to in(z,\alpha)) for z:\delta
+                  connect in(\gamma,\alpha)\wedge in(\beta,\alpha)\wedge in(\gamma,\beta)
+                  apply invoke leftward mem_cor1 for X:\alpha,x:\gamma,y:\beta
+                  connect in(\delta,\alpha)\wedge in(\gamma,\alpha)\wedge in(\delta,\gamma)
+                  apply invoke leftward mem_cor1 for X:\alpha,x:\delta,y:\gamma
+                  connect in(op(\delta,\gamma),mem(\alpha))\wedge in(op(\gamma,\beta),mem(\alpha))
+                  expand wordon(\alpha,mem(\alpha)) for wordon
+                  split 1 ordon(\alpha,mem(\alpha))\wedge\forall A(subset(A,\alpha)\wedge neq(A,emptyset)\to\exists a(minimum(\alpha,mem(\alpha),A,a)))
+                  expand ordon(\alpha,mem(\alpha)) for ordon
+                  split 1 transrelon(\alpha,mem(\alpha))\wedge antisymrelon(\alpha,mem(\alpha))
+                  expand transrelon(\alpha,mem(\alpha)) for transrelon
+                  split 2 relon(\alpha,mem(\alpha))\wedge\forall x\forall y\forall z(in(op(x,y),mem(\alpha))\wedge in(op(y,z),mem(\alpha))\to in(op(x,z),mem(\alpha)))
+                  apply invoke \forall x\forall y\forall z(in(op(x,y),mem(\alpha))\wedge in(op(y,z),mem(\alpha))\to in(op(x,z),mem(\alpha))) for x:\delta,y:\gamma,z:\beta
+                  apply invoke rightward mem_cor1 for X:\alpha,x:\delta,y:\beta
+                  split 3 in(\delta,\alpha)\wedge in(\beta,\alpha)\wedge in(\delta,\beta)
+                }
+              }
+            }
+          }
+          fold for trans conclude trans(\beta)
+        }
+      }
+    }
+  }
 }
