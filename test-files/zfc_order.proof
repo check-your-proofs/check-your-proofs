@@ -1,30 +1,306 @@
 include "zfc_relation.proof"
 
-definition predicate relon(X,R) as \forall z(in(z,R)\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))))
+definition predicate transrel(R) as \forall x\forall y\forall z(in(op(x,y),R)\wedge in(op(y,z),R)\to in(op(x,z),R))
 
-theorem emptyset_is_relon_emptyset relon(emptyset,emptyset) {
-  any z {
-    assume in(z,emptyset) {
-      apply emptyset_existence for y:z
-      contradict in(z,emptyset)
-      explode \exists x\exists y(in(x,emptyset)\wedge in(y,emptyset)\wedge equal(z,op(x,y)))
-    }
-    assume \exists x\exists y(in(x,emptyset)\wedge in(y,emptyset)\wedge equal(z,op(x,y))) {
-      some x:x,y:y such \exists x\exists y(in(x,emptyset)\wedge in(y,emptyset)\wedge equal(z,op(x,y))) {
-        split 1 in(x,emptyset)\wedge in(y,emptyset)\wedge equal(z,op(x,y))
-        apply emptyset_existence for y:x
-        contradict in(x,emptyset)
-        explode in(z,emptyset)
+definition predicate transrelon(X,R) as relon(X,R)\wedge transrel(R)
+
+definition predicate antisymrel(R) as \forall x\forall y(in(op(x,y),R)\wedge in(op(y,x),R)\to equal(x,y))
+
+definition predicate antisymrelon(X,R) as relon(X,R)\wedge antisymrel(R)
+
+definition predicate order(R) as transrel(R)\wedge antisymrel(R)
+
+definition predicate orderon(X,R) as relon(X,R)\wedge order(R)
+
+definition predicate irrefrel(R) as \forall x(notin(op(x,x),R))
+
+definition predicate irrefrelon(X,R) as relon(X,R)\wedge irrefrel(R)
+
+definition predicate linordon(X,R) as orderon(X,R)\wedge\forall x\forall y(in(x,X)\wedge in(y,X)\to in(op(x,y),R)\vee equal(x,y)\vee in(op(y,x),R))
+
+definition predicate minimal(X,R,A,a) as subset(A,X)\wedge in(a,A)\wedge\forall x(in(x,A)\wedge neq(x,a)\to notin(op(x,a),R))
+
+definition predicate minimum(X,R,A,a) as subset(A,X)\wedge in(a,A)\wedge\forall x(in(x,A)\wedge neq(x,a)\to in(op(a,x),R))
+
+definition predicate wfrelon(X,R) as relon(X,R)\wedge\forall A(subset(A,X)\wedge neq(A,emptyset)\to\exists a(minimal(X,R,A,a)))
+
+definition predicate worderon(X,R) as orderon(X,R)\wedge\forall A(subset(A,X)\wedge neq(A,emptyset)\to\exists a(minimum(X,R,A,a)))
+
+theorem res_of_transrel_is_transrel \forall R\forall X(transrel(R)\to transrel(res(R,X))) {
+  any R,X {
+    assume transrel(R) {
+      expand transrel(R) for transrel
+      any x,y,z {
+        assume in(op(x,y),res(R,X))\wedge in(op(y,z),res(R,X)) {
+          split in(op(x,y),res(R,X))\wedge in(op(y,z),res(R,X))
+          apply invoke rightward res_characterization_op for R:R,X:X,x:x,y:y
+          split in(op(x,y),R)\wedge in(x,X)\wedge in(y,X)
+          apply invoke rightward res_characterization_op for R:R,X:X,x:y,y:z
+          split in(op(y,z),R)\wedge in(y,X)\wedge in(z,X)
+          connect in(op(x,y),R)\wedge in(op(y,z),R)
+          apply invoke \forall x\forall y\forall z(in(op(x,y),R)\wedge in(op(y,z),R)\to in(op(x,z),R)) for x:x,y:y,z:z
+          connect in(op(x,z),R)\wedge in(x,X)\wedge in(z,X)
+          apply invoke leftward res_characterization_op for R:R,X:X,x:x,y:z
+        }
       }
+      fold for transrel conclude transrel(res(R,X))
     }
-    connect in(z,emptyset)\leftrightarrow\exists x\exists y(in(x,emptyset)\wedge in(y,emptyset)\wedge equal(z,op(x,y)))
   }
-  fold for relon conclude relon(emptyset,emptyset)
 }
 
-definition predicate transrelon(X,R) as relon(X,R)\wedge\forall x\forall y\forall z(in(op(x,y),R)\wedge in(op(y,z),R)\to in(op(x,z),R))
+theorem res_of_transrelon_is_transrelon \forall R\forall X\forall Y(transrelon(X,R)\wedge subset(Y,X)\to transrelon(Y,res(R,Y))) {
+  any X,R,Y {
+    assume transrelon(X,R)\wedge subset(Y,X) {
+      split transrelon(X,R)\wedge subset(Y,X)
+      expand transrelon(X,R) for transrelon
+      split relon(X,R)\wedge transrel(R)
+      apply res_is_relon for X:Y,R:R
+      apply invoke res_of_transrel_is_transrel for R:R,X:Y
+      connect relon(Y,res(R,Y))\wedge transrel(res(R,Y))
+      fold for transrelon conclude transrelon(Y,res(R,Y))
+    }
+  }
+}
 
-theorem emptyset_is_transrelon_emptyset transrelon(emptyset,emptyset) {
+theorem res_of_antisymrel_is_antisymrel \forall R\forall X(antisymrel(R)\to antisymrel(res(R,X))) {
+  any R,X {
+    assume antisymrel(R) {
+      expand antisymrel(R) for antisymrel
+      any x,y {
+        assume in(op(x,y),res(R,X))\wedge in(op(y,x),res(R,X)) {
+          split in(op(x,y),res(R,X))\wedge in(op(y,x),res(R,X))
+          apply invoke rightward res_characterization_op for R:R,X:X,x:x,y:y
+          split 1 in(op(x,y),R)\wedge in(x,X)\wedge in(y,X)
+          apply invoke rightward res_characterization_op for R:R,X:X,x:y,y:x
+          split 1 in(op(y,x),R)\wedge in(y,X)\wedge in(x,X)
+          connect in(op(x,y),R)\wedge in(op(y,x),R)
+          apply invoke \forall x\forall y(in(op(x,y),R)\wedge in(op(y,x),R)\to equal(x,y)) for x:x,y:y
+        }
+      }
+      fold for antisymrel conclude antisymrel(res(R,X))
+    }
+  }
+}
+
+theorem res_of_antisymrelon_is_antisymrelon \forall R\forall X\forall Y(antisymrelon(X,R)\wedge subset(Y,X)\to antisymrelon(Y,res(R,Y))) {
+  any X,R,Y {
+    assume antisymrelon(X,R)\wedge subset(Y,X) {
+      split antisymrelon(X,R)\wedge subset(Y,X)
+      expand antisymrelon(X,R) for antisymrelon
+      split relon(X,R)\wedge antisymrel(R)
+      apply res_is_relon for X:Y,R:R
+      apply invoke res_of_antisymrel_is_antisymrel for R:R,X:Y
+      connect relon(Y,res(R,Y))\wedge antisymrel(res(R,Y))
+      fold for antisymrelon conclude antisymrelon(Y,res(R,Y))
+    }
+  }
+}
+
+theorem res_of_order_is_order \forall R\forall X(order(R)\to order(res(R,X))) {
+  any R,X {
+    assume order(R) {
+      expand order(R) for order
+      split transrel(R)\wedge antisymrel(R)
+      apply invoke res_of_transrel_is_transrel for R:R,X:X
+      apply invoke res_of_antisymrel_is_antisymrel for R:R,X:X
+      connect transrel(res(R,X))\wedge antisymrel(res(R,X))
+      fold for order conclude order(res(R,X))
+    }
+  }
+}
+
+theorem res_of_orderon_is_orderon \forall R\forall X\forall Y(orderon(X,R)\wedge subset(Y,X)\to orderon(Y,res(R,Y))) {
+  any X,R,Y {
+    assume orderon(X,R)\wedge subset(Y,X) {
+      split orderon(X,R)\wedge subset(Y,X)
+      expand orderon(X,R) for orderon
+      split relon(X,R)\wedge order(R)
+      apply res_is_relon for X:Y,R:R
+      apply invoke res_of_order_is_order for R:R,X:Y
+      connect relon(Y,res(R,Y))\wedge order(res(R,Y))
+      fold for orderon conclude orderon(Y,res(R,Y))
+    }
+  }
+}
+
+theorem res_of_irrefrel_is_irrefrel \forall R\forall X(irrefrel(R)\to irrefrel(res(R,X))) {
+  any R,X {
+    assume irrefrel(R) {
+      expand irrefrel(R) for irrefrel
+      any x {
+        deny in(op(x,x),res(R,X)) {
+          apply invoke rightward res_characterization_op for R:R,X:X,x:x,y:x
+          split 1 in(op(x,x),R)\wedge in(x,X)\wedge in(x,X)
+          apply \forall x(notin(op(x,x),R)) for x:x
+          contradict in(op(x,x),R)
+        }
+      }
+      fold for irrefrel conclude irrefrel(res(R,X))
+    }
+  }
+}
+
+theorem res_of_irrefrelon_is_irrefrelon \forall R\forall X\forall Y(irrefrelon(X,R)\wedge subset(Y,X)\to irrefrelon(Y,res(R,Y))) {
+  any X,R,Y {
+    assume irrefrelon(X,R)\wedge subset(Y,X) {
+      split irrefrelon(X,R)\wedge subset(Y,X)
+      expand irrefrelon(X,R) for irrefrelon
+      split relon(X,R)\wedge irrefrel(R)
+      apply res_is_relon for X:Y,R:R
+      apply invoke res_of_irrefrel_is_irrefrel for R:R,X:Y
+      connect relon(Y,res(R,Y))\wedge irrefrel(res(R,Y))
+      fold for irrefrelon conclude irrefrelon(Y,res(R,Y))
+    }
+  }
+}
+
+theorem res_of_worderon_is_worderon \forall R\forall X\forall Y(worderon(X,R)\wedge subset(Y,X)\to worderon(Y,res(R,Y))) {
+  any R,X,Y {
+    assume worderon(X,R)\wedge subset(Y,X) {
+      split worderon(X,R)\wedge subset(Y,X)
+      expand worderon(X,R) for worderon
+      split orderon(X,R)\wedge\forall A(subset(A,X)\wedge neq(A,emptyset)\to\exists a(minimum(X,R,A,a)))
+      connect orderon(X,R)\wedge subset(Y,X)
+      apply invoke res_of_orderon_is_orderon for R:R,X:X,Y:Y
+      any A {
+        assume subset(A,Y)\wedge neq(A,emptyset) {
+          split subset(A,Y)\wedge neq(A,emptyset)
+          connect subset(A,Y)\wedge subset(Y,X)
+          apply invoke subset_trans for x:A,y:Y,z:X
+          connect subset(A,X)\wedge neq(A,emptyset)
+          apply invoke \forall A(subset(A,X)\wedge neq(A,emptyset)\to\exists a(minimum(X,R,A,a))) for A:A
+          some a:a such \exists a(minimum(X,R,A,a)) {
+            expand minimum(X,R,A,a) for minimum
+            split subset(A,X)\wedge in(a,A)\wedge\forall x(in(x,A)\wedge neq(x,a)\to in(op(a,x),R))
+            any x {
+              assume in(x,A)\wedge neq(x,a) {
+                split in(x,A)\wedge neq(x,a)
+                apply invoke \forall x(in(x,A)\wedge neq(x,a)\to in(op(a,x),R)) for x:x
+                connect in(a,A)\wedge subset(A,Y)
+                apply invoke subset_cor1 for z:a,x:A,y:Y
+                connect in(x,A)\wedge subset(A,Y)
+                apply invoke subset_cor1 for z:x,x:A,y:Y
+                connect in(op(a,x),R)\wedge in(a,Y)\wedge in(x,Y)
+                apply invoke leftward res_characterization_op for R:R,X:Y,x:a,y:x
+              }
+            }
+            connect subset(A,Y)\wedge in(a,A)\wedge\forall x(in(x,A)\wedge neq(x,a)\to in(op(a,x),res(R,Y)))
+            fold for minimum conclude minimum(Y,res(R,Y),A,a)
+            lift for a:a conclude \exists a(minimum(Y,res(R,Y),A,a))
+          }
+        }
+      }
+      connect orderon(Y,res(R,Y))\wedge\forall A(subset(A,Y)\wedge neq(A,emptyset)\to\exists a(minimum(Y,res(R,Y),A,a)))
+      fold for worderon conclude worderon(Y,res(R,Y))
+    }
+  }
+}
+
+theorem transrel_relsep_subset \forall X\forall^T\phi[2]\forall Y(transrel(relsep(X,\phi))\wedge subset(Y,X)\to transrel(relsep(Y,\phi))) {
+  any X, template \phi[2], Y {
+    assume transrel(relsep(X,\phi))\wedge subset(Y,X) {
+      split transrel(relsep(X,\phi))\wedge subset(Y,X)
+      apply invoke res_of_transrel_is_transrel for R:relsep(X,\phi),X:Y
+      apply invoke relsep_res for X:X,\phi:\phi,Y:Y
+      substitute transrel(res(relsep(X,\phi),Y)) for res(relsep(X,\phi),Y):relsep(Y,\phi)
+    }
+  }
+}
+
+theorem transrelon_relsep_subset \forall X\forall^T\phi[2]\forall Y(transrelon(X,relsep(X,\phi))\wedge subset(Y,X)\to transrelon(Y,relsep(Y,\phi))) {
+  any X, template \phi[2], Y {
+    assume transrelon(X,relsep(X,\phi))\wedge subset(Y,X) {
+      split transrelon(X,relsep(X,\phi))\wedge subset(Y,X)
+      apply invoke res_of_transrelon_is_transrelon for R:relsep(X,\phi),X:X,Y:Y
+      apply invoke relsep_res for X:X,\phi:\phi,Y:Y
+      substitute transrelon(Y,res(relsep(X,\phi),Y)) for res(relsep(X,\phi),Y):relsep(Y,\phi)
+    }
+  }
+}
+
+theorem antisymrel_relsep_subset \forall X\forall^T\phi[2]\forall Y(antisymrel(relsep(X,\phi))\wedge subset(Y,X)\to antisymrel(relsep(Y,\phi))) {
+  any X, template \phi[2], Y {
+    assume antisymrel(relsep(X,\phi))\wedge subset(Y,X) {
+      split antisymrel(relsep(X,\phi))\wedge subset(Y,X)
+      apply invoke res_of_antisymrel_is_antisymrel for R:relsep(X,\phi),X:Y
+      apply invoke relsep_res for X:X,\phi:\phi,Y:Y
+      substitute antisymrel(res(relsep(X,\phi),Y)) for res(relsep(X,\phi),Y):relsep(Y,\phi)
+    }
+  }
+}
+
+theorem antisymrelon_relsep_subset \forall X\forall^T\phi[2]\forall Y(antisymrelon(X,relsep(X,\phi))\wedge subset(Y,X)\to antisymrelon(Y,relsep(Y,\phi))) {
+  any X, template \phi[2], Y {
+    assume antisymrelon(X,relsep(X,\phi))\wedge subset(Y,X) {
+      split antisymrelon(X,relsep(X,\phi))\wedge subset(Y,X)
+      apply invoke res_of_antisymrelon_is_antisymrelon for R:relsep(X,\phi),X:X,Y:Y
+      apply invoke relsep_res for X:X,\phi:\phi,Y:Y
+      substitute antisymrelon(Y,res(relsep(X,\phi),Y)) for res(relsep(X,\phi),Y):relsep(Y,\phi)
+    }
+  }
+}
+
+theorem order_relsep_subset \forall X\forall^T\phi[2]\forall Y(order(relsep(X,\phi))\wedge subset(Y,X)\to order(relsep(Y,\phi))) {
+  any X, template \phi[2], Y {
+    assume order(relsep(X,\phi))\wedge subset(Y,X) {
+      split order(relsep(X,\phi))\wedge subset(Y,X)
+      expand order(relsep(X,\phi)) for order
+      split transrel(relsep(X,\phi))\wedge antisymrel(relsep(X,\phi))
+      connect transrel(relsep(X,\phi))\wedge subset(Y,X)
+      apply invoke transrel_relsep_subset for X:X,\phi:\phi,Y:Y
+      connect antisymrel(relsep(X,\phi))\wedge subset(Y,X)
+      apply invoke antisymrel_relsep_subset for X:X,\phi:\phi,Y:Y
+      connect transrel(relsep(Y,\phi))\wedge  antisymrel(relsep(Y,\phi))
+      fold for order conclude order(relsep(Y,\phi))
+    }
+  }
+}
+
+theorem orderon_relsep_subset \forall X\forall^T\phi[2]\forall Y(orderon(X,relsep(X,\phi))\wedge subset(Y,X)\to orderon(Y,relsep(Y,\phi))) {
+  any X, template \phi[2], Y {
+    assume orderon(X,relsep(X,\phi))\wedge subset(Y,X) {
+      split orderon(X,relsep(X,\phi))\wedge subset(Y,X)
+      apply invoke res_of_orderon_is_orderon for R:relsep(X,\phi),X:X,Y:Y
+      apply invoke relsep_res for X:X,\phi:\phi,Y:Y
+      substitute orderon(Y,res(relsep(X,\phi),Y)) for res(relsep(X,\phi),Y):relsep(Y,\phi)
+    }
+  }
+}
+
+theorem irrefrel_relsep_subset \forall X\forall^T\phi[2]\forall Y(irrefrel(relsep(X,\phi))\wedge subset(Y,X)\to irrefrel(relsep(Y,\phi))) {
+  any X, template \phi[2], Y {
+    assume irrefrel(relsep(X,\phi))\wedge subset(Y,X) {
+      split irrefrel(relsep(X,\phi))\wedge subset(Y,X)
+      apply invoke res_of_irrefrel_is_irrefrel for R:relsep(X,\phi),X:Y
+      apply invoke relsep_res for X:X,\phi:\phi,Y:Y
+      substitute irrefrel(res(relsep(X,\phi),Y)) for res(relsep(X,\phi),Y):relsep(Y,\phi)
+    }
+  }
+}
+
+theorem irrefrelon_relsep_subset \forall X\forall^T\phi[2]\forall Y(irrefrelon(X,relsep(X,\phi))\wedge subset(Y,X)\to irrefrelon(Y,relsep(Y,\phi))) {
+  any X, template \phi[2], Y {
+    assume irrefrelon(X,relsep(X,\phi))\wedge subset(Y,X) {
+      split irrefrelon(X,relsep(X,\phi))\wedge subset(Y,X)
+      apply invoke res_of_irrefrelon_is_irrefrelon for R:relsep(X,\phi),X:X,Y:Y
+      apply invoke relsep_res for X:X,\phi:\phi,Y:Y
+      substitute irrefrelon(Y,res(relsep(X,\phi),Y)) for res(relsep(X,\phi),Y):relsep(Y,\phi)
+    }
+  }
+}
+
+theorem worderon_relsep_subset \forall X\forall^T\phi[2]\forall Y(worderon(X,relsep(X,\phi))\wedge subset(Y,X)\to worderon(Y,relsep(Y,\phi))) {
+  any X, template \phi[2], Y {
+    assume worderon(X,relsep(X,\phi))\wedge subset(Y,X) {
+      split worderon(X,relsep(X,\phi))\wedge subset(Y,X)
+      apply invoke res_of_worderon_is_worderon for R:relsep(X,\phi),X:X,Y:Y
+      apply invoke relsep_res for X:X,\phi:\phi,Y:Y
+      substitute worderon(Y,res(relsep(X,\phi),Y)) for res(relsep(X,\phi),Y):relsep(Y,\phi)
+    }
+  }
+}
+
+theorem emptyset_is_transrel transrel(emptyset) {
   any x,y,z {
     assume in(op(x,y),emptyset)\wedge in(op(y,z),emptyset) {
       split in(op(x,y),emptyset)\wedge in(op(y,z),emptyset)
@@ -33,59 +309,65 @@ theorem emptyset_is_transrelon_emptyset transrelon(emptyset,emptyset) {
       explode in(op(x,z),emptyset)
     }
   }
+  fold for transrel conclude transrel(emptyset)
+}
+
+theorem emptyset_is_transrelon_emptyset transrelon(emptyset,emptyset) {
   assert emptyset_is_relon_emptyset
-  connect relon(emptyset,emptyset)\wedge\forall x\forall y\forall z(in(op(x,y),emptyset)\wedge in(op(y,z),emptyset)\to in(op(x,z),emptyset))
+  assert emptyset_is_transrel
+  connect relon(emptyset,emptyset)\wedge transrel(emptyset)
   fold for transrelon conclude transrelon(emptyset,emptyset)
 }
 
-definition predicate antisymrelon(X,R) as relon(X,R)\wedge\forall x\forall y(in(op(x,y),R)\wedge in(op(y,x),R)\to equal(x,y))
-
-theorem emptyset_is_antisymrelon_emptyset antisymrelon(emptyset,emptyset) {
-  assert emptyset_is_relon_emptyset
+theorem emptyset_is_antisymrel antisymrel(emptyset) {
   any x,y {
     assume in(op(x,y),emptyset)\wedge in(op(y,x),emptyset) {
-      split in(op(x,y),emptyset)\wedge in(op(y,x),emptyset)
+      split 1 in(op(x,y),emptyset)\wedge in(op(y,x),emptyset)
       apply emptyset_existence for y:op(x,y)
       contradict in(op(x,y),emptyset)
       explode equal(x,y)
     }
   }
-  connect relon(emptyset,emptyset)\wedge\forall x\forall y(in(op(x,y),emptyset)\wedge in(op(y,x),emptyset)\to equal(x,y))
+  fold for antisymrel conclude antisymrel(emptyset)
+}
+
+theorem emptyset_is_antisymrelon_emptyset antisymrelon(emptyset,emptyset) {
+  assert emptyset_is_relon_emptyset
+  assert emptyset_is_antisymrel
+  connect relon(emptyset,emptyset)\wedge antisymrel(emptyset)
   fold for antisymrelon conclude antisymrelon(emptyset,emptyset)
 }
 
-definition predicate ordon(X,R) as transrelon(X,R)\wedge antisymrelon(X,R)
-
-theorem emptyset_is_ordon_emptyset ordon(emptyset,emptyset) {
-  assert emptyset_is_transrelon_emptyset
-  assert emptyset_is_antisymrelon_emptyset
-  connect transrelon(emptyset,emptyset)\wedge antisymrelon(emptyset,emptyset)
-  fold for ordon conclude ordon(emptyset,emptyset)
+theorem emptyset_is_order order(emptyset) {
+  assert emptyset_is_transrel
+  assert emptyset_is_antisymrel
+  connect transrel(emptyset)\wedge antisymrel(emptyset)
+  fold for order conclude order(emptyset)
 }
 
-definition predicate irrefrelon(X,R) as relon(X,R)\wedge\forall x(notin(op(x,x),R))
-
-theorem emptyset_is_irrefrelon_on_emptyset irrefrelon(emptyset,emptyset) {
+theorem emptyset_is_orderon_emptyset orderon(emptyset,emptyset) {
   assert emptyset_is_relon_emptyset
+  assert emptyset_is_order
+  connect relon(emptyset,emptyset)\wedge order(emptyset)
+  fold for orderon conclude orderon(emptyset,emptyset)
+}
+
+theorem emptyset_is_irrefrel irrefrel(emptyset) {
   any x {
     apply emptyset_existence for y:op(x,x)
   }
-  connect relon(emptyset,emptyset)\wedge\forall x(notin(op(x,x),emptyset))
+  fold for irrefrel conclude irrefrel(emptyset)
+}
+
+theorem emptyset_is_irrefrelon_emptyset irrefrelon(emptyset,emptyset) {
+  assert emptyset_is_relon_emptyset
+  assert emptyset_is_irrefrel
+  connect relon(emptyset,emptyset)\wedge irrefrel(emptyset)
   fold for irrefrelon conclude irrefrelon(emptyset,emptyset)
 }
 
-definition predicate linordon(X,R) as ordon(X,R)\wedge\forall x\forall y(in(x,X)\wedge in(y,X)\to in(op(x,y),R)\vee equal(x,y)\vee in(op(y,x),R))
-
-definition predicate minimal(X,R,A,a) as subset(A,X)\wedge in(a,A)\wedge\forall x(in(x,A)\wedge neq(x,a)\to notin(op(x,a),R))
-
-definition predicate minimum(X,R,A,a) as subset(A,X)\wedge in(a,A)\wedge\forall x(in(x,A)\wedge neq(x,a)\to in(op(a,x),R))
-
-definition predicate wfrelon(X,R) as relon(X,R)\wedge\forall A(subset(A,X)\wedge neq(A,emptyset)\to\exists a(minimal(X,R,A,a)))
-
-definition predicate wordon(X,R) as ordon(X,R)\wedge\forall A(subset(A,X)\wedge neq(A,emptyset)\to\exists a(minimum(X,R,A,a)))
-
-theorem emptyset_is_wordon_emptyset wordon(emptyset,emptyset) {
-  assert emptyset_is_ordon_emptyset
+theorem emptyset_is_worderon_emptyset worderon(emptyset,emptyset) {
+  assert emptyset_is_orderon_emptyset
   any A {
     assume subset(A,emptyset)\wedge neq(A,emptyset) {
       split subset(A,emptyset)\wedge neq(A,emptyset)
@@ -94,8 +376,8 @@ theorem emptyset_is_wordon_emptyset wordon(emptyset,emptyset) {
       explode \exists a(minimum(emptyset,emptyset,A,a))
     }
   }
-  connect ordon(emptyset,emptyset)\wedge\forall A(subset(A,emptyset)\wedge neq(A,emptyset)\to\exists a(minimum(emptyset,emptyset,A,a)))
-  fold for wordon conclude wordon(emptyset,emptyset)
+  connect orderon(emptyset,emptyset)\wedge\forall A(subset(A,emptyset)\wedge neq(A,emptyset)\to\exists a(minimum(emptyset,emptyset,A,a)))
+  fold for worderon conclude worderon(emptyset,emptyset)
 }
 
 definition predicate trans(x) as \forall y(in(y,x)\to\forall z(in(z,y)\to in(z,x)))
@@ -135,34 +417,16 @@ theorem emptyset_is_trans trans(emptyset) {
   fold for trans conclude trans(emptyset)
 }
 
-definition function mem(X) as sep(cartprod(X,X),lambda z.\exists x\exists y(equal(z,op(x,y))\wedge in(x,y)))
+definition function mem(X) as relsep(X,lambda x,y.in(x,y))
 
 theorem mem_characterization \forall X\forall z(in(z,mem(X))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y))) {
   any X,z {
     assume in(z,mem(X)) {
       expand in(z,mem(X)) for mem
-      apply invoke rightward sep_existence for x:cartprod(X,X),\phi:lambda z.\exists x\exists y(equal(z,op(x,y))\wedge in(x,y)),z:z
-      split in(z,cartprod(X,X))\wedge\exists x\exists y(equal(z,op(x,y))\wedge in(x,y))
-      some x:x,y:y such \exists x\exists y(equal(z,op(x,y))\wedge in(x,y)) {
-        split equal(z,op(x,y))\wedge in(x,y)
-        substitute in(z,cartprod(X,X)) for z:op(x,y)
-        apply invoke leftward cartprod_cor1 for X:X,Y:X,x:x,y:y
-        split in(x,X)\wedge in(y,X)
-        connect in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y)
-        lift for x:x,y:y conclude \exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y))
-      }
+      apply invoke rightward relsep_characterization for X:X,\phi:lambda x,y.in(x,y),z:z
     }
     assume \exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y)) {
-      some x:x,y:y such \exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y)) {
-        split in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y)
-        connect in(x,X)\wedge in(y,X)
-        apply invoke rightward cartprod_cor1 for X:X,Y:X,x:x,y:y
-        substitute in(op(x,y),cartprod(X,X)) for op(x,y):z
-        connect equal(z,op(x,y))\wedge in(x,y)
-        lift for x:x,y:y conclude \exists x\exists y(equal(z,op(x,y))\wedge in(x,y))
-        connect in(z,cartprod(X,X))\wedge\exists x\exists y(equal(z,op(x,y))\wedge in(x,y))
-      }
-      apply invoke leftward sep_existence for x:cartprod(X,X),\phi:lambda z.\exists x\exists y(equal(z,op(x,y))\wedge in(x,y)),z:z
+      apply invoke leftward relsep_characterization for X:X,\phi:lambda x,y.in(x,y),z:z
       fold for mem conclude in(z,mem(X))
     }
     connect in(z,mem(X))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y))
@@ -193,6 +457,130 @@ theorem mem_cor1 \forall X\forall x\forall y(in(op(x,y),mem(X))\leftrightarrow i
   }
 }
 
+theorem mem_relon \forall X(relon(X,mem(X))) {
+  any X {
+    apply relsep_relon for X:X,\phi:lambda x,y.in(x,y)
+    fold for mem conclude relon(X,mem(X))
+  }
+}
+
+theorem mem_res \forall X\forall Y(subset(Y,X)\to equal(mem(Y),res(mem(X),Y))) {
+  any X,Y {
+    assume subset(Y,X) {
+      apply invoke relsep_res for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude equal(mem(Y),res(mem(X),Y))
+    }
+  }
+}
+
+theorem mem_trasnrel_subset \forall X\forall Y(transrel(mem(X))\wedge subset(Y,X)\to transrel(mem(Y))) {
+  any X,Y {
+    assume transrel(mem(X))\wedge subset(Y,X) {
+      split transrel(mem(X))\wedge subset(Y,X)
+      expand transrel(mem(X)) for mem
+      connect transrel(relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke transrel_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude transrel(mem(Y))
+    }
+  }
+}
+
+theorem mem_trasnrelon_subset \forall X\forall Y(transrelon(X,mem(X))\wedge subset(Y,X)\to transrelon(Y,mem(Y))) {
+  any X,Y {
+    assume transrelon(X,mem(X))\wedge subset(Y,X) {
+      split transrelon(X,mem(X))\wedge subset(Y,X)
+      expand transrelon(X,mem(X)) for mem
+      connect transrelon(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke transrelon_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude transrelon(Y,mem(Y))
+    }
+  }
+}
+
+theorem mem_antisymrel_subset \forall X\forall Y(antisymrel(mem(X))\wedge subset(Y,X)\to antisymrel(mem(Y))) {
+  any X,Y {
+    assume antisymrel(mem(X))\wedge subset(Y,X) {
+      split antisymrel(mem(X))\wedge subset(Y,X)
+      expand antisymrel(mem(X)) for mem
+      connect antisymrel(relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke antisymrel_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude antisymrel(mem(Y))
+    }
+  }
+}
+
+theorem mem_antisymrelon_subset \forall X\forall Y(antisymrelon(X,mem(X))\wedge subset(Y,X)\to antisymrelon(Y,mem(Y))) {
+  any X,Y {
+    assume antisymrelon(X,mem(X))\wedge subset(Y,X) {
+      split antisymrelon(X,mem(X))\wedge subset(Y,X)
+      expand antisymrelon(X,mem(X)) for mem
+      connect antisymrelon(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke antisymrelon_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude antisymrelon(Y,mem(Y))
+    }
+  }
+}
+
+theorem mem_order_subset \forall X\forall Y(order(mem(X))\wedge subset(Y,X)\to order(mem(Y))) {
+  any X,Y {
+    assume order(mem(X))\wedge subset(Y,X) {
+      split order(mem(X))\wedge subset(Y,X)
+      expand order(mem(X)) for mem
+      connect order(relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke order_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude order(mem(Y))
+    }
+  }
+}
+
+theorem mem_orderon_subset \forall X\forall Y(orderon(X,mem(X))\wedge subset(Y,X)\to orderon(Y,mem(Y))) {
+  any X,Y {
+    assume orderon(X,mem(X))\wedge subset(Y,X) {
+      split orderon(X,mem(X))\wedge subset(Y,X)
+      expand orderon(X,mem(X)) for mem
+      connect orderon(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke orderon_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude orderon(Y,mem(Y))
+    }
+  }
+}
+
+theorem mem_irrefrel_subset \forall X\forall Y(irrefrel(mem(X))\wedge subset(Y,X)\to irrefrel(mem(Y))) {
+  any X,Y {
+    assume irrefrel(mem(X))\wedge subset(Y,X) {
+      split irrefrel(mem(X))\wedge subset(Y,X)
+      expand irrefrel(mem(X)) for mem
+      connect irrefrel(relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke irrefrel_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude irrefrel(mem(Y))
+    }
+  }
+}
+
+theorem mem_irrefrelon_subset \forall X\forall Y(irrefrelon(X,mem(X))\wedge subset(Y,X)\to irrefrelon(Y,mem(Y))) {
+  any X,Y {
+    assume irrefrelon(X,mem(X))\wedge subset(Y,X) {
+      split irrefrelon(X,mem(X))\wedge subset(Y,X)
+      expand irrefrelon(X,mem(X)) for mem
+      connect irrefrelon(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke irrefrelon_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude irrefrelon(Y,mem(Y))
+    }
+  }
+}
+
+theorem mem_worderon_subset \forall X\forall Y(worderon(X,mem(X))\wedge subset(Y,X)\to worderon(Y,mem(Y))) {
+  any X,Y {
+    assume worderon(X,mem(X))\wedge subset(Y,X) {
+      split worderon(X,mem(X))\wedge subset(Y,X)
+      expand worderon(X,mem(X)) for mem
+      connect worderon(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke worderon_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude worderon(Y,mem(Y))
+    }
+  }
+}
+
 theorem mem_of_emptyset_is_emptyset equal(mem(emptyset),emptyset) {
   any z {
     deny in(z,mem(emptyset)) {
@@ -207,30 +595,30 @@ theorem mem_of_emptyset_is_emptyset equal(mem(emptyset),emptyset) {
   apply invoke emptyset_uniqueness for x:mem(emptyset)
 }
 
-definition predicate ord(\alpha) as trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge wordon(\alpha,mem(\alpha))
+definition predicate ordinal(\alpha) as trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge worderon(\alpha,mem(\alpha))
 
-theorem emptyset_is_ord ord(emptyset) {
+theorem emptyset_is_ordinal ordinal(emptyset) {
   assert emptyset_is_trans
   assert mem_of_emptyset_is_emptyset
-  assert emptyset_is_irrefrelon_on_emptyset
+  assert emptyset_is_irrefrelon_emptyset
   substitute irrefrelon(emptyset,emptyset) for emptyset[2]:mem(emptyset)
-  assert emptyset_is_wordon_emptyset
-  substitute wordon(emptyset,emptyset) for emptyset[2]:mem(emptyset)
-  connect trans(emptyset)\wedge irrefrelon(emptyset,mem(emptyset))\wedge wordon(emptyset,mem(emptyset))
-  fold for ord conclude ord(emptyset)
+  assert emptyset_is_worderon_emptyset
+  substitute worderon(emptyset,emptyset) for emptyset[2]:mem(emptyset)
+  connect trans(emptyset)\wedge irrefrelon(emptyset,mem(emptyset))\wedge worderon(emptyset,mem(emptyset))
+  fold for ordinal conclude ordinal(emptyset)
 }
 
-theorem element_of_ordianl_is_trans \forall\alpha(ord(\alpha)\to\forall\beta(in(\beta,\alpha)\to trans(\beta))) {
+theorem element_of_ordinal_is_trans \forall\alpha(ordinal(\alpha)\to\forall\beta(in(\beta,\alpha)\to trans(\beta))) {
   any \alpha {
-    assume ord(\alpha) {
+    assume ordinal(\alpha) {
       any \beta {
         assume in(\beta,\alpha) {
           any \gamma {
             assume in(\gamma,\beta) {
               any \delta {
                 assume in(\delta,\gamma) {
-                  expand ord(\alpha) for ord
-                  split trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge wordon(\alpha,mem(\alpha))
+                  expand ordinal(\alpha) for ordinal
+                  split trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge worderon(\alpha,mem(\alpha))
                   expand trans(\alpha) for trans
                   apply invoke \forall y(in(y,\alpha)\to\forall z(in(z,y)\to in(z,\alpha))) for y:\beta
                   apply invoke \forall z(in(z,\beta)\to in(z,\alpha)) for z:\gamma
@@ -241,12 +629,13 @@ theorem element_of_ordianl_is_trans \forall\alpha(ord(\alpha)\to\forall\beta(in(
                   connect in(\delta,\alpha)\wedge in(\gamma,\alpha)\wedge in(\delta,\gamma)
                   apply invoke leftward mem_cor1 for X:\alpha,x:\delta,y:\gamma
                   connect in(op(\delta,\gamma),mem(\alpha))\wedge in(op(\gamma,\beta),mem(\alpha))
-                  expand wordon(\alpha,mem(\alpha)) for wordon
-                  split 1 ordon(\alpha,mem(\alpha))\wedge\forall A(subset(A,\alpha)\wedge neq(A,emptyset)\to\exists a(minimum(\alpha,mem(\alpha),A,a)))
-                  expand ordon(\alpha,mem(\alpha)) for ordon
-                  split 1 transrelon(\alpha,mem(\alpha))\wedge antisymrelon(\alpha,mem(\alpha))
-                  expand transrelon(\alpha,mem(\alpha)) for transrelon
-                  split 2 relon(\alpha,mem(\alpha))\wedge\forall x\forall y\forall z(in(op(x,y),mem(\alpha))\wedge in(op(y,z),mem(\alpha))\to in(op(x,z),mem(\alpha)))
+                  expand worderon(\alpha,mem(\alpha)) for worderon
+                  split 1 orderon(\alpha,mem(\alpha))\wedge\forall A(subset(A,\alpha)\wedge neq(A,emptyset)\to\exists a(minimum(\alpha,mem(\alpha),A,a)))
+                  expand orderon(\alpha,mem(\alpha)) for orderon
+                  split 2 relon(\alpha,mem(\alpha))\wedge order(mem(\alpha))
+                  expand order(mem(\alpha)) for order
+                  split 1 transrel(mem(\alpha))\wedge antisymrel(mem(\alpha))
+                  expand transrel(mem(\alpha)) for transrel
                   apply invoke \forall x\forall y\forall z(in(op(x,y),mem(\alpha))\wedge in(op(y,z),mem(\alpha))\to in(op(x,z),mem(\alpha))) for x:\delta,y:\gamma,z:\beta
                   apply invoke rightward mem_cor1 for X:\alpha,x:\delta,y:\beta
                   split 3 in(\delta,\alpha)\wedge in(\beta,\alpha)\wedge in(\delta,\beta)
@@ -255,6 +644,29 @@ theorem element_of_ordianl_is_trans \forall\alpha(ord(\alpha)\to\forall\beta(in(
             }
           }
           fold for trans conclude trans(\beta)
+        }
+      }
+    }
+  }
+}
+
+theorem element_of_ordinal_is_ordinal \forall\alpha(ordinal(\alpha)\to\forall\beta(in(\beta,\alpha)\to ordinal(\beta))) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      any \beta {
+        assume in(\beta,\alpha) {
+          apply invoke element_of_ordinal_is_trans for \alpha:\alpha
+          apply invoke \forall\beta(in(\beta,\alpha)\to trans(\beta)) for \beta:\beta
+          expand ordinal(\alpha) for ordinal
+          split trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge worderon(\alpha,mem(\alpha))
+          apply invoke rightward trans_cor1 for x:\alpha
+          apply invoke \forall y(in(y,\alpha)\to subset(y,\alpha)) for y:\beta
+          connect irrefrelon(\alpha,mem(\alpha))\wedge subset(\beta,\alpha)
+          apply invoke mem_irrefrelon_subset for X:\alpha,Y:\beta
+          connect worderon(\alpha,mem(\alpha))\wedge subset(\beta,\alpha)
+          apply invoke mem_worderon_subset for X:\alpha,Y:\beta
+          connect trans(\beta)\wedge irrefrelon(\beta,mem(\beta))\wedge worderon(\beta,mem(\beta))
+          fold for ordinal conclude ordinal(\beta)
         }
       }
     }

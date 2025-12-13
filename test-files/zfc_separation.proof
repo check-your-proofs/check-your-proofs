@@ -153,6 +153,34 @@ theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrigh
   }
 }
 
+definition function setminus(x,y) as sep(x,lambda z.notin(z,y)) tex "","\setminus",""
+
+theorem setminus_characterization \forall x\forall y\forall z(in(z,setminus(x,y))\leftrightarrow in(z,x)\wedge notin(z,y)) {
+  any x,y,z {
+    assume in(z,setminus(x,y)) {
+      expand in(z,setminus(x,y)) for setminus
+      apply invoke rightward sep_existence for x:x,\phi:lambda z.notin(z,y),z:z
+    }
+    assume in(z,x)\wedge notin(z,y) {
+      apply invoke leftward sep_existence for x:x,\phi:lambda z.notin(z,y),z:z
+      fold for setminus conclude in(z,setminus(x,y))
+    }
+    connect in(z,setminus(x,y))\leftrightarrow in(z,x)\wedge notin(z,y)
+  }
+}
+
+theorem setminus_is_subset \forall x\forall y(subset(setminus(x,y),x)) {
+  any x,y {
+    any z {
+      assume in(z,setminus(x,y)) {
+        apply invoke rightward setminus_characterization for x:x,y:y,z:z
+        split 1 in(z,x)\wedge notin(z,y)
+      }
+    }
+    fold for subset conclude subset(setminus(x,y),x)
+  }
+}
+
 definition function cartprod(X,Y) as sep(powerset(powerset(cup(X,Y))), lambda z. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))) tex "","\times",""
 
 theorem cartprod_lem1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)\to in(op(x,y),powerset(powerset(cup(X,Y))))) {
