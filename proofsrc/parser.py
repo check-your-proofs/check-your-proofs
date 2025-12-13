@@ -728,7 +728,10 @@ class Parser:
                 raise SyntaxError(f"{tok.info()} Term object is required, but {name} is unknown")
         elif tok.type == "LAMBDA":
             self.stream.consume("LAMBDA")
-            vars = self.parse_vars()
+            if self.stream.peek().type == "DOT":
+                vars: list[Var] = []
+            else:
+                vars = self.parse_vars()
             self.stream.consume("DOT")
             formula = self.parse_formula(context.add_form(vars, []))
             return Lambda(tuple(vars), formula)

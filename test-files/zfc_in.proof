@@ -1,3 +1,5 @@
+include "logic.proof"
+
 primitive predicate in arity 2 tex "","\in",""
 
 definition predicate equal(x,y) as \forall z(in(z,x)\leftrightarrow in(z,y)) tex "","=",""

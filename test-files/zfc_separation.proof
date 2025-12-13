@@ -181,6 +181,28 @@ theorem setminus_is_subset \forall x\forall y(subset(setminus(x,y),x)) {
   }
 }
 
+theorem setminus_of_set_and_subsetneq \forall x\forall y(subsetneq(y,x)\to neq(setminus(x,y),emptyset)) {
+  any x,y {
+    assume subsetneq(y,x) {
+      expand subsetneq(y,x) for subsetneq
+      split subset(y,x)\wedge neq(y,x)
+      deny \forall z(in(z,x)\to in(z,y)) {
+        fold for subset conclude subset(x,y)
+        connect subset(x,y)\wedge subset(y,x)
+        apply invoke subset_antisymmetry for x:x,y:y
+        contradict equal(x,y)
+      }
+      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \phi:lambda z.in(z,x)\to in(z,y)
+      some z:z such \exists z(\neg(in(z,x)\to in(z,y))) {
+        apply invoke rightward neg_implication for \phi:lambda.in(z,x),\psi:lambda.in(z,y)
+        apply invoke leftward setminus_characterization for x:x,y:y,z:z
+        lift for z:z conclude \exists z(in(z,setminus(x,y)))
+      }
+      apply invoke has_a_member_not_emptyset for x:setminus(x,y)
+    }
+  }
+}
+
 definition function cartprod(X,Y) as sep(powerset(powerset(cup(X,Y))), lambda z. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))) tex "","\times",""
 
 theorem cartprod_lem1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)\to in(op(x,y),powerset(powerset(cup(X,Y))))) {
