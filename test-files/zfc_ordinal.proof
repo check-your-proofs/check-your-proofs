@@ -1,0 +1,501 @@
+include "zfc_order.proof"
+
+definition predicate trans(x) as \forall y\forall z(in(z,y)\wedge in(y,x)\to in(z,x))
+
+theorem trans_cor1 \forall x(trans(x)\leftrightarrow\forall y(in(y,x)\to subset(y,x))) {
+  any x {
+    assume trans(x) {
+      expand trans(x) for trans
+      any y {
+        assume in(y,x) {
+          any z {
+            assume in(z,y) {
+              connect in(z,y)\wedge in(y,x)
+              apply invoke \forall y\forall z(in(z,y)\wedge in(y,x)\to in(z,x)) for y:y,z:z
+            }
+          }
+          fold for subset conclude subset(y,x)
+        }
+      }
+    }
+    assume \forall y(in(y,x)\to subset(y,x)) {
+      any y,z {
+        assume in(z,y)\wedge in(y,x) {
+          split in(z,y)\wedge in(y,x)
+          apply invoke \forall y(in(y,x)\to subset(y,x)) for y:y
+          connect in(z,y)\wedge subset(y,x)
+          apply invoke subset_cor1 for z:z,x:y,y:x
+        }
+      }
+      fold for trans conclude trans(x)
+    }
+    connect trans(x)\leftrightarrow\forall y(in(y,x)\to subset(y,x))
+  }
+}
+
+theorem emptyset_is_trans trans(emptyset) {
+  any x,y {
+    assume in(y,x)\wedge in(x,emptyset) {
+      split 2 in(y,x)\wedge in(x,emptyset)
+      apply emptyset_existence for y:x
+      contradict in(x,emptyset)
+      explode in(y,emptyset)
+    }
+  }
+  fold for trans conclude trans(emptyset)
+}
+
+definition function mem(X) as relsep(X,lambda x,y.in(x,y))
+
+theorem mem_characterization \forall X\forall z(in(z,mem(X))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y))) {
+  any X,z {
+    assume in(z,mem(X)) {
+      expand in(z,mem(X)) for mem
+      apply invoke rightward relsep_characterization for X:X,\phi:lambda x,y.in(x,y),z:z
+    }
+    assume \exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y)) {
+      apply invoke leftward relsep_characterization for X:X,\phi:lambda x,y.in(x,y),z:z
+      fold for mem conclude in(z,mem(X))
+    }
+    connect in(z,mem(X))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y))
+  }
+}
+
+theorem mem_characterization_op \forall X\forall x\forall y(in(op(x,y),mem(X))\leftrightarrow in(x,X)\wedge in(y,X)\wedge in(x,y)) {
+  any X,x,y {
+    assume in(op(x,y),mem(X)) {
+      apply invoke rightward mem_characterization for X:X,z:op(x,y)
+      some x':x',y':y' such \exists x'\exists y'(in(x',X)\wedge in(y',X)\wedge equal(op(x,y),op(x',y'))\wedge in(x',y')) {
+        split in(x',X)\wedge in(y',X)\wedge equal(op(x,y),op(x',y'))\wedge in(x',y')
+        apply invoke op_characterization for x:x,y:y,x':x',y':y'
+        split equal(x,x')\wedge equal(y,y')
+        substitute in(x',X) for x':x
+        substitute in(y',X) for y':y
+        substitute in(x',y') for x':x,y':y
+        connect in(x,X)\wedge in(y,X)\wedge in(x,y)
+      }
+    }
+    assume in(x,X)\wedge in(y,X)\wedge in(x,y) {
+      split in(x,X)\wedge in(y,X)\wedge in(x,y)
+      connect in(x,X)\wedge in(y,X)\wedge equal(op(x,y),op(x,y))\wedge in(x,y)
+      lift for x:x,y:y conclude \exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(op(x,y),op(x,y))\wedge in(x,y))
+      apply invoke leftward mem_characterization for X:X,z:op(x,y)
+    }
+    connect in(op(x,y),mem(X))\leftrightarrow in(x,X)\wedge in(y,X)\wedge in(x,y)
+  }
+}
+
+theorem mem_relon \forall X(relon(X,mem(X))) {
+  any X {
+    apply relsep_relon for X:X,\phi:lambda x,y.in(x,y)
+    fold for mem conclude relon(X,mem(X))
+  }
+}
+
+theorem mem_res \forall X\forall Y(subset(Y,X)\to equal(mem(Y),res(mem(X),Y))) {
+  any X,Y {
+    assume subset(Y,X) {
+      apply invoke relsep_res for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude equal(mem(Y),res(mem(X),Y))
+    }
+  }
+}
+
+theorem mem_trasnrel_subset \forall X\forall Y(transrel(mem(X))\wedge subset(Y,X)\to transrel(mem(Y))) {
+  any X,Y {
+    assume transrel(mem(X))\wedge subset(Y,X) {
+      split transrel(mem(X))\wedge subset(Y,X)
+      expand transrel(mem(X)) for mem
+      connect transrel(relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke transrel_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude transrel(mem(Y))
+    }
+  }
+}
+
+theorem mem_trasnrelon_subset \forall X\forall Y(transrelon(X,mem(X))\wedge subset(Y,X)\to transrelon(Y,mem(Y))) {
+  any X,Y {
+    assume transrelon(X,mem(X))\wedge subset(Y,X) {
+      split transrelon(X,mem(X))\wedge subset(Y,X)
+      expand transrelon(X,mem(X)) for mem
+      connect transrelon(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke transrelon_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude transrelon(Y,mem(Y))
+    }
+  }
+}
+
+theorem mem_antisymrel_subset \forall X\forall Y(antisymrel(mem(X))\wedge subset(Y,X)\to antisymrel(mem(Y))) {
+  any X,Y {
+    assume antisymrel(mem(X))\wedge subset(Y,X) {
+      split antisymrel(mem(X))\wedge subset(Y,X)
+      expand antisymrel(mem(X)) for mem
+      connect antisymrel(relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke antisymrel_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude antisymrel(mem(Y))
+    }
+  }
+}
+
+theorem mem_antisymrelon_subset \forall X\forall Y(antisymrelon(X,mem(X))\wedge subset(Y,X)\to antisymrelon(Y,mem(Y))) {
+  any X,Y {
+    assume antisymrelon(X,mem(X))\wedge subset(Y,X) {
+      split antisymrelon(X,mem(X))\wedge subset(Y,X)
+      expand antisymrelon(X,mem(X)) for mem
+      connect antisymrelon(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke antisymrelon_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude antisymrelon(Y,mem(Y))
+    }
+  }
+}
+
+theorem mem_order_subset \forall X\forall Y(order(mem(X))\wedge subset(Y,X)\to order(mem(Y))) {
+  any X,Y {
+    assume order(mem(X))\wedge subset(Y,X) {
+      split order(mem(X))\wedge subset(Y,X)
+      expand order(mem(X)) for mem
+      connect order(relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke order_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude order(mem(Y))
+    }
+  }
+}
+
+theorem mem_orderon_subset \forall X\forall Y(orderon(X,mem(X))\wedge subset(Y,X)\to orderon(Y,mem(Y))) {
+  any X,Y {
+    assume orderon(X,mem(X))\wedge subset(Y,X) {
+      split orderon(X,mem(X))\wedge subset(Y,X)
+      expand orderon(X,mem(X)) for mem
+      connect orderon(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke orderon_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude orderon(Y,mem(Y))
+    }
+  }
+}
+
+theorem mem_irrefrel_subset \forall X\forall Y(irrefrel(mem(X))\wedge subset(Y,X)\to irrefrel(mem(Y))) {
+  any X,Y {
+    assume irrefrel(mem(X))\wedge subset(Y,X) {
+      split irrefrel(mem(X))\wedge subset(Y,X)
+      expand irrefrel(mem(X)) for mem
+      connect irrefrel(relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke irrefrel_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude irrefrel(mem(Y))
+    }
+  }
+}
+
+theorem mem_irrefrelon_subset \forall X\forall Y(irrefrelon(X,mem(X))\wedge subset(Y,X)\to irrefrelon(Y,mem(Y))) {
+  any X,Y {
+    assume irrefrelon(X,mem(X))\wedge subset(Y,X) {
+      split irrefrelon(X,mem(X))\wedge subset(Y,X)
+      expand irrefrelon(X,mem(X)) for mem
+      connect irrefrelon(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke irrefrelon_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude irrefrelon(Y,mem(Y))
+    }
+  }
+}
+
+theorem mem_wellorder_subset \forall X\forall Y(wellorder(X,mem(X))\wedge subset(Y,X)\to wellorder(Y,mem(Y))) {
+  any X,Y {
+    assume wellorder(X,mem(X))\wedge subset(Y,X) {
+      split wellorder(X,mem(X))\wedge subset(Y,X)
+      expand wellorder(X,mem(X)) for mem
+      connect wellorder(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke wellorder_relsep_subset for X:X,\phi:lambda x,y.in(x,y),Y:Y
+      fold for mem conclude wellorder(Y,mem(Y))
+    }
+  }
+}
+
+theorem mem_of_emptyset_is_emptyset equal(mem(emptyset),emptyset) {
+  any z {
+    deny in(z,mem(emptyset)) {
+      apply invoke rightward mem_characterization for X:emptyset,z:z
+      some x:x,y:y such \exists x\exists y(in(x,emptyset)\wedge in(y,emptyset)\wedge equal(z,op(x,y))\wedge in(x,y)) {
+        split 1 in(x,emptyset)\wedge in(y,emptyset)\wedge equal(z,op(x,y))\wedge in(x,y)
+        apply emptyset_existence for y:x
+        contradict in(x,emptyset)
+      }
+    }
+  }
+  apply invoke emptyset_uniqueness for x:mem(emptyset)
+}
+
+definition predicate ordinal(\alpha) as trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge wellorder(\alpha,mem(\alpha))
+
+theorem emptyset_is_ordinal ordinal(emptyset) {
+  assert emptyset_is_trans
+  assert mem_of_emptyset_is_emptyset
+  assert emptyset_is_irrefrelon_emptyset
+  substitute irrefrelon(emptyset,emptyset) for emptyset[2]:mem(emptyset)
+  assert emptyset_is_wellorder_emptyset
+  substitute wellorder(emptyset,emptyset) for emptyset[2]:mem(emptyset)
+  connect trans(emptyset)\wedge irrefrelon(emptyset,mem(emptyset))\wedge wellorder(emptyset,mem(emptyset))
+  fold for ordinal conclude ordinal(emptyset)
+}
+
+theorem element_of_ordinal_is_trans \forall\alpha(ordinal(\alpha)\to\forall\beta(in(\beta,\alpha)\to trans(\beta))) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      any \beta {
+        assume in(\beta,\alpha) {
+          any \gamma,\delta {
+            assume in(\delta,\gamma)\wedge in(\gamma,\beta) {
+              split in(\delta,\gamma)\wedge in(\gamma,\beta)
+              expand ordinal(\alpha) for ordinal
+              split trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge wellorder(\alpha,mem(\alpha))
+              expand trans(\alpha) for trans
+              connect in(\gamma,\beta)\wedge in(\beta,\alpha)
+              apply invoke \forall y\forall z(in(z,y)\wedge in(y,\alpha)\to in(z,\alpha)) for y:\beta,z:\gamma
+              connect in(\delta,\gamma)\wedge in(\gamma,\alpha)
+              apply invoke \forall y\forall z(in(z,y)\wedge in(y,\alpha)\to in(z,\alpha)) for y:\gamma,z:\delta
+              connect in(\gamma,\alpha)\wedge in(\beta,\alpha)\wedge in(\gamma,\beta)
+              apply invoke leftward mem_characterization_op for X:\alpha,x:\gamma,y:\beta
+              connect in(\delta,\alpha)\wedge in(\gamma,\alpha)\wedge in(\delta,\gamma)
+              apply invoke leftward mem_characterization_op for X:\alpha,x:\delta,y:\gamma
+              connect in(op(\delta,\gamma),mem(\alpha))\wedge in(op(\gamma,\beta),mem(\alpha))
+              expand wellorder(\alpha,mem(\alpha)) for wellorder
+              split 1 orderon(\alpha,mem(\alpha))\wedge\forall A(subset(A,\alpha)\wedge neq(A,emptyset)\to\exists a(minimum(\alpha,mem(\alpha),A,a)))
+              expand orderon(\alpha,mem(\alpha)) for orderon
+              split 2 relon(\alpha,mem(\alpha))\wedge order(mem(\alpha))
+              expand order(mem(\alpha)) for order
+              split 1 transrel(mem(\alpha))\wedge antisymrel(mem(\alpha))
+              expand transrel(mem(\alpha)) for transrel
+              apply invoke \forall x\forall y\forall z(in(op(x,y),mem(\alpha))\wedge in(op(y,z),mem(\alpha))\to in(op(x,z),mem(\alpha))) for x:\delta,y:\gamma,z:\beta
+              apply invoke rightward mem_characterization_op for X:\alpha,x:\delta,y:\beta
+              split 3 in(\delta,\alpha)\wedge in(\beta,\alpha)\wedge in(\delta,\beta)
+            }
+          }
+          fold for trans conclude trans(\beta)
+        }
+      }
+    }
+  }
+}
+
+theorem element_of_ordinal_is_ordinal \forall\alpha(ordinal(\alpha)\to\forall\beta(in(\beta,\alpha)\to ordinal(\beta))) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      any \beta {
+        assume in(\beta,\alpha) {
+          apply invoke element_of_ordinal_is_trans for \alpha:\alpha
+          apply invoke \forall\beta(in(\beta,\alpha)\to trans(\beta)) for \beta:\beta
+          expand ordinal(\alpha) for ordinal
+          split trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge wellorder(\alpha,mem(\alpha))
+          apply invoke rightward trans_cor1 for x:\alpha
+          apply invoke \forall y(in(y,\alpha)\to subset(y,\alpha)) for y:\beta
+          connect irrefrelon(\alpha,mem(\alpha))\wedge subset(\beta,\alpha)
+          apply invoke mem_irrefrelon_subset for X:\alpha,Y:\beta
+          connect wellorder(\alpha,mem(\alpha))\wedge subset(\beta,\alpha)
+          apply invoke mem_wellorder_subset for X:\alpha,Y:\beta
+          connect trans(\beta)\wedge irrefrelon(\beta,mem(\beta))\wedge wellorder(\beta,mem(\beta))
+          fold for ordinal conclude ordinal(\beta)
+        }
+      }
+    }
+  }
+}
+
+theorem ordinal_not_contain_itself \forall\alpha(ordinal(\alpha)\to notin(\alpha,\alpha)) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      expand ordinal(\alpha) for ordinal
+      split 2 trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge wellorder(\alpha,mem(\alpha))
+      expand irrefrelon(\alpha,mem(\alpha)) for irrefrelon
+      split 2 relon(\alpha,mem(\alpha))\wedge irrefrel(mem(\alpha))
+      expand irrefrel(mem(\alpha)) for irrefrel
+      apply \forall x(notin(op(x,x),mem(\alpha))) for x:\alpha
+      deny in(\alpha,\alpha) {
+        connect in(\alpha,\alpha)\wedge in(\alpha,\alpha)\wedge in(\alpha,\alpha)
+        apply invoke leftward mem_characterization_op for X:\alpha,x:\alpha,y:\alpha
+        contradict in(op(\alpha,\alpha),mem(\alpha))
+      }
+    }
+  }
+}
+
+theorem ordinal_seg \forall\alpha(ordinal(\alpha)\to\forall\beta(in(\beta,\alpha)\to equal(seg(\alpha,mem(\alpha),\beta),\beta))) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      any \beta {
+        assume in(\beta,\alpha) {
+          any \gamma {
+            assume in(\gamma,seg(\alpha,mem(\alpha),\beta)) {
+              apply invoke rightward seg_characterization for X:\alpha,R:mem(\alpha),x:\beta,y:\gamma
+              split 3 in(\gamma,\alpha)\wedge neq(\gamma,\beta)\wedge in(op(\gamma,\beta),mem(\alpha))
+              apply invoke rightward mem_characterization_op for X:\alpha,x:\gamma,y:\beta
+              split 3 in(\gamma,\alpha)\wedge in(\beta,\alpha)\wedge in(\gamma,\beta)
+            }
+            assume in(\gamma,\beta) {
+              show in(\gamma,\alpha) {
+                expand ordinal(\alpha) for ordinal
+                split 1 trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge wellorder(\alpha,mem(\alpha))
+                expand trans(\alpha) for trans
+                connect in(\gamma,\beta)\wedge in(\beta,\alpha)
+                apply invoke \forall y\forall z(in(z,y)\wedge in(y,\alpha)\to in(z,\alpha)) for y:\beta,z:\gamma
+              }
+              deny equal(\gamma,\beta) {
+                substitute in(\gamma,\beta) for \gamma:\beta
+                apply invoke element_of_ordinal_is_ordinal for \alpha:\alpha
+                apply invoke \forall\beta(in(\beta,\alpha)\to ordinal(\beta)) for \beta:\beta
+                apply invoke ordinal_not_contain_itself for \alpha:\beta
+                contradict in(\beta,\beta)
+              }
+              show in(op(\gamma,\beta),mem(\alpha)) {
+                connect in(\gamma,\alpha)\wedge in(\beta,\alpha)\wedge in(\gamma,\beta)
+                apply invoke leftward mem_characterization_op for X:\alpha,x:\gamma,y:\beta
+              }
+              connect in(\gamma,\alpha)\wedge neq(\gamma,\beta)\wedge in(op(\gamma,\beta),mem(\alpha))
+              apply invoke leftward seg_characterization for X:\alpha,R:mem(\alpha),x:\beta,y:\gamma              
+            }
+            connect in(\gamma,seg(\alpha,mem(\alpha),\beta))\leftrightarrow in(\gamma,\beta)
+          }
+          fold for equal conclude equal(seg(\alpha,mem(\alpha),\beta),\beta)
+        }
+      }
+    }
+  }
+}
+
+theorem ordinal_minimal \forall\alpha(ordinal(\alpha)\to\forall A(subset(A,\alpha)\wedge neq(A,emptyset)\to\exists\beta(in(\beta,A)\wedge equal(cap(\beta,A),emptyset)))) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      any A {
+        assume subset(A,\alpha)\wedge neq(A,emptyset) {
+          expand ordinal(\alpha) for ordinal
+          split 3 trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge wellorder(\alpha,mem(\alpha))
+          expand wellorder(\alpha,mem(\alpha)) for wellorder
+          split orderon(\alpha,mem(\alpha))\wedge\forall A(subset(A,\alpha)\wedge neq(A,emptyset)\to\exists a(minimum(\alpha,mem(\alpha),A,a)))
+          expand orderon(\alpha,mem(\alpha)) for orderon
+          split relon(\alpha,mem(\alpha))\wedge order(mem(\alpha))
+          expand order(mem(\alpha)) for order
+          split transrel(mem(\alpha))\wedge antisymrel(mem(\alpha))
+          apply invoke \forall A(subset(A,\alpha)\wedge neq(A,emptyset)\to\exists a(minimum(\alpha,mem(\alpha),A,a))) for A:A
+          some a:\beta such \exists a(minimum(\alpha,mem(\alpha),A,a)) {
+            expand minimum(\alpha,mem(\alpha),A,\beta) for minimum
+            split subset(A,\alpha)\wedge in(\beta,A)\wedge\forall x(in(x,A)\wedge neq(x,\beta)\to in(op(\beta,x),mem(\alpha)))
+            connect in(\beta,A)\wedge subset(A,\alpha)
+            apply invoke subset_cor1 for z:\beta,x:A,y:\alpha
+            connect antisymrel(mem(\alpha))\wedge minimum(\alpha,mem(\alpha),A,\beta)
+            apply invoke minimum_implies_minimal for X:\alpha,R:mem(\alpha),A:A,a:\beta
+            apply invoke rightward minimal_equivalence for X:\alpha,R:mem(\alpha),A:A,a:\beta
+            split subset(A,\alpha)\wedge in(\beta,A)\wedge equal(cap(seg(\alpha,mem(\alpha),\beta),A),emptyset)
+            apply invoke ordinal_seg for \alpha:\alpha
+            apply invoke \forall\beta(in(\beta,\alpha)\to equal(seg(\alpha,mem(\alpha),\beta),\beta)) for \beta:\beta
+            substitute equal(cap(seg(\alpha,mem(\alpha),\beta),A),emptyset) for seg(\alpha,mem(\alpha),\beta):\beta
+            connect in(\beta,A)\wedge equal(cap(\beta,A),emptyset)
+            lift for \beta:\beta conclude \exists\beta(in(\beta,A)\wedge equal(cap(\beta,A),emptyset))
+          }
+        }
+      }
+    }
+  }
+}
+
+theorem ordianl_trans \forall\alpha\forall\beta\forall\gamma(ordinal(\alpha)\wedge in(\gamma,\beta)\wedge in(\beta,\alpha)\to in(\gamma,\alpha)) {
+  any \alpha,\beta,\gamma {
+    assume ordinal(\alpha)\wedge in(\gamma,\beta)\wedge in(\beta,\alpha) {
+      split ordinal(\alpha)\wedge in(\gamma,\beta)\wedge in(\beta,\alpha)
+      expand ordinal(\alpha) for ordinal
+      split 1 trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge wellorder(\alpha,mem(\alpha))
+      expand trans(\alpha) for trans
+      connect in(\gamma,\beta)\wedge in(\beta,\alpha)
+      apply invoke \forall y\forall z(in(z,y)\wedge in(y,\alpha)\to in(z,\alpha)) for y:\beta,z:\gamma
+    }
+  }
+}
+
+theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to\forall\beta(subsetneq(\beta,\alpha)\wedge ordinal(\beta)\to in(\beta,\alpha))) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      any \beta {
+        assume subsetneq(\beta,\alpha)\wedge ordinal(\beta) {
+          split subsetneq(\beta,\alpha)\wedge ordinal(\beta)
+          apply setminus_is_subset for x:\alpha,y:\beta
+          apply invoke setminus_of_set_and_subsetneq for x:\alpha,y:\beta
+          connect subset(setminus(\alpha,\beta),\alpha)\wedge neq(setminus(\alpha,\beta),emptyset)
+          expand ordinal(\alpha) for ordinal
+          split trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge wellorder(\alpha,mem(\alpha))
+          expand wellorder(\alpha,mem(\alpha)) for wellorder
+          split orderon(\alpha,mem(\alpha))\wedge\forall A(subset(A,\alpha)\wedge neq(A,emptyset)\to\exists a(minimum(\alpha,mem(\alpha),A,a)))
+          apply invoke \forall A(subset(A,\alpha)\wedge neq(A,emptyset)\to\exists a(minimum(\alpha,mem(\alpha),A,a))) for A:setminus(\alpha,\beta)
+          some a:\gamma such \exists a(minimum(\alpha,mem(\alpha),setminus(\alpha,\beta),a)) {
+            expand minimum(\alpha,mem(\alpha),setminus(\alpha,\beta),\gamma) for minimum
+            split subset(setminus(\alpha,\beta),\alpha)\wedge in(\gamma,setminus(\alpha,\beta))\wedge\forall x(in(x,setminus(\alpha,\beta))\wedge neq(x,\gamma)\to in(op(\gamma,x),mem(\alpha)))
+            apply invoke rightward setminus_characterization for x:\alpha,y:\beta,z:\gamma
+            split in(\gamma,\alpha)\wedge notin(\gamma,\beta)
+            any \delta {
+              assume in(\delta,\gamma) {
+                deny notin(\delta,\beta) {
+                  connect in(\delta,\gamma)\wedge in(\gamma,\alpha)
+                  expand trans(\alpha) for trans
+                  apply invoke \forall y\forall z(in(z,y)\wedge in(y,\alpha)\to in(z,\alpha)) for y:\gamma,z:\delta
+                  connect in(\delta,\alpha)\wedge notin(\delta,\beta)
+                  apply invoke leftward setminus_characterization for x:\alpha,y:\beta,z:\delta
+                  connect in(\delta,\gamma)\wedge in(\delta,\alpha)\wedge in(\gamma,\alpha)
+                  apply invoke leftward mem_characterization_op for X:\alpha,x:\delta,y:\gamma
+                  show neq(\delta,\gamma) {
+                    expand irrefrelon(\alpha,mem(\alpha)) for irrefrelon
+                    split 2 relon(\alpha,mem(\alpha))\wedge irrefrel(mem(\alpha))
+                    expand irrefrel(mem(\alpha)) for irrefrel
+                    deny equal(\delta,\gamma) {
+                      substitute in(op(\delta,\gamma),mem(\alpha)) for \delta:\gamma
+                      apply \forall x(notin(op(x,x),mem(\alpha))) for x:\gamma
+                      contradict in(op(\gamma,\gamma),mem(\alpha))
+                    }
+                  }
+                  connect in(\delta,setminus(\alpha,\beta))\wedge neq(\delta,\gamma)
+                  apply invoke \forall x(in(x,setminus(\alpha,\beta))\wedge neq(x,\gamma)\to in(op(\gamma,x),mem(\alpha))) for x:\delta
+                  connect in(op(\delta,\gamma),mem(\alpha))\wedge in(op(\gamma,\delta),mem(\alpha))
+                  expand orderon(\alpha,mem(\alpha)) for orderon
+                  split relon(\alpha,mem(\alpha))\wedge order(mem(\alpha))
+                  expand order(mem(\alpha)) for order
+                  split 2 transrel(mem(\alpha))\wedge antisymrel(mem(\alpha))
+                  expand antisymrel(mem(\alpha)) for antisymrel
+                  apply invoke \forall x\forall y(in(op(x,y),mem(\alpha))\wedge in(op(y,x),mem(\alpha))\to equal(x,y)) for x:\delta,y:\gamma
+                  contradict equal(\delta,\gamma)
+                }
+              }
+              assume in(\delta,\beta) {
+                expand subsetneq(\beta,\alpha) for subsetneq
+                split 1 subset(\beta,\alpha)\wedge neq(\beta,\alpha)
+                connect in(\delta,\beta)\wedge subset(\beta,\alpha)
+                apply invoke subset_cor1 for z:\delta,x:\beta,y:\alpha
+                connect in(\delta,\alpha)\wedge in(\gamma,\alpha)
+                apply invoke wellorder_implies_linorder for X:\alpha,R:mem(\alpha)
+                expand linorder(\alpha,mem(\alpha)) for linorder
+                split 2 orderon(\alpha,mem(\alpha))\wedge\forall x\forall y(in(x,\alpha)\wedge in(y,\alpha)\to in(op(x,y),mem(\alpha))\vee equal(x,y)\vee in(op(y,x),mem(\alpha)))
+                apply invoke \forall x\forall y(in(x,\alpha)\wedge in(y,\alpha)\to in(op(x,y),mem(\alpha))\vee equal(x,y)\vee in(op(y,x),mem(\alpha))) for x:\delta,y:\gamma
+                divide in(op(\delta,\gamma),mem(\alpha))\vee equal(\delta,\gamma)\vee in(op(\gamma,\delta),mem(\alpha))
+                  case in(op(\delta,\gamma),mem(\alpha)) {}
+                  case equal(\delta,\gamma) {
+                    substitute in(\delta,\beta) for \delta:\gamma
+                    contradict in(\gamma,\beta)
+                    explode in(op(\delta,\gamma),mem(\alpha))
+                  }
+                  case in(op(\gamma,\delta),mem(\alpha)) {
+                    apply invoke rightward mem_characterization_op for X:\alpha,x:\gamma,y:\delta
+                    split 3 in(\gamma,\alpha)\wedge in(\delta,\alpha)\wedge in(\gamma,\delta)
+                    connect in(\gamma,\delta)\wedge in(\delta,\beta)
+                    expand ordinal(\beta) for ordinal
+                    split 1 trans(\beta)\wedge irrefrelon(\beta,mem(\beta))\wedge wellorder(\beta,mem(\beta))
+                    expand trans(\beta) for trans
+                    apply invoke \forall y\forall z(in(z,y)\wedge in(y,\beta)\to in(z,\beta)) for y:\delta,z:\gamma
+                    contradict in(\gamma,\beta)
+                    explode in(op(\delta,\gamma),mem(\alpha))
+                  }
+                  apply invoke rightward mem_characterization_op for X:\alpha,x:\delta,y:\gamma
+                  split 3 in(\delta,\alpha)\wedge in(\gamma,\alpha)\wedge in(\delta,\gamma)
+              }
+              connect in(\delta,\gamma)\leftrightarrow in(\delta,\beta)
+            }
+            fold for equal conclude equal(\gamma,\beta)
+            substitute in(\gamma,\alpha) for \gamma:\beta
+          }
+        }
+      }
+    }
+  }
+}

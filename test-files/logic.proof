@@ -74,3 +74,43 @@ theorem neg_implication \forall^T\phi[0]\forall^T\psi[0](\neg(\phi\to\psi)\leftr
     connect \neg(\phi\to\psi)\leftrightarrow\phi\wedge\neg(\psi)
   }
 }
+
+theorem neg_or \forall^T\phi[0]\forall^T\psi[0](\neg(\phi\vee\psi)\leftrightarrow\neg(\phi)\wedge\neg(\psi)) {
+  any template \phi[0], template \psi[0] {
+    assume \neg(\phi\vee\psi) {
+      deny \phi {
+        pad \phi conclude \phi\vee\psi
+        contradict \phi\vee\psi
+      }
+      deny \psi {
+        pad \psi conclude \phi\vee\psi
+        contradict \phi\vee\psi
+      }
+      connect \neg(\phi)\wedge\neg(\psi)
+    }
+    assume \neg(\phi)\wedge\neg(\psi) {
+      split \neg(\phi)\wedge\neg(\psi)
+      deny \phi\vee\psi {
+        divide \phi\vee\psi
+          case \phi {
+            contradict \phi
+          }
+          case \psi {
+            contradict \psi
+          }
+      }
+    }
+    connect \neg(\phi\vee\psi)\leftrightarrow\neg(\phi)\wedge\neg(\psi)
+  }
+}
+
+theorem law_of_excluded_middle \forall^T\phi[0](\phi\vee\neg(\phi)) {
+  any template \phi[0] {
+    deny \neg(\phi\vee\neg(\phi)) {
+      apply invoke rightward neg_or for \phi:lambda.\phi,\psi:lambda.\neg(\phi)
+      split 2 \neg(\phi)\wedge\phi
+      pad \phi conclude \phi\vee\neg(\phi)
+      contradict \phi\vee\neg(\phi)
+    }
+  }
+}
