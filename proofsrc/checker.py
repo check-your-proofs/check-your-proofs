@@ -1,5 +1,5 @@
 from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, Lambda, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold
-from logic_utils import Substitutor, DefExpander, expr_in_context, collect_quantifier_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr
+from logic_utils import Substitutor, DefExpander, expr_in_context, collect_quantifier_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr, alpha_rename_formula
 from copy import deepcopy
 
 import logging
@@ -639,8 +639,23 @@ def check_apply(node: Apply, context: Context, indent: int):
                 return False
             logger.debug(f"{debug_prefix}arity of {item.name} is {item.arity}, args of Lambda are {",".join([arg.name for arg in v.args])}")
         env[item] = v
+    used_vars: set[Var | Template] = set()
+    for value in env.values():
+        used_vars.update(collect_vars(value)[0])
+    rename_map: dict[Term, Term] = {}
+    new_env: dict[Term, Term] = {}
+    for item in env:
+        if item in used_vars:
+            new_item = fresh_var(item, used_vars)
+            used_vars.add(new_item)
+            rename_map[item] = new_item
+            new_env[new_item] = env[item]
+        else:
+            new_env[item] = env[item]
+    if rename_map:
+        body = alpha_rename_formula(body, rename_map)
     logger.debug(f"{debug_prefix}Instantiable: env={env}")
-    subst = Substitutor(env)
+    subst = Substitutor(new_env)
     instantiation = subst.substitute_formula(body)
     logger.debug(f"{debug_prefix}\\forall-elimination is done: instantiation={pretty_expr(instantiation, context)}")
     if node.invoke == "none":

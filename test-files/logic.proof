@@ -21,8 +21,8 @@ theorem neg_exist_leftrightarrow_forall_neg \forall^T\phi[1](\neg(\exists x(\phi
 }
 
 theorem neg_exist_neg_leftrightarrow_forall \forall^T\phi[1](\neg(\exists x(\neg(\phi(x))))\leftrightarrow\forall x(\phi(x))) {
-  any template \psi[1] {
-    apply neg_exist_leftrightarrow_forall_neg for \phi:lambda x.\neg(\psi(x))
+  any template \phi[1] {
+    apply neg_exist_leftrightarrow_forall_neg for \phi:lambda x.\neg(\phi(x))
   }
 }
 

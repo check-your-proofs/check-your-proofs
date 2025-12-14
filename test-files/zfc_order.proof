@@ -18,6 +18,22 @@ definition predicate irrefrelon(X,R) as relon(X,R)\wedge irrefrel(R)
 
 definition predicate linordon(X,R) as orderon(X,R)\wedge\forall x\forall y(in(x,X)\wedge in(y,X)\to in(op(x,y),R)\vee equal(x,y)\vee in(op(y,x),R))
 
+definition function seg(X,R,x) as sep(X,lambda y.neq(y,x)\wedge in(op(y,x),R))
+
+theorem seg_characterization \forall X\forall R\forall x\forall y(in(y,seg(X,R,x))\leftrightarrow in(y,X)\wedge neq(y,x)\wedge in(op(y,x),R)) {
+  any X,R,x,y {
+    assume in(y,seg(X,R,x)) {
+      expand in(y,seg(X,R,x)) for seg
+      apply invoke rightward sep_existence for x:X,\phi:lambda y.neq(y,x)\wedge in(op(y,x),R),z:y
+    }
+    assume in(y,X)\wedge neq(y,x)\wedge in(op(y,x),R) {
+      apply invoke leftward sep_existence for x:X,\phi:lambda y.neq(y,x)\wedge in(op(y,x),R),z:y
+      fold for seg conclude in(y,seg(X,R,x))
+    }
+    connect in(y,seg(X,R,x))\leftrightarrow in(y,X)\wedge neq(y,x)\wedge in(op(y,x),R)
+  }
+}
+
 definition predicate minimal(X,R,A,a) as subset(A,X)\wedge in(a,A)\wedge\forall x(in(x,A)\wedge neq(x,a)\to notin(op(x,a),R))
 
 definition predicate minimum(X,R,A,a) as subset(A,X)\wedge in(a,A)\wedge\forall x(in(x,A)\wedge neq(x,a)\to in(op(a,x),R))
