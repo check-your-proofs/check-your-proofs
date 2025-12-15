@@ -251,16 +251,3 @@ theorem test25 \neg(\exists x\exists y(in(x,y)))\to\forall x\forall y(\neg(in(x,
     }
   }
 }
-
-theorem contrapositive_is_equivalent \forall^T\phi[0]\forall^T\psi[0]((\phi\to\psi)\to(\neg(\psi)\to\neg(\phi))) {
-  any template \phi[0], template \psi[0] {
-    assume \phi\to\psi {
-      assume \neg(\psi) {
-        deny \phi {
-          invoke \phi\to\psi
-          contradict \psi
-        }
-      }
-    }
-  }
-}

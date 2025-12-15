@@ -104,6 +104,31 @@ theorem neg_or \forall^T\phi[0]\forall^T\psi[0](\neg(\phi\vee\psi)\leftrightarro
   }
 }
 
+theorem neg_and \forall^T\phi[0]\forall^T\psi[0](\neg(\phi\wedge\psi)\leftrightarrow\neg(\phi)\vee\neg(\psi)) {
+  any template \phi[0], template \psi[0] {
+    assume \neg(\phi\wedge\psi) {
+      deny \neg(\neg(\phi)\vee\neg(\psi)) {
+        apply invoke rightward neg_or for \phi:lambda.\neg(\phi),\psi:lambda.\neg(\psi)
+        split \phi\wedge\psi
+        contradict \phi\wedge\psi
+      }
+    }
+    assume \neg(\phi)\vee\neg(\psi) {
+      deny \phi\wedge\psi {
+        split \phi\wedge\psi
+        divide \neg(\phi)\vee\neg(\psi)
+          case \neg(\phi) {
+            contradict \phi
+          }
+          case \neg(\psi) {
+            contradict \psi
+          }
+      }
+    }
+    connect \neg(\phi\wedge\psi)\leftrightarrow\neg(\phi)\vee\neg(\psi)
+  }
+}
+
 theorem law_of_excluded_middle \forall^T\phi[0](\phi\vee\neg(\phi)) {
   any template \phi[0] {
     deny \neg(\phi\vee\neg(\phi)) {
@@ -111,6 +136,30 @@ theorem law_of_excluded_middle \forall^T\phi[0](\phi\vee\neg(\phi)) {
       split 2 \neg(\phi)\wedge\phi
       pad \phi conclude \phi\vee\neg(\phi)
       contradict \phi\vee\neg(\phi)
+    }
+  }
+}
+
+theorem contrapositive_is_equivalent \forall^T\phi[0]\forall^T\psi[0]((\phi\to\psi)\to(\neg(\psi)\to\neg(\phi))) {
+  any template \phi[0], template \psi[0] {
+    assume \phi\to\psi {
+      assume \neg(\psi) {
+        deny \phi {
+          invoke \phi\to\psi
+          contradict \psi
+        }
+      }
+    }
+  }
+}
+
+theorem neg_iff \forall^T\phi[0]\forall^T\psi[0]((\phi\leftrightarrow\psi)\to(\neg(\phi)\leftrightarrow\neg(\psi))) {
+  any template \phi[0], template \psi[0] {
+    assume \phi\leftrightarrow\psi {
+      split \phi\leftrightarrow\psi
+      apply invoke contrapositive_is_equivalent for \phi:\phi,\psi:\psi
+      apply invoke contrapositive_is_equivalent for \phi:\psi,\psi:\phi
+      connect \neg(\phi)\leftrightarrow\neg(\psi)
     }
   }
 }

@@ -63,7 +63,7 @@ theorem pair_commutativity \forall x\forall y(equal(pair(x,y),pair(y,x))) {
     apply pair_cor3 for x:x,y:y
     apply pair_cor3 for x:y,y:x
     connect subset(pair(x,y),pair(y,x))\wedge subset(pair(y,x),pair(x,y))
-    apply invoke subset_antisymmetry for x:pair(x,y),y:pair(y,x)
+    apply invoke rightward subset_antisymmetry for x:pair(x,y),y:pair(y,x)
   }
 }
 

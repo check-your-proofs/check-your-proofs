@@ -153,6 +153,115 @@ theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrigh
   }
 }
 
+theorem cap_commutatvity \forall x\forall y(equal(cap(x,y),cap(y,x))) {
+  any x,y {
+    any z {
+      assume in(z,cap(x,y)) {
+        apply invoke rightward cap_characterization for x:x,y:y,z:z
+        apply invoke leftward cap_characterization for x:y,y:x,z:z
+      }
+      assume in(z,cap(y,x)) {
+        apply invoke rightward cap_characterization for x:y,y:x,z:z
+        apply invoke leftward cap_characterization for x:x,y:y,z:z
+      }
+      connect in(z,cap(x,y))\leftrightarrow in(z,cap(y,x))
+    }
+    fold for equal conclude equal(cap(x,y),cap(y,x))
+  }
+}
+
+theorem cap_is_subset_left \forall x\forall y(subset(cap(x,y),x)) {
+  any x,y {
+    any z {
+      assume in(z,cap(x,y)) {
+        apply invoke rightward cap_characterization for x:x,y:y,z:z
+        split 1 in(z,x)\wedge in(z,y)
+      }
+    }
+    fold for subset conclude subset(cap(x,y),x)
+  }
+}
+
+theorem cap_is_subset_right \forall x\forall y(subset(cap(x,y),y)) {
+  any x,y {
+    any z {
+      assume in(z,cap(x,y)) {
+        apply invoke rightward cap_characterization for x:x,y:y,z:z
+        split 2 in(z,x)\wedge in(z,y)
+      }
+    }
+    fold for subset conclude subset(cap(x,y),y)
+  }
+}
+
+theorem cap_iff_subset \forall x\forall y(equal(cap(x,y),x)\leftrightarrow subset(x,y)) {
+  any x,y {
+    assume equal(cap(x,y),x) {
+      any z {
+        assume in(z,x) {
+          substitute in(z,x) for x:cap(x,y)
+          apply invoke rightward cap_characterization for x:x,y:y,z:z
+          split 2 in(z,x)\wedge in(z,y)
+        }
+      }
+      fold for subset conclude subset(x,y)
+    }
+    assume subset(x,y) {
+      any z {
+        assume in(z,cap(x,y)) {
+          apply invoke rightward cap_characterization for x:x,y:y,z:z
+          split 1 in(z,x)\wedge in(z,y)
+        }
+        assume in(z,x) {
+          connect in(z,x)\wedge subset(x,y)
+          apply invoke subset_cor1 for z:z,x:x,y:y
+          connect in(z,x)\wedge in(z,y)
+          apply invoke leftward cap_characterization for x:x,y:y,z:z
+        }
+        connect in(z,cap(x,y))\leftrightarrow in(z,x)
+      }
+      fold for equal conclude equal(cap(x,y),x)
+    }
+    connect equal(cap(x,y),x)\leftrightarrow subset(x,y)
+  }
+}
+
+theorem neq_cap_iff_neg_subset \forall x\forall y(neq(cap(x,y),x)\leftrightarrow\neg(subset(x,y))) {
+  any x,y {
+    apply cap_iff_subset for x:x,y:y
+    apply invoke neg_iff for \phi:lambda.equal(cap(x,y),x),\psi:lambda.subset(x,y)
+  }
+}
+
+theorem cap_subsetneq_iff_neq_cap \forall x\forall y(subsetneq(cap(x,y),x)\leftrightarrow neq(cap(x,y),x)) {
+  any x,y {
+    assume subsetneq(cap(x,y),x) {
+      expand subsetneq(cap(x,y),x) for subsetneq
+      split 2 subset(cap(x,y),x)\wedge neq(cap(x,y),x)
+    }
+    assume neq(cap(x,y),x) {
+      apply cap_is_subset_left for x:x,y:y
+      connect subset(cap(x,y),x)\wedge neq(cap(x,y),x)
+      fold for subsetneq conclude subsetneq(cap(x,y),x)
+    }
+    connect subsetneq(cap(x,y),x)\leftrightarrow neq(cap(x,y),x)
+  }
+}
+
+theorem cap_subsetneq_iff_neg_subset \forall x\forall y(subsetneq(cap(x,y),x)\leftrightarrow\neg(subset(x,y))) {
+  any x,y {
+    assume subsetneq(cap(x,y),x) {
+      apply invoke rightward cap_subsetneq_iff_neq_cap for x:x,y:y
+      apply invoke rightward neq_cap_iff_neg_subset for x:x,y:y
+    }
+    assume \neg(subset(x,y)) {
+      apply invoke leftward neq_cap_iff_neg_subset for x:x,y:y
+      apply invoke leftward cap_subsetneq_iff_neq_cap for x:x,y:y
+    }
+    connect subsetneq(cap(x,y),x)\leftrightarrow\neg(subset(x,y))
+  }
+}
+
 definition function setminus(x,y) as sep(x,lambda z.notin(z,y)) tex "","\setminus",""
 
 theorem setminus_characterization \forall x\forall y\forall z(in(z,setminus(x,y))\leftrightarrow in(z,x)\wedge notin(z,y)) {
@@ -189,7 +298,7 @@ theorem setminus_of_set_and_subsetneq \forall x\forall y(subsetneq(y,x)\to neq(s
       deny \forall z(in(z,x)\to in(z,y)) {
         fold for subset conclude subset(x,y)
         connect subset(x,y)\wedge subset(y,x)
-        apply invoke subset_antisymmetry for x:x,y:y
+        apply invoke rightward subset_antisymmetry for x:x,y:y
         contradict equal(x,y)
       }
       apply invoke leftward exist_neg_leftrightarrow_neg_forall for \phi:lambda z.in(z,x)\to in(z,y)

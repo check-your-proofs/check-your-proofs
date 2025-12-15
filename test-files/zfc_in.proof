@@ -174,7 +174,7 @@ theorem subset_reflection \forall x(subset(x,x)) {
   }
 }
 
-theorem subset_antisymmetry \forall x\forall y(subset(x,y)\wedge subset(y,x)\to equal(x,y)) {
+theorem subset_antisymmetry \forall x\forall y(subset(x,y)\wedge subset(y,x)\leftrightarrow equal(x,y)) {
   any x,y {
     assume subset(x,y)\wedge subset(y,x) {
       any z {
@@ -192,6 +192,23 @@ theorem subset_antisymmetry \forall x\forall y(subset(x,y)\wedge subset(y,x)\to 
       }
       fold for equal conclude equal(x,y)
     }
+    assume equal(x,y) {
+      expand equal(x,y) for equal
+      any z {
+        assume in(z,x) {
+          apply invoke rightward \forall z(in(z,x)\leftrightarrow in(z,y)) for z:z
+        }
+      }
+      fold for subset conclude subset(x,y)
+      any z {
+        assume in(z,y) {
+          apply invoke leftward \forall z(in(z,x)\leftrightarrow in(z,y)) for z:z
+        }
+      }
+      fold for subset conclude subset(y,x)
+      connect subset(x,y)\wedge subset(y,x)
+    }
+    connect subset(x,y)\wedge subset(y,x)\leftrightarrow equal(x,y)
   }
 }
 
@@ -212,4 +229,71 @@ theorem subset_trans \forall x\forall y\forall z(subset(x,y)\wedge subset(y,z)\t
   }
 }
 
+theorem neg_subset \forall x\forall y(\neg(subset(x,y))\leftrightarrow\exists z(in(z,x)\wedge notin(z,y))) {
+  any x,y {
+    assume \neg(subset(x,y)) {
+      expand \neg(subset(x,y)) for subset
+      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \phi:lambda z.in(z,x)\to in(z,y)
+      some z:z such \exists z(\neg(in(z,x)\to in(z,y))) {
+        apply invoke rightward neg_implication for \phi:lambda.in(z,x),\psi:lambda.in(z,y)
+        lift for z:z conclude \exists z(in(z,x)\wedge notin(z,y))
+      }
+    }
+    assume \exists z(in(z,x)\wedge notin(z,y)) {
+      some z:z such \exists z(in(z,x)\wedge notin(z,y)) {
+        apply invoke leftward neg_implication for \phi:lambda.in(z,x),\psi:lambda.in(z,y)
+        lift for z:z conclude \exists z(\neg(in(z,x)\to in(z,y)))
+      }
+      apply invoke rightward exist_neg_leftrightarrow_neg_forall for \phi:lambda z.in(z,x)\to in(z,y)
+      fold for subset conclude \neg(subset(x,y))
+    }
+    connect \neg(subset(x,y))\leftrightarrow\exists z(in(z,x)\wedge notin(z,y))
+  }
+}
+
+theorem neq_iff_subset \forall x\forall y(neq(x,y)\leftrightarrow\neg(subset(x,y))\vee\neg(subset(y,x))) {
+  any x,y {
+    apply subset_antisymmetry for x:x,y:y
+    apply invoke neg_iff for \phi:lambda.subset(x,y)\wedge subset(y,x),\psi:lambda.equal(x,y)
+    assume neq(x,y) {
+      invoke leftward \neg(subset(x,y)\wedge subset(y,x))\leftrightarrow neq(x,y)
+      apply invoke rightward neg_and for \phi:lambda.subset(x,y),\psi:lambda.subset(y,x)
+    }
+    assume \neg(subset(x,y))\vee\neg(subset(y,x)) {
+      apply invoke leftward neg_and for \phi:lambda.subset(x,y),\psi:lambda.subset(y,x)
+      invoke rightward \neg(subset(x,y)\wedge subset(y,x))\leftrightarrow neq(x,y)
+    }
+    connect neq(x,y)\leftrightarrow\neg(subset(x,y))\vee\neg(subset(y,x))
+  }
+}
+
 definition predicate subsetneq(x,y) as subset(x,y)\wedge neq(x,y) tex "","\subsetneq",""
+
+theorem subset_subsetneq \forall x\forall y(subset(x,y)\leftrightarrow subsetneq(x,y)\vee equal(x,y)) {
+  any x,y {
+    assume subset(x,y) {
+      apply law_of_excluded_middle for \phi:lambda.equal(x,y)
+      divide equal(x,y)\vee neq(x,y)
+        case equal(x,y) {
+          pad equal(x,y) conclude subsetneq(x,y)\vee equal(x,y)
+        }
+        case neq(x,y) {
+          connect subset(x,y)\wedge neq(x,y)
+          fold for subsetneq conclude subsetneq(x,y)
+          pad subsetneq(x,y) conclude subsetneq(x,y)\vee equal(x,y)
+        }
+    }
+    assume subsetneq(x,y)\vee equal(x,y) {
+      divide subsetneq(x,y)\vee equal(x,y)
+        case subsetneq(x,y) {
+          expand subsetneq(x,y) for subsetneq
+          split 1 subset(x,y)\wedge neq(x,y)
+        }
+        case equal(x,y) {
+          apply invoke leftward subset_antisymmetry for x:x,y:y
+          split 1 subset(x,y)\wedge subset(y,x)
+        }
+    }
+    connect subset(x,y)\leftrightarrow subsetneq(x,y)\vee equal(x,y)
+  }
+}
