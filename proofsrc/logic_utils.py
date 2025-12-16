@@ -419,6 +419,8 @@ def alpha_rename_term(expr: Term, rename_map: dict[Var | Template, Var | Templat
         return expr
     elif isinstance(expr, Compound):
         return Compound(expr.fun, tuple(alpha_rename_term(a, rename_map) for a in expr.args))
+    elif isinstance(expr, Lambda):
+        return Lambda(tuple(alpha_rename_term(a, rename_map) for a in expr.args), alpha_rename_formula(expr.body, rename_map))
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 

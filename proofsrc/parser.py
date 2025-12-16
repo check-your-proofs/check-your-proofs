@@ -97,10 +97,10 @@ class Parser:
             autoexpand =False
         name = self.stream.consume("IDENT").value
         self.stream.consume("LPAREN")
-        args = self.parse_vars()
+        args, local_vars, local_templates = self.parse_vars_or_templates()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        formula = self.parse_formula(context.add_form(args, []))
+        formula = self.parse_formula(context.add_form(local_vars, local_templates))
         tex = self.parse_or_create_tex(name, len(args))
         if len(tex) != len(args) + 1:
             raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
@@ -724,6 +724,13 @@ class Parser:
                     if len(args) != arity:
                         raise SyntaxError(f"{tok.info()} arity of {name} is {arity}, but lenfth of args is {len(args)}")
                 return Compound(Fun(name), args)
+            elif name in context.decl.primpreds or name in context.decl.defpreds:
+                if name in context.decl.primpreds:
+                    arity = context.decl.primpreds[name].arity
+                else:
+                    arity = len(context.decl.defpreds[name].args)
+                args = [Var(f"x_{i}") for i in range(arity)]
+                return Lambda(tuple(args), Symbol(Pred(name), tuple(args)))
             else:
                 raise SyntaxError(f"{tok.info()} Term object is required, but {name} is unknown")
         elif tok.type == "LAMBDA":

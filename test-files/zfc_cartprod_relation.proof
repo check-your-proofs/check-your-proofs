@@ -1,4 +1,4 @@
-include "zfc_separation.proof"
+include "zfc_cartprod.proof"
 
 definition predicate rel(R) as \forall z(in(z,R)\to\exists x\exists y(equal(z,op(x,y))))
 

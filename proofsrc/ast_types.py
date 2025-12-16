@@ -30,7 +30,7 @@ class Var(Term):
 class Formula:
     pass
 
-@dataclass
+@dataclass(frozen=True)
 class Pred:
     name: str
 
@@ -287,7 +287,7 @@ class Theorem(Declaration):
 
 @dataclass
 class DefPred(Declaration):
-    args: list[Var]
+    args: list[Var | Template]
     formula: Formula
     autoexpand: bool
     tex: list[str]
