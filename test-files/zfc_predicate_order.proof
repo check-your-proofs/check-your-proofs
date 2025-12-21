@@ -303,13 +303,3 @@ theorem wellorder_subset \forall X\forall^T\psi[2]\forall Y(wellorder(X,\psi)\we
     }
   }
 }
-
-definition predicate trans(x) as \forall y\forall z(in(z,y)\wedge in(y,x)\to in(z,x))
-
-definition predicate ordinal(\alpha) as trans(\alpha)\wedge irrefrelon(\alpha,lambda x,y.in(x,y))\wedge wellorder(\alpha,lambda x,y.in(x,y))
-
-definition predicate sucordinal(\alpha) as ordinal(\alpha)\wedge\exists\beta(ordinal(\beta)\wedge\forall\gamma(in(\gamma,\alpha)\leftrightarrow in(\gamma,\beta)\vee equal(\gamma,\beta)))
-
-definition predicate natural(n) as (\forall x(notin(x,n))\vee(sucordinal(n)))\wedge\forall m(in(m,n)\to\forall x(notin(x,m))\vee sucordinal(m))
-
-/*definition predicate finite(x) as \exists n\exists^T\psi[2](natural(n)\wedge\forall m(in(m,n)\to\exists!a(in(a,x)\wedge\psi(m,a)))\wedge\forall a(in(a,x)\to\exists!a(in(a,n)\wedge\psi(a,m))))*/
