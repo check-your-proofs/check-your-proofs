@@ -589,12 +589,12 @@ class Renderer:
         header_parts = [self.bullet,
                         self.render_keyword("characterize"),
                         self.render_keyword("for"),
-                        self.render_expr_dict(node.env),
+                        self.render_expr(node.term),
                         self.render_keyword("conclude"),
                         self.render_expr(node.conclusion)]
         header_parts_jp = [self.bullet,
-                           "、".join([self.render_expr(v) + "を" + self.render_expr(k) + "に" for k, v in node.env.items()]),
-                           "置き換えて",
+                           self.render_expr(node.term),
+                           "を置き換えて",
                            self.render_expr(node.conclusion),
                            "を得る。"]
         return header_parts, header_parts_jp, ""

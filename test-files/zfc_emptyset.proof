@@ -3,17 +3,17 @@ include "zfc_in.proof"
 axiom axiom_of_emptyset \exists x\forall y(notin(y,x))
 
 theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {
-  some x:x such axiom_of_emptyset {
+  some x such axiom_of_emptyset {
     any x' {
       assume \forall y(notin(y,x')) {
         any y {
           assume in(y,x') {
-            apply \forall y(notin(y,x')) for y:y
+            apply \forall y(notin(y,x')) for y
             contradict in(y,x')
             explode in(y,x)
           }
           assume in(y,x) {
-            apply \forall y(notin(y,x)) for y:y
+            apply \forall y(notin(y,x)) for y
             contradict in(y,x)
             explode in(y,x')
           }
@@ -23,7 +23,7 @@ theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {
       }
     }
     connect \forall y(notin(y,x))\wedge\forall x'(\forall y(notin(y,x'))\to equal(x',x))
-    characterize for x:x conclude \exists!x\forall y(notin(y,x))
+    characterize for x conclude \exists!x\forall y(notin(y,x))
   }
 }
 
@@ -37,11 +37,11 @@ theorem not_emptyset_has_a_member \forall x(neq(x, emptyset)\to\exists y(in(y,x)
       deny \neg(\exists y(in(y,x))) {
         any y {
           deny in(y,x) {
-            lift for y:y conclude \exists y(in(y,x))
+            lift for y conclude \exists y(in(y,x))
             contradict \exists y(in(y,x))
           }
         }
-        apply emptyset_uniqueness for x:x
+        apply emptyset_uniqueness for x
         invoke \forall y(notin(y,x))\to equal(x,emptyset)
         contradict equal(x,emptyset)
       }
@@ -54,8 +54,8 @@ theorem has_a_member_not_emptyset \forall x(\exists y(in(y,x))\to neq(x,emptyset
     assume \exists y(in(y,x)) {
       deny equal(x,emptyset) {
         substitute \exists y(in(y,x)) for x:emptyset
-        some y:y such \exists y(in(y,emptyset)) {
-          apply emptyset_existence for y:y
+        some y such \exists y(in(y,emptyset)) {
+          apply emptyset_existence for y
           contradict in(y,emptyset)
         }
       }
@@ -69,13 +69,13 @@ theorem emptyset_subset_cor1 \forall x(subset(x,emptyset)\to equal(x,emptyset)) 
       expand subset(x,emptyset) for subset
       any y {
         deny in(y,x) {
-          apply \forall z(in(z,x)\to in(z,emptyset)) for z:y
+          apply \forall z(in(z,x)\to in(z,emptyset)) for y
           invoke in(y,x)\to in(y,emptyset)
-          apply emptyset_existence for y:y
+          apply emptyset_existence for y
           contradict in(y,emptyset)
         }
       }
-      apply emptyset_uniqueness for x:x
+      apply emptyset_uniqueness for x
       invoke \forall y(notin(y,x))\to equal(x,emptyset)
     }
   }

@@ -4,18 +4,18 @@ axiom axiom_of_pair \forall x\forall y\exists z\forall w(in(w,z)\leftrightarrow 
 
 theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
   any x, y {
-    apply axiom_of_pair for x:x, y:y
-    some z:z such \exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
+    apply axiom_of_pair for x, y
+    some z such \exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
       any z' {
         assume \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) {
           any w {
             assume in(w,z') {
-              apply invoke rightward \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w
-              apply invoke leftward \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w
+              apply invoke rightward \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) for w
+              apply invoke leftward \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) for w
             }
             assume in(w,z) {
-              apply invoke rightward \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w
-              apply invoke leftward \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w
+              apply invoke rightward \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) for w
+              apply invoke leftward \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) for w
             }
             connect in(w,z')\leftrightarrow in(w,z)
           }
@@ -23,7 +23,7 @@ theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftri
         }
       }
       connect \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z))
-      characterize for z:z conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
+      characterize for z conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
     }
   }
 }
@@ -35,14 +35,14 @@ uniqueness pair_uniqueness \forall x\forall y\forall z(\forall w(in(w,z)\leftrig
 theorem pair_cor1 \forall x\forall y(in(x,pair(x,y))) {
   any x,y {
     pad equal(x,x) conclude equal(x,x)\vee equal(x,y)
-    apply invoke leftward pair_existence for x:x,y:y,w:x
+    apply invoke leftward pair_existence for x,y,x
   }
 }
 
 theorem pair_cor2 \forall x\forall y(in(y,pair(x,y))) {
   any x,y {
     pad equal(y,y) conclude equal(y,x)\vee equal(y,y)
-    apply invoke leftward pair_existence for x:x,y:y,w:y
+    apply invoke leftward pair_existence for x,y,y
   }
 }
 
@@ -50,8 +50,8 @@ theorem pair_cor3 \forall x\forall y(subset(pair(x,y),pair(y,x))) {
   any x,y {
     any z {
       assume in(z,pair(x,y)) {
-        apply invoke rightward pair_existence for x:x,y:y,w:z
-        apply invoke leftward pair_existence for x:y,y:x,w:z
+        apply invoke rightward pair_existence for x,y,z
+        apply invoke leftward pair_existence for y,x,z
       }
     }
     fold for subset conclude subset(pair(x,y),pair(y,x))
@@ -60,19 +60,19 @@ theorem pair_cor3 \forall x\forall y(subset(pair(x,y),pair(y,x))) {
 
 theorem pair_commutativity \forall x\forall y(equal(pair(x,y),pair(y,x))) {
   any x,y {
-    apply pair_cor3 for x:x,y:y
-    apply pair_cor3 for x:y,y:x
+    apply pair_cor3 for x,y
+    apply pair_cor3 for y,x
     connect subset(pair(x,y),pair(y,x))\wedge subset(pair(y,x),pair(x,y))
-    apply invoke rightward subset_antisymmetry for x:pair(x,y),y:pair(y,x)
+    apply invoke rightward subset_antisymmetry for pair(x,y),pair(y,x)
   }
 }
 
 theorem pair_cor4 \forall x\forall y\forall z\forall w(equal(pair(x,y),pair(z,w))\to equal(x,z)\vee equal(x,w)) {
   any x,y,z,w {
     assume equal(pair(x,y),pair(z,w)) {
-      apply pair_cor1 for x:x,y:y
+      apply pair_cor1 for x,y
       substitute in(x,pair(x,y)) for pair(x,y):pair(z,w)
-      apply invoke rightward pair_existence for x:z,y:w,w:x
+      apply invoke rightward pair_existence for z,w,x
     }
   }
 }
@@ -80,9 +80,9 @@ theorem pair_cor4 \forall x\forall y\forall z\forall w(equal(pair(x,y),pair(z,w)
 theorem pair_cor5 \forall x\forall y\forall z\forall w(equal(pair(x,y),pair(z,w))\to equal(y,z)\vee equal(y,w)) {
   any x,y,z,w {
     assume equal(pair(x,y),pair(z,w)) {
-      apply pair_cor2 for x:x,y:y
+      apply pair_cor2 for x,y
       substitute in(y,pair(x,y)) for pair(x,y):pair(z,w)
-      apply invoke rightward pair_existence for x:z,y:w,w:y
+      apply invoke rightward pair_existence for z,w,y
     }
   }
 }
@@ -90,7 +90,7 @@ theorem pair_cor5 \forall x\forall y\forall z\forall w(equal(pair(x,y),pair(z,w)
 theorem pair_cor6 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equal(x,y)) {
   any x,y,z {
     assume equal(pair(x,x),pair(y,z)) {
-      apply invoke pair_cor4 for x:y,y:z,z:x,w:x
+      apply invoke pair_cor4 for y,z,x,x
       divide equal(y,x)\vee equal(y,x)
         case equal(y,x) {}
         case equal(y,x) {}
@@ -101,7 +101,7 @@ theorem pair_cor6 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equa
 theorem pair_cor7 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equal(x,z)) {
   any x,y,z {
     assume equal(pair(x,x),pair(y,z)) {
-      apply invoke pair_cor5 for x:y,y:z,z:x,w:x
+      apply invoke pair_cor5 for y,z,x,x
       divide equal(z,x)\vee equal(z,x)
         case equal(z,x) {}
         case equal(z,x) {}
@@ -112,11 +112,11 @@ theorem pair_cor7 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equa
 theorem pair_cor8 \forall x\forall y\forall z(equal(pair(x,y),pair(x,z))\to equal(y,z)) {
   any x,y,z {
     assume equal(pair(x,y),pair(x,z)) {
-      apply invoke pair_cor5 for x:x,y:y,z:x,w:z
+      apply invoke pair_cor5 for x,y,x,z
       divide equal(y,x)\vee equal(y,z)
         case equal(y,x) {
           substitute equal(pair(x,y),pair(x,z)) for y:x
-          apply invoke pair_cor7 for x:x,y:x,z:z
+          apply invoke pair_cor7 for x,x,z
           substitute equal(y,x) for x:z
         }
         case equal(y,z) {}
@@ -126,9 +126,9 @@ theorem pair_cor8 \forall x\forall y\forall z(equal(pair(x,y),pair(x,z))\to equa
 
 theorem pair_cor9 \forall x\forall y(neq(pair(x,y),emptyset)) {
   any x, y {
-    apply pair_cor1 for x:x,y:y
-    lift for z:x conclude \exists z(in(z,pair(x,y)))
-    apply invoke has_a_member_not_emptyset for x:pair(x,y)
+    apply pair_cor1 for x,y
+    lift for x conclude \exists z(in(z,pair(x,y)))
+    apply invoke has_a_member_not_emptyset for pair(x,y)
   }
 }
 
@@ -138,7 +138,7 @@ theorem pair_cor10 \forall x\forall y\forall z(in(x,z)\wedge in(y,z)\to subset(p
       split in(x,z)\wedge in(y,z)
       any w {
         assume in(w,pair(x,y)) {
-          apply invoke rightward pair_existence for x:x,y:y,w:w
+          apply invoke rightward pair_existence for x,y,w
           divide equal(w,x)\vee equal(w,y)
             case equal(w,x) {
               substitute in(x,z) for x:w
@@ -159,14 +159,14 @@ theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrig
   any x,y {
     assume in(y,singleton(x)) {
       expand in(y,singleton(x)) for singleton
-      apply invoke rightward pair_existence for x:x,y:x,w:y
+      apply invoke rightward pair_existence for x,x,y
       divide equal(y,x)\vee equal(y,x)
         case equal(y,x) {}
         case equal(y,x) {}
     }
     assume equal(y,x) {
       pad equal(y,x) conclude equal(y,x)\vee equal(y,x)
-      apply invoke leftward pair_existence for x:x,y:x,w:y
+      apply invoke leftward pair_existence for x,x,y
       fold for singleton conclude in(y,singleton(x))
     }
     connect in(y,singleton(x))\leftrightarrow equal(y,x)
@@ -175,16 +175,16 @@ theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrig
 
 theorem singleton_cor1 \forall x(in(x,singleton(x))) {
   any x {
-    apply invoke leftward singleton_characterization for x:x,y:x
+    apply invoke leftward singleton_characterization for x,x
   }
 }
 
 theorem singleton_cor2 \forall x\forall y(equal(singleton(x),singleton(y))\to equal(x,y)) {
   any x,y {
     assume equal(singleton(x),singleton(y)) {
-      apply singleton_cor1 for x:x
+      apply singleton_cor1 for x
       substitute in(x,singleton(x)) for singleton(x):singleton(y)
-      apply invoke rightward singleton_characterization for x:y,y:x
+      apply invoke rightward singleton_characterization for y,x
     }
   }
 }
@@ -194,7 +194,7 @@ theorem singleton_cor3 \forall x\forall y(in(x,y)\to subset(singleton(x),y)) {
     assume in(x,y) {
       any z {
         assume in(z,singleton(x)) {
-          apply invoke rightward singleton_characterization for x:x,y:z
+          apply invoke rightward singleton_characterization for x,z
           substitute in(x,y) for x:z
         }
       }
@@ -207,7 +207,7 @@ theorem pair_singleton_cor1 \forall x\forall y\forall z(equal(singleton(x),pair(
   any x,y,z {
     assume equal(singleton(x),pair(y,z)) {
       expand equal(singleton(x),pair(y,z)) for singleton
-      apply invoke pair_cor6 for x:x,y:y,z:z
+      apply invoke pair_cor6 for x,y,z
     }
   }
 }
@@ -216,7 +216,7 @@ theorem pair_singleton_cor2 \forall x\forall y\forall z(equal(singleton(x),pair(
   any x,y,z {
     assume equal(singleton(x),pair(y,z)) {
       expand equal(singleton(x),pair(y,z)) for singleton
-      apply invoke pair_cor7 for x:x,y:y,z:z
+      apply invoke pair_cor7 for x,y,z
     }
   }
 }
@@ -227,17 +227,17 @@ theorem op_characterization \forall x\forall y\forall x'\forall y'(equal(op(x,y)
   any x,y,x',y' {
     assume equal(op(x,y),op(x',y')) {
       expand equal(op(x,y),op(x',y')) for op
-      apply invoke pair_cor4 for x:singleton(x),y:pair(x,y),z:singleton(x'),w:pair(x',y')
+      apply invoke pair_cor4 for singleton(x),pair(x,y),singleton(x'),pair(x',y')
       divide equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y'))
         case equal(singleton(x),singleton(x')) {
-          apply invoke singleton_cor2 for x:x,y:x'
+          apply invoke singleton_cor2 for x,x'
         }
         case equal(singleton(x),pair(x',y')) {
-          apply invoke pair_singleton_cor1 for x:x,y:x',z:y'
+          apply invoke pair_singleton_cor1 for x,x',y'
         }
       substitute equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y'))) for x':x
-      apply invoke pair_cor8 for x:singleton(x),y:pair(x,y),z:pair(x,y')
-      apply invoke pair_cor8 for x:x,y:y,z:y'
+      apply invoke pair_cor8 for singleton(x),pair(x,y),pair(x,y')
+      apply invoke pair_cor8 for x,y,y'
       connect equal(x,x')\wedge equal(y,y')
     }
   }

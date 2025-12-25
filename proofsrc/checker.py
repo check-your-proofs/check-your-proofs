@@ -807,22 +807,17 @@ def check_characterize(node: Characterize, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}Target conclusion is ExistsUniq object: {pretty_expr(node.conclusion, context)}")
-    if node.conclusion.var != list(node.env.keys())[0]:
-        logger.error(f"{error_prefix}node.conclusion.var {node.conclusion.var} is not matched with node.env {node.env}")
-        node.proofinfo.status = "ERROR"
-        return False
-    logger.debug(f"{debug_prefix}node.conclusion.var {node.conclusion.var} is matched with node.env {node.env}")
     free, bound = collect_vars(node.conclusion.body)
     vardash = fresh_var(Var(node.conclusion.var.name + "'"), free | bound)
     if context.decl.equality is None:
         logger.error(f"{error_prefix}equality has not been declared yet")
         node.proofinfo.status = "ERROR"
         return False
-    subst = Substitutor(node.env)
+    subst = Substitutor({node.conclusion.var: node.term})
     existence = subst.substitute_formula(node.conclusion.body)
     subst = Substitutor({node.conclusion.var: vardash})
     existence_dash = subst.substitute_formula(node.conclusion.body)
-    fact = And(existence, Forall(vardash, Implies(existence_dash, Symbol(Pred(context.decl.equality.equal.name), (vardash, list(node.env.values())[0])))))
+    fact = And(existence, Forall(vardash, Implies(existence_dash, Symbol(Pred(context.decl.equality.equal.name), (vardash, node.term)))))
     if not goal_in_context(fact, context):
         logger.error(f"{error_prefix}Not fact: {pretty_expr(fact, context)}")
         node.proofinfo.status = "ERROR"

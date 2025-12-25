@@ -211,7 +211,7 @@ class Lift(Control):
 
 @dataclass
 class Characterize(Control):
-    env: dict[Var, Term]
+    term: Term
     conclusion: ExistsUniq
 
 @dataclass

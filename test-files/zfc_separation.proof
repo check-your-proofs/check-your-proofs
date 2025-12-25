@@ -4,18 +4,18 @@ axiom axiom_schema_of_separation \forall x\forall^T\phi[1]\exists y\forall z(in(
 
 theorem separation_is_unique \forall x\forall^T\phi[1]\exists!y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) {
   any x, template \phi[1] {
-    apply axiom_schema_of_separation for x:x, \phi:\phi
-    some y:y such \exists y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) {
+    apply axiom_schema_of_separation for x, \phi
+    some y such \exists y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) {
       any y' {
         assume \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)) {
           any z {
             assume in(z,y') {
-              apply invoke rightward \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
-              apply invoke leftward \forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
+              apply invoke rightward \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)) for z
+              apply invoke leftward \forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) for z
             }
             assume in(z,y) {
-              apply invoke rightward \forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
-              apply invoke leftward \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
+              apply invoke rightward \forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) for z
+              apply invoke leftward \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)) for z
             }
             connect in(z,y')\leftrightarrow in(z,y)
           }
@@ -23,7 +23,7 @@ theorem separation_is_unique \forall x\forall^T\phi[1]\exists!y\forall z(in(z,y)
         }
       }
       connect \forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z))\to equal(y',y))
-      characterize for y:y conclude \exists!y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z))
+      characterize for y conclude \exists!y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z))
     }
   }
 }
@@ -36,7 +36,7 @@ theorem sep_cor1 \forall x\forall^T\phi[1](subset(sep(x,\phi),x)) {
   any x, template \phi[1] {
     any z {
       assume in(z,sep(x,\phi)) {
-        apply invoke rightward sep_existence for x:x, \phi:\phi, z:z
+        apply invoke rightward sep_existence for x, \phi, z
         split 1 in(z,x)\wedge\phi(z)
       }
     }
@@ -47,7 +47,7 @@ theorem sep_cor1 \forall x\forall^T\phi[1](subset(sep(x,\phi),x)) {
 theorem sep_cor2 \forall x\forall^T\phi[1]\forall z(in(z,sep(x,\phi))\to\phi(z)) {
   any x, template \phi[1], z {
     assume in(z,sep(x,\phi)) {
-      apply invoke rightward sep_existence for x:x,\phi:\phi,z:z
+      apply invoke rightward sep_existence for x,\phi,z
       split 2 in(z,x)\wedge\phi(z)
     }
   }
@@ -59,10 +59,10 @@ theorem bigcap_characterization \forall u\forall z(in(z,bigcap(u))\leftrightarro
   any u, z {
     assume in(z,bigcap(u)) {
       expand in(z,bigcap(u)) for bigcap
-      apply invoke rightward sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
+      apply invoke rightward sep_existence for bigcup(u),lambda z'. \forall w(in(w,u)\to in(z',w)),z
     }
     assume in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w)) {
-      apply invoke leftward sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
+      apply invoke leftward sep_existence for bigcup(u),lambda z'. \forall w(in(w,u)\to in(z',w)),z
       fold for bigcap conclude in(z,bigcap(u))
     }
     connect in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
@@ -70,11 +70,11 @@ theorem bigcap_characterization \forall u\forall z(in(z,bigcap(u))\leftrightarro
 }
 
 theorem bigcap_cor1 equal(bigcap(emptyset),emptyset) {
-  apply sep_cor1 for x:bigcup(emptyset), \phi: lambda z. \forall w(in(w,emptyset)\to in(z,w))
+  apply sep_cor1 for bigcup(emptyset), lambda z. \forall w(in(w,emptyset)\to in(z,w))
   fold for bigcap conclude subset(bigcap(emptyset),bigcup(emptyset))
   assert bigcup_cor2
   substitute subset(bigcap(emptyset),bigcup(emptyset)) for bigcup(emptyset):emptyset
-  apply invoke emptyset_subset_cor1 for x:bigcap(emptyset)
+  apply invoke emptyset_subset_cor1 for bigcap(emptyset)
 }
 
 theorem bigcap_cor2 \forall u(neq(u,emptyset)\to\forall z(in(z,bigcap(u))\leftrightarrow\forall w(in(w,u)\to in(z,w)))) {
@@ -82,19 +82,19 @@ theorem bigcap_cor2 \forall u(neq(u,emptyset)\to\forall z(in(z,bigcap(u))\leftri
     assume neq(u,emptyset) {
       any z {
         assume in(z,bigcap(u)) {
-          apply invoke rightward bigcap_characterization for u:u,z:z
+          apply invoke rightward bigcap_characterization for u,z
           split 2 in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
         }
         assume \forall w(in(w,u)\to in(z,w)) {
-          apply invoke not_emptyset_has_a_member for x:u
-          some y:y such \exists y(in(y,u)) {
-            apply invoke \forall w(in(w,u)\to in(z,w)) for w:y
+          apply invoke not_emptyset_has_a_member for u
+          some y such \exists y(in(y,u)) {
+            apply invoke \forall w(in(w,u)\to in(z,w)) for y
             connect in(z,y)\wedge in(y,u)
-            lift for y:y conclude \exists y(in(z,y)\wedge in(y,u))
+            lift for y conclude \exists y(in(z,y)\wedge in(y,u))
           }
-          apply invoke leftward bigcup_existence for x:u,z:z
+          apply invoke leftward bigcup_existence for u,z
           connect in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
-          apply invoke leftward bigcap_characterization for u:u,z:z
+          apply invoke leftward bigcap_characterization for u,z
         }
         connect in(z,bigcap(u))\leftrightarrow\forall w(in(w,u)\to in(z,w))
       }
@@ -107,9 +107,9 @@ theorem bigcap_cor3 \forall x\forall y(in(y,x)\to subset(bigcap(x),y)) {
     assume in(y,x) {
       any z {
         assume in(z,bigcap(x)) {
-          apply invoke rightward bigcap_characterization for z:z,u:x
+          apply invoke rightward bigcap_characterization for x,z
           split in(z,bigcup(x))\wedge\forall w(in(w,x)\to in(z,w))
-          apply invoke \forall w(in(w,x)\to in(z,w)) for w:y
+          apply invoke \forall w(in(w,x)\to in(z,w)) for y
         }
       }
       fold for subset conclude subset(bigcap(x),y)
@@ -121,22 +121,22 @@ definition function cap(x,y) as bigcap(pair(x,y)) tex "","\cap",""
 
 theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrightarrow in(z,x)\wedge in(z,y)) {
   any x, y, z {
-    apply pair_cor9 for x:x,y:y
-    apply invoke bigcap_cor2 for u:pair(x,y)
+    apply pair_cor9 for x,y
+    apply invoke bigcap_cor2 for pair(x,y)
     assume in(z,cap(x,y)) {
       expand in(z,cap(x,y)) for cap
-      apply invoke rightward \forall z(in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))) for z:z
-      apply pair_cor1 for x:x,y:y
-      apply invoke \forall w(in(w,pair(x,y))\to in(z,w)) for w:x
-      apply pair_cor2 for x:x,y:y
-      apply invoke \forall w(in(w,pair(x,y))\to in(z,w)) for w:y
+      apply invoke rightward \forall z(in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))) for z
+      apply pair_cor1 for x,y
+      apply invoke \forall w(in(w,pair(x,y))\to in(z,w)) for x
+      apply pair_cor2 for x,y
+      apply invoke \forall w(in(w,pair(x,y))\to in(z,w)) for y
       connect in(z,x)\wedge in(z,y)
     }
     assume in(z,x)\wedge in(z,y) {
       split in(z,x)\wedge in(z,y)
       any w {
         assume in(w,pair(x,y)) {
-          apply invoke rightward pair_existence for x:x,y:y,w:w
+          apply invoke rightward pair_existence for x,y,w
           divide equal(w,x)\vee equal(w,y)
             case equal(w,x) {
               substitute in(z,x) for x:w
@@ -146,7 +146,7 @@ theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrigh
             }
         }
       }
-      apply invoke leftward \forall z(in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))) for z:z
+      apply invoke leftward \forall z(in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))) for z
       fold for cap conclude in(z,cap(x,y))
     }
     connect in(z,cap(x,y))\leftrightarrow in(z,x)\wedge in(z,y)
@@ -157,12 +157,12 @@ theorem cap_commutatvity \forall x\forall y(equal(cap(x,y),cap(y,x))) {
   any x,y {
     any z {
       assume in(z,cap(x,y)) {
-        apply invoke rightward cap_characterization for x:x,y:y,z:z
-        apply invoke leftward cap_characterization for x:y,y:x,z:z
+        apply invoke rightward cap_characterization for x,y,z
+        apply invoke leftward cap_characterization for y,x,z
       }
       assume in(z,cap(y,x)) {
-        apply invoke rightward cap_characterization for x:y,y:x,z:z
-        apply invoke leftward cap_characterization for x:x,y:y,z:z
+        apply invoke rightward cap_characterization for y,x,z
+        apply invoke leftward cap_characterization for x,y,z
       }
       connect in(z,cap(x,y))\leftrightarrow in(z,cap(y,x))
     }
@@ -174,7 +174,7 @@ theorem cap_is_subset_left \forall x\forall y(subset(cap(x,y),x)) {
   any x,y {
     any z {
       assume in(z,cap(x,y)) {
-        apply invoke rightward cap_characterization for x:x,y:y,z:z
+        apply invoke rightward cap_characterization for x,y,z
         split 1 in(z,x)\wedge in(z,y)
       }
     }
@@ -186,7 +186,7 @@ theorem cap_is_subset_right \forall x\forall y(subset(cap(x,y),y)) {
   any x,y {
     any z {
       assume in(z,cap(x,y)) {
-        apply invoke rightward cap_characterization for x:x,y:y,z:z
+        apply invoke rightward cap_characterization for x,y,z
         split 2 in(z,x)\wedge in(z,y)
       }
     }
@@ -200,7 +200,7 @@ theorem cap_iff_subset \forall x\forall y(equal(cap(x,y),x)\leftrightarrow subse
       any z {
         assume in(z,x) {
           substitute in(z,x) for x:cap(x,y)
-          apply invoke rightward cap_characterization for x:x,y:y,z:z
+          apply invoke rightward cap_characterization for x,y,z
           split 2 in(z,x)\wedge in(z,y)
         }
       }
@@ -209,14 +209,14 @@ theorem cap_iff_subset \forall x\forall y(equal(cap(x,y),x)\leftrightarrow subse
     assume subset(x,y) {
       any z {
         assume in(z,cap(x,y)) {
-          apply invoke rightward cap_characterization for x:x,y:y,z:z
+          apply invoke rightward cap_characterization for x,y,z
           split 1 in(z,x)\wedge in(z,y)
         }
         assume in(z,x) {
           connect in(z,x)\wedge subset(x,y)
-          apply invoke subset_cor1 for z:z,x:x,y:y
+          apply invoke subset(x,y) for z
           connect in(z,x)\wedge in(z,y)
-          apply invoke leftward cap_characterization for x:x,y:y,z:z
+          apply invoke leftward cap_characterization for x,y,z
         }
         connect in(z,cap(x,y))\leftrightarrow in(z,x)
       }
@@ -228,8 +228,8 @@ theorem cap_iff_subset \forall x\forall y(equal(cap(x,y),x)\leftrightarrow subse
 
 theorem neq_cap_iff_neg_subset \forall x\forall y(neq(cap(x,y),x)\leftrightarrow\neg(subset(x,y))) {
   any x,y {
-    apply cap_iff_subset for x:x,y:y
-    apply invoke neg_iff for \phi:lambda.equal(cap(x,y),x),\psi:lambda.subset(x,y)
+    apply cap_iff_subset for x,y
+    apply invoke neg_iff for lambda.equal(cap(x,y),x),lambda.subset(x,y)
   }
 }
 
@@ -240,7 +240,7 @@ theorem cap_subsetneq_iff_neq_cap \forall x\forall y(subsetneq(cap(x,y),x)\leftr
       split 2 subset(cap(x,y),x)\wedge neq(cap(x,y),x)
     }
     assume neq(cap(x,y),x) {
-      apply cap_is_subset_left for x:x,y:y
+      apply cap_is_subset_left for x,y
       connect subset(cap(x,y),x)\wedge neq(cap(x,y),x)
       fold for subsetneq conclude subsetneq(cap(x,y),x)
     }
@@ -251,12 +251,12 @@ theorem cap_subsetneq_iff_neq_cap \forall x\forall y(subsetneq(cap(x,y),x)\leftr
 theorem cap_subsetneq_iff_neg_subset \forall x\forall y(subsetneq(cap(x,y),x)\leftrightarrow\neg(subset(x,y))) {
   any x,y {
     assume subsetneq(cap(x,y),x) {
-      apply invoke rightward cap_subsetneq_iff_neq_cap for x:x,y:y
-      apply invoke rightward neq_cap_iff_neg_subset for x:x,y:y
+      apply invoke rightward cap_subsetneq_iff_neq_cap for x,y
+      apply invoke rightward neq_cap_iff_neg_subset for x,y
     }
     assume \neg(subset(x,y)) {
-      apply invoke leftward neq_cap_iff_neg_subset for x:x,y:y
-      apply invoke leftward cap_subsetneq_iff_neq_cap for x:x,y:y
+      apply invoke leftward neq_cap_iff_neg_subset for x,y
+      apply invoke leftward cap_subsetneq_iff_neq_cap for x,y
     }
     connect subsetneq(cap(x,y),x)\leftrightarrow\neg(subset(x,y))
   }
@@ -268,10 +268,10 @@ theorem setminus_characterization \forall x\forall y\forall z(in(z,setminus(x,y)
   any x,y,z {
     assume in(z,setminus(x,y)) {
       expand in(z,setminus(x,y)) for setminus
-      apply invoke rightward sep_existence for x:x,\phi:lambda z.notin(z,y),z:z
+      apply invoke rightward sep_existence for x,lambda z.notin(z,y),z
     }
     assume in(z,x)\wedge notin(z,y) {
-      apply invoke leftward sep_existence for x:x,\phi:lambda z.notin(z,y),z:z
+      apply invoke leftward sep_existence for x,lambda z.notin(z,y),z
       fold for setminus conclude in(z,setminus(x,y))
     }
     connect in(z,setminus(x,y))\leftrightarrow in(z,x)\wedge notin(z,y)
@@ -282,7 +282,7 @@ theorem setminus_is_subset \forall x\forall y(subset(setminus(x,y),x)) {
   any x,y {
     any z {
       assume in(z,setminus(x,y)) {
-        apply invoke rightward setminus_characterization for x:x,y:y,z:z
+        apply invoke rightward setminus_characterization for x,y,z
         split 1 in(z,x)\wedge notin(z,y)
       }
     }
@@ -298,16 +298,16 @@ theorem setminus_of_set_and_subsetneq \forall x\forall y(subsetneq(y,x)\to neq(s
       deny \forall z(in(z,x)\to in(z,y)) {
         fold for subset conclude subset(x,y)
         connect subset(x,y)\wedge subset(y,x)
-        apply invoke rightward subset_antisymmetry for x:x,y:y
+        apply invoke rightward subset_antisymmetry for x,y
         contradict equal(x,y)
       }
-      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \phi:lambda z.in(z,x)\to in(z,y)
-      some z:z such \exists z(\neg(in(z,x)\to in(z,y))) {
-        apply invoke rightward neg_implication for \phi:lambda.in(z,x),\psi:lambda.in(z,y)
-        apply invoke leftward setminus_characterization for x:x,y:y,z:z
-        lift for z:z conclude \exists z(in(z,setminus(x,y)))
+      apply invoke leftward exist_neg_leftrightarrow_neg_forall for lambda z.in(z,x)\to in(z,y)
+      some z such \exists z(\neg(in(z,x)\to in(z,y))) {
+        apply invoke rightward neg_implication for lambda.in(z,x),lambda.in(z,y)
+        apply invoke leftward setminus_characterization for x,y,z
+        lift for z conclude \exists z(in(z,setminus(x,y)))
       }
-      apply invoke has_a_member_not_emptyset for x:setminus(x,y)
+      apply invoke has_a_member_not_emptyset for setminus(x,y)
     }
   }
 }

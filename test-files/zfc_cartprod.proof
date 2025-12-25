@@ -7,17 +7,17 @@ theorem cartprod_lem1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)
   any X,Y,x,y {
     assume in(x,X)\wedge in(y,Y) {
       split in(x,X)\wedge in(y,Y)
-      apply invoke singleton_cor3 for x:x,y:X
-      apply cup_cor3 for x:X,y:Y
+      apply invoke singleton_cor3 for x,X
+      apply cup_cor3 for X,Y
       connect subset(singleton(x),X)\wedge subset(X,cup(X,Y))
-      apply invoke subset_trans for x:singleton(x),y:X,z:cup(X,Y)
-      apply invoke leftward powerset_existence for x:cup(X,Y),z:singleton(x)
-      apply invoke cup_cor5 for x:x,y:y,X:X,Y:Y
-      apply invoke leftward powerset_existence for x:cup(X,Y),z:pair(x,y)
+      apply invoke subset_trans for singleton(x),X,cup(X,Y)
+      apply invoke leftward powerset_existence for cup(X,Y),singleton(x)
+      apply invoke cup_cor5 for x,y,X,Y
+      apply invoke leftward powerset_existence for cup(X,Y),pair(x,y)
       connect in(singleton(x),powerset(cup(X,Y)))\wedge in(pair(x,y),powerset(cup(X,Y)))
-      apply invoke pair_cor10 for x:singleton(x),y:pair(x,y),z:powerset(cup(X,Y))
+      apply invoke pair_cor10 for singleton(x),pair(x,y),powerset(cup(X,Y))
       fold for op conclude subset(op(x,y),powerset(cup(X,Y)))
-      apply invoke leftward powerset_existence for x:powerset(cup(X,Y)),z:op(x,y)
+      apply invoke leftward powerset_existence for powerset(cup(X,Y)),op(x,y)
     }
   }
 }
@@ -26,17 +26,17 @@ theorem cartprod_characterization \forall X\forall Y\forall z(in(z,cartprod(X,Y)
   any X,Y,z {
     assume in(z,cartprod(X,Y)) {
       expand in(z,cartprod(X,Y)) for cartprod
-      apply invoke rightward sep_existence for x:powerset(powerset(cup(X,Y))),\phi:lambda z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))),z:z
+      apply invoke rightward sep_existence for powerset(powerset(cup(X,Y))),lambda z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))),z
       split in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
     }
     assume \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y))) {
-      some x:x,y:y such \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y))) {
+      some x,y such \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y))) {
         split in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y))
         connect in(x,X)\wedge in(y,Y)
-        apply invoke cartprod_lem1 for X:X,Y:Y,x:x,y:y
+        apply invoke cartprod_lem1 for X,Y,x,y
         substitute in(op(x,y),powerset(powerset(cup(X,Y)))) for op(x,y):z
         connect in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
-        apply invoke leftward sep_existence for x:powerset(powerset(cup(X,Y))),\phi:lambda z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))),z:z
+        apply invoke leftward sep_existence for powerset(powerset(cup(X,Y))),lambda z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))),z
         fold for cartprod conclude in(z,cartprod(X,Y))
       }
     }
@@ -49,14 +49,14 @@ theorem cartprod_cor1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)
     assume in(x,X)\wedge in(y,Y) {
       split in(x,X)\wedge in(y,Y)
       connect in(x,X)\wedge in(y,Y)\wedge equal(op(x,y),op(x,y))
-      lift for x':x,y':y conclude \exists x'\exists y'(in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y')))
-      apply invoke leftward cartprod_characterization for X:X,Y:Y,z:op(x,y)
+      lift for x,y conclude \exists x'\exists y'(in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y')))
+      apply invoke leftward cartprod_characterization for X,Y,op(x,y)
     }
     assume in(op(x,y),cartprod(X,Y)) {
-      apply invoke rightward cartprod_characterization for X:X,Y:Y,z:op(x,y)
-      some x':x',y':y' such \exists x'\exists y'(in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y'))) {
+      apply invoke rightward cartprod_characterization for X,Y,op(x,y)
+      some x',y' such \exists x'\exists y'(in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y'))) {
         split in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y'))
-        apply invoke op_characterization for x:x,y:y,x':x',y':y'
+        apply invoke op_characterization for x,y,x',y'
         split equal(x,x')\wedge equal(y,y')
         substitute in(x',X) for x':x
         substitute in(y',Y) for y':y
@@ -71,15 +71,15 @@ theorem cartprod_cor2 \forall X(equal(cartprod(X,emptyset),emptyset)) {
   any X {
     any z {
       deny in(z,cartprod(X,emptyset)) {
-        apply invoke rightward cartprod_characterization for X:X,Y:emptyset,z:z
-        some x:x,y:y such \exists x\exists y(in(x,X)\wedge in(y,emptyset)\wedge equal(z,op(x,y))) {
+        apply invoke rightward cartprod_characterization for X,emptyset,z
+        some x,y such \exists x\exists y(in(x,X)\wedge in(y,emptyset)\wedge equal(z,op(x,y))) {
           split 2 in(x,X)\wedge in(y,emptyset)\wedge equal(z,op(x,y))
-          apply emptyset_existence for y:y
+          apply emptyset_existence for y
           contradict in(y,emptyset)
         }
       }
     }
-    apply invoke emptyset_uniqueness for x:cartprod(X,emptyset)
+    apply invoke emptyset_uniqueness for cartprod(X,emptyset)
   }
 }
 
@@ -87,15 +87,15 @@ theorem cartprod_cor3 \forall Y(equal(cartprod(emptyset,Y),emptyset)) {
   any Y {
     any z {
       deny in(z,cartprod(emptyset,Y)) {
-        apply invoke rightward cartprod_characterization for X:emptyset,Y:Y,z:z
-        some x:x,y:y such \exists x\exists y(in(x,emptyset)\wedge in(y,Y)\wedge equal(z,op(x,y))) {
+        apply invoke rightward cartprod_characterization for emptyset,Y,z
+        some x,y such \exists x\exists y(in(x,emptyset)\wedge in(y,Y)\wedge equal(z,op(x,y))) {
           split 1 in(x,emptyset)\wedge in(y,Y)\wedge equal(z,op(x,y))
-          apply emptyset_existence for y:x
+          apply emptyset_existence for x
           contradict in(x,emptyset)
         }
       }
     }
-    apply invoke emptyset_uniqueness for x:cartprod(emptyset,Y)
+    apply invoke emptyset_uniqueness for cartprod(emptyset,Y)
   }
 }
 
@@ -103,16 +103,16 @@ theorem cartprod_cor4 \forall X\forall Y(neq(X,emptyset)\wedge neq(Y,emptyset)\t
   any X,Y {
     assume neq(X,emptyset)\wedge neq(Y,emptyset) {
       split neq(X,emptyset)\wedge neq(Y,emptyset)
-      apply invoke not_emptyset_has_a_member for x:X
-      apply invoke not_emptyset_has_a_member for x:Y
-      some x:x such \exists x(in(x,X)) {
-        some y:y such \exists y(in(y,Y)) {
+      apply invoke not_emptyset_has_a_member for X
+      apply invoke not_emptyset_has_a_member for Y
+      some x such \exists x(in(x,X)) {
+        some y such \exists y(in(y,Y)) {
           connect in(x,X)\wedge in(y,Y)
-          apply invoke rightward cartprod_cor1 for X:X,Y:Y,x:x,y:y
-          lift for z:op(x,y) conclude \exists z(in(z,cartprod(X,Y)))
+          apply invoke rightward cartprod_cor1 for X,Y,x,y
+          lift for op(x,y) conclude \exists z(in(z,cartprod(X,Y)))
         }
       }
-      apply invoke has_a_member_not_emptyset for x:cartprod(X,Y)
+      apply invoke has_a_member_not_emptyset for cartprod(X,Y)
     }
   }
 }

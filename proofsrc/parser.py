@@ -404,15 +404,12 @@ class Parser:
     def parse_characterize(self, context: Context) -> Characterize:
         start_token = self.stream.consume("CHARACTERIZE")
         self.stream.consume("FOR")
-        bound = self.parse_var()
-        self.stream.consume("COLON")
         term = self.parse_term(context)
-        env = {bound: term}
         self.stream.consume("CONCLUDE")
         conclusion = self.parse_formula(context)
         if not isinstance(conclusion, ExistsUniq):
             raise Exception(f"{start_token.info()} ExistsUniq object is required")
-        return Characterize(token=start_token, env=env, conclusion=conclusion)
+        return Characterize(token=start_token, term=term, conclusion=conclusion)
 
     def parse_invoke(self, context: Context) -> Invoke:
         start_token = self.stream.consume("INVOKE")
