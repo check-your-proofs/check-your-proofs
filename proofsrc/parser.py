@@ -388,36 +388,18 @@ class Parser:
             invoke = "none"
         fact = self.parse_reference_or_formula(context)
         self.stream.consume("FOR")
-        terms: list[Term | None] = []
-        while True:
-            if self.stream.peek().type == "UNDERSCORE":
-                terms.append(None)
-            else:
-                terms.append(self.parse_term(context))
-            if self.stream.peek().type == "COMMA":
-                self.stream.consume("COMMA")
-            else:
-                break
+        terms = self.parse_terms_or_none(context)
         return Apply(token=start_token, invoke=invoke, fact=fact, terms=terms)
 
     def parse_lift(self, context: Context) -> Lift:
         start_token = self.stream.consume("LIFT")
         self.stream.consume("FOR")
-        env: dict[Var, Term] = {}
-        while True:
-            bound = self.parse_var()
-            self.stream.consume("COLON")
-            term = self.parse_term(context)
-            env[bound] = term
-            if self.stream.peek().type == "COMMA":
-                self.stream.consume("COMMA")
-                continue
-            break
+        terms = self.parse_terms_or_none(context)
         self.stream.consume("CONCLUDE")
         conclusion = self.parse_formula(context)
         if not isinstance(conclusion, Exists):
             raise Exception(f"{start_token.info()} Exists object is required")
-        return Lift(token=start_token, env=env, conclusion=conclusion)
+        return Lift(token=start_token, terms=terms, conclusion=conclusion)
 
     def parse_characterize(self, context: Context) -> Characterize:
         start_token = self.stream.consume("CHARACTERIZE")
@@ -690,6 +672,19 @@ class Parser:
 
         else:
             raise SyntaxError(f"{tok.info()} Formula objct is required, but unknown token is found")
+
+    def parse_terms_or_none(self, context: Context) -> list[Term | None]:
+        terms: list[Term | None] = []
+        while True:
+            if self.stream.peek().type == "UNDERSCORE":
+                terms.append(None)
+            else:
+                terms.append(self.parse_term(context))
+            if self.stream.peek().type == "COMMA":
+                self.stream.consume("COMMA")
+            else:
+                break
+        return terms
 
     def parse_term(self, context: Context) -> Term:
         tok = self.stream.peek()

@@ -206,7 +206,7 @@ class Apply(Control):
 
 @dataclass
 class Lift(Control):
-    env: dict[Var, Term]
+    terms: list[Term | None]
     conclusion: Exists
 
 @dataclass

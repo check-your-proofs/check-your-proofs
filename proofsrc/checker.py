@@ -758,13 +758,34 @@ def check_lift(node: Lift, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}Target conclusion: {pretty_expr(node.conclusion, context)}")
-    vars, body = collect_quantifier_vars(node.conclusion, Exists)
-    if set(vars) != set(node.env):
-        logger.error(f"{error_prefix}Not matched: vars: {vars}, node.env: {node.env}")
+    items, body = collect_quantifier_vars(node.conclusion, Exists)
+    if len(items) != len(node.terms):
+        logger.error(f"{error_prefix}len(items)={len(items)}, len(node.terms)={len(node.terms)}")
         node.proofinfo.status = "ERROR"
         return False
-    logger.debug(f"{debug_prefix}Matched: vars: {vars}, node.env: {node.env}")
-    subst = Substitutor(node.env)
+    env: dict[Var | Template, Term] = {}
+    for item, term in zip(items, node.terms):
+        if term is None:
+            continue
+        if isinstance(item, Var):
+            if not isinstance(term, (Compound, Con, Var)):
+                logger.error(f"{error_prefix}{type(term)} cannot be substituted to Var {item.name}")
+                node.proofinfo.status = "ERROR"
+                return False
+        elif isinstance(item, Template):
+            if not isinstance(term, (Template, Lambda)):
+                logger.error(f"{error_prefix}{type(term)} cannot be substituted to Template {item.name}")
+                node.proofinfo.status = "ERROR"
+                return False
+        else:
+            logger.error(f"{error_prefix}Unexpected item {item}")
+            node.proofinfo.status = "ERROR"
+            return False
+        env[item] = term
+    for item, term in zip(reversed(items), reversed(node.terms)):
+        if term is None:
+            body = Exists(item, body)
+    subst = Substitutor(env)
     fact = subst.substitute_formula(body)
     if not goal_in_context(fact, context):
         logger.error(f"{error_prefix}Not fact: {pretty_expr(fact, context)}")

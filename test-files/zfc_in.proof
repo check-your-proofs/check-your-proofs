@@ -92,7 +92,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
       deny \neg(\exists z(\neg(in(z,x)\leftrightarrow in(z,y)))) {
         any z {
           deny \neg(in(z,x)\leftrightarrow in(z,y)) {
-            lift for z:z conclude \exists z(\neg(in(z,x)\leftrightarrow in(z,y)))
+            lift for z conclude \exists z(\neg(in(z,x)\leftrightarrow in(z,y)))
             contradict \exists z(\neg(in(z,x)\leftrightarrow in(z,y)))
           }
         }
@@ -141,7 +141,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
             }
             pad notin(z,x)\wedge in(z,y) conclude (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
           }
-        lift for z:z conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))
+        lift for z conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))
       }
     }
     assume \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
@@ -237,13 +237,13 @@ theorem neg_subset \forall x\forall y(\neg(subset(x,y))\leftrightarrow\exists z(
       apply invoke leftward exist_neg_leftrightarrow_neg_forall for lambda z.in(z,x)\to in(z,y)
       some z such \exists z(\neg(in(z,x)\to in(z,y))) {
         apply invoke rightward neg_implication for lambda.in(z,x),lambda.in(z,y)
-        lift for z:z conclude \exists z(in(z,x)\wedge notin(z,y))
+        lift for z conclude \exists z(in(z,x)\wedge notin(z,y))
       }
     }
     assume \exists z(in(z,x)\wedge notin(z,y)) {
       some z such \exists z(in(z,x)\wedge notin(z,y)) {
         apply invoke leftward neg_implication for lambda.in(z,x),lambda.in(z,y)
-        lift for z:z conclude \exists z(\neg(in(z,x)\to in(z,y)))
+        lift for z conclude \exists z(\neg(in(z,x)\to in(z,y)))
       }
       apply invoke rightward exist_neg_leftrightarrow_neg_forall for lambda z.in(z,x)\to in(z,y)
       fold for subset conclude \neg(subset(x,y))
@@ -285,7 +285,7 @@ theorem subsetneq_implies_exist \forall x\forall y(subsetneq(x,y)\to\exists z(in
             explode notin(z,x)\wedge in(z,y)
           }
           case notin(z,x)\wedge in(z,y) {}
-        lift for z:z conclude \exists z(in(z,y)\wedge notin(z,x))
+        lift for z conclude \exists z(in(z,y)\wedge notin(z,x))
       }
     }
   }

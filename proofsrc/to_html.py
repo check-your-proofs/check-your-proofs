@@ -521,15 +521,23 @@ class Renderer:
         return header_parts, header_parts_jp, ""
 
     def render_lift(self, node: Lift):
+        terms_str: list[str] = []
+        for term in node.terms:
+            if isinstance(term, Term):
+                terms_str.append(self.render_expr(term))
+            elif term is None:
+                terms_str.append("_")
+            else:
+                raise Exception(f"Unexpected term: {term}")
         header_parts = [self.bullet,
                         self.render_keyword("lift"),
                         self.render_keyword("for"),
-                        self.render_expr_dict(node.env),
+                        ",".join(terms_str),
                         self.render_keyword("conclude"),
                         self.render_expr(node.conclusion)]
         header_parts_jp = [self.bullet,
-                           "、".join([self.render_expr(v) + "を" + self.render_expr(k) + "に" for k, v in node.env.items()]),
-                           "置き換えて",
+                           ",".join(terms_str),
+                           "を置き換えて",
                            self.render_expr(node.conclusion),
                            "を得る。"]
         return header_parts, header_parts_jp, ""

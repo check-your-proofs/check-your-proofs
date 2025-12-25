@@ -3,7 +3,7 @@ theorem neg_exist_leftrightarrow_forall_neg \forall^T\phi[1](\neg(\exists x(\phi
     assume \neg(\exists x(\phi(x))) {
       any x {
         deny \phi(x) {
-          lift for x:x conclude \exists x(\phi(x))
+          lift for x conclude \exists x(\phi(x))
           contradict \exists x(\phi(x))
         }
       }
