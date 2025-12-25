@@ -188,7 +188,7 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to
           split ordinal(\alpha)
           split wellorder(\alpha,in)
           apply invoke \forall^T\phi[1](\exists z(in(z,\alpha)\wedge\phi(z))\to\exists a(minimum(\alpha,in,\phi,a))) for lambda\gamma.notin(\gamma,\beta)
-          some a:\gamma such \exists a(minimum(\alpha,in,lambda\gamma.notin(\gamma,\beta),a)) {
+          some \gamma such \exists a(minimum(\alpha,in,lambda\gamma.notin(\gamma,\beta),a)) {
             split minimum(\alpha,in,lambda\gamma.notin(\gamma,\beta),\gamma)
             any \delta {
               assume in(\delta,\gamma) {
@@ -310,13 +310,13 @@ theorem ordinals_comparable_subset \forall\alpha\forall\beta(ordinal(\alpha)\wed
         apply invoke \forall^T\phi[1](\exists z(in(z,\alpha)\wedge\phi(z))\to\exists\gamma(minimum(\alpha,in,\phi,\gamma))) for lambda z.notin(z,\beta)
         apply invoke rightward neg_subset for \beta,\alpha
         apply invoke \forall^T\phi[1](\exists z(in(z,\beta)\wedge\phi(z))\to\exists\delta(minimum(\beta,in,\phi,\delta))) for lambda z.notin(z,\alpha)
-        some \gamma:\gamma such \exists\gamma(minimum(\alpha,in,lambda z.notin(z,\beta),\gamma)) {
-          some \delta:\delta such \exists\delta(minimum(\beta,in,lambda z.notin(z,\alpha),\delta)) {
+        some \gamma such \exists\gamma(minimum(\alpha,in,lambda z.notin(z,\beta),\gamma)) {
+          some \delta such \exists\delta(minimum(\beta,in,lambda z.notin(z,\alpha),\delta)) {
             split minimum(\alpha,in,lambda z.notin(z,\beta),\gamma)
             split minimum(\beta,in,lambda z.notin(z,\alpha),\delta)
             deny \neg(subset(\gamma,\delta)) {
               apply invoke rightward neg_subset for \gamma,\delta
-              some \varepsilon:\varepsilon such \exists\varepsilon(in(\varepsilon,\gamma)\wedge notin(\varepsilon,\delta)) {
+              some \varepsilon such \exists\varepsilon(in(\varepsilon,\gamma)\wedge notin(\varepsilon,\delta)) {
                 split in(\varepsilon,\gamma)\wedge notin(\varepsilon,\delta)
                 connect in(\varepsilon,\gamma)\wedge in(\gamma,\alpha)
                 apply invoke trans(\alpha) for \gamma,\varepsilon
@@ -355,7 +355,7 @@ theorem ordinals_comparable_subset \forall\alpha\forall\beta(ordinal(\alpha)\wed
             }
             deny \neg(subset(\delta,\gamma)) {
               apply invoke rightward neg_subset for \delta,\gamma
-              some \varepsilon:\varepsilon such \exists\varepsilon(in(\varepsilon,\delta)\wedge notin(\varepsilon,\gamma)) {
+              some \varepsilon such \exists\varepsilon(in(\varepsilon,\delta)\wedge notin(\varepsilon,\gamma)) {
                 split in(\varepsilon,\delta)\wedge notin(\varepsilon,\gamma)
                 connect in(\varepsilon,\delta)\wedge in(\delta,\beta)
                 apply invoke trans(\beta) for \delta,\varepsilon

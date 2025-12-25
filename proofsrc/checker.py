@@ -516,24 +516,44 @@ def check_some(node: Some, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}derivable: {pretty_expr(node.fact, context)}")
-    fact = get_fact(node.fact, context)
+    fact = get_fact(node.fact, context, True)
     if not isinstance(fact, Exists):
         logger.error(f"{error_prefix}Exists object: {pretty_expr(node.fact, context)}")
         node.proofinfo.status = "ERROR"
         return False
     vars, body = collect_quantifier_vars(fact, Exists)
-    if not set(node.env.keys()).issubset(set(vars)):
-        logger.error(f"{error_prefix}invalid vars: node.env.keys()={node.env.keys()}, vars={vars}")
+    if len(vars) != len(node.items):
+        logger.error(f"{error_prefix}len(vars)={len(vars)}, len(node.vars)={len(node.items)}")
         node.proofinfo.status = "ERROR"
         return False
-    for var in node.env.values():
-        if var in context.ctrl.vars:
+    env: dict[Var | Template, Var | Template] = {}
+    for bound, free in zip(vars, node.items):
+        if free is None:
+            continue
+        if isinstance(bound, Var):
+            if not isinstance(free, Var):
+                logger.error(f"{error_prefix}{type(free)} cannot be substituted to Var {bound.name}")
+                node.proofinfo.status = "ERROR"
+                return False
+        elif isinstance(bound, Template):
+            if not isinstance(free, Template):
+                logger.error(f"{error_prefix}{type(free)} cannot be substituted to Template {bound.name}")
+                node.proofinfo.status = "ERROR"
+                return False
+        else:
+            logger.error(f"{error_prefix}Unexpected bound item {bound}")
             node.proofinfo.status = "ERROR"
-            logger.error(f"{error_prefix}{pretty_expr(var, context)} is already used")
-    subst = Substitutor(node.env)
+            return False
+        env[bound] = free
+    for free, bound in zip(reversed(vars), reversed(node.items)):
+        if bound is None:
+            body = Exists(free, body)
+    subst = Substitutor(env)
     premise = subst.substitute_formula(body)
-    logger.debug(f"{debug_prefix}Taking {node.env.values()}, premise={pretty_expr(premise, context)}")
-    local_ctx = context.add_ctrl(list(node.env.values()), [premise], [])
+    logger.debug(f"{debug_prefix}Taking {node.items}, premise={pretty_expr(premise, context)}")
+    local_vars = [item for item in node.items if isinstance(item, Var)]
+    local_templates = [item for item in node.items if isinstance(item, Template)]
+    local_ctx = context.add_ctrl(local_vars, [premise], local_templates)
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
@@ -547,7 +567,7 @@ def check_some(node: Some, context: Context, indent: int):
     node.proofinfo.status = "OK"
     node.proofinfo.premises = [node.fact]
     node.proofinfo.conclusions = [goal]
-    node.proofinfo.local_vars = list(node.env.values())
+    node.proofinfo.local_vars = list(local_vars)
     node.proofinfo.local_premise = [premise]
     node.proofinfo.local_conclusion = [goal]
     add_conclusion(context, goal)

@@ -10,7 +10,7 @@ theorem neg_exist_leftrightarrow_forall_neg \forall^T\phi[1](\neg(\exists x(\phi
     }
     assume \forall x(\neg(\phi(x))) {
       deny \exists x(\phi(x)) {
-        some x:x such \exists x(\phi(x)) {
+        some x such \exists x(\phi(x)) {
           apply \forall x(\neg(\phi(x))) for x
           contradict \phi(x)
         }
@@ -29,7 +29,7 @@ theorem neg_exist_neg_leftrightarrow_forall \forall^T\phi[1](\neg(\exists x(\neg
 theorem exist_neg_leftrightarrow_neg_forall \forall^T\phi[1](\exists x(\neg(\phi(x)))\leftrightarrow\neg(\forall x(\phi(x)))) {
   any template \phi[1] {
     assume \exists x(\neg(\phi(x))) {
-      some x:x such \exists x(\neg(\phi(x))) {
+      some x such \exists x(\neg(\phi(x))) {
         deny \forall x(\phi(x)) {
           apply \forall x(\phi(x)) for x
           contradict \phi(x)

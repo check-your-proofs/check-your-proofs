@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, Template
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from logic_utils import pretty_expr
@@ -490,16 +490,24 @@ class Renderer:
         return header_parts, header_parts_jp, body_html
 
     def render_some(self, node: Some):
+        items_str: list[str] = []
+        for item in node.items:
+            if isinstance(item, (Var, Template)):
+                items_str.append(self.render_expr(item))
+            elif item is None:
+                items_str.append("_")
+            else:
+                raise Exception(f"Unexpected item: {item}")
         header_parts = [self.toggle,
                         self.render_keyword("some"),
-                        self.render_expr_dict(node.env),
+                        ",".join(items_str),
                         self.render_keyword("such"),
                         self.render_expr(node.fact)]
         header_parts_jp = [self.toggle,
                            self.render_expr(node.fact),
-                           "の",
-                           "、".join([self.render_expr(k) + "を" + self.render_expr(v) + "として" for k, v in node.env.items()]),
-                           "とる。"]
+                           "において",
+                           ",".join(items_str),
+                           "としてとる。"]
         body_html = "".join(self.render_node(s) for s in node.body)
         return header_parts, header_parts_jp, body_html
 

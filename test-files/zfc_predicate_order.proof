@@ -84,7 +84,7 @@ theorem linorder_and_wellfounded_implies_wellorder \forall X\forall^T\psi[2](lin
       any template \phi[1] {
         assume \exists z(in(z,X)\wedge\phi(z)) {
           apply invoke wellfounded(X,\psi) for \phi
-          some a:a such \exists a(minimal(X,\psi,\phi,a)) {
+          some a such \exists a(minimal(X,\psi,\phi,a)) {
             connect linorder(X,\psi)\wedge minimal(X,\psi,\phi,a)
             apply invoke linorder_and_minmal_implies_minimum for X,\psi,\phi,a
             lift for a:a conclude \exists a(minimum(X,\psi,\phi,a))
@@ -108,7 +108,7 @@ theorem wellorder_implies_linorder \forall X\forall^T\psi[2](wellorder(X,\psi)\t
           connect in(x,X)\wedge(equal(x,x)\vee equal(x,y))
           lift for z:x conclude \exists z(in(z,X)\wedge(equal(z,x)\vee equal(z,y)))
           apply invoke \forall^T\phi[1](\exists z(in(z,X)\wedge\phi(z))\to\exists a(minimum(X,\psi,\phi,a))) for lambda z.equal(z,x)\vee equal(z,y)
-          some a:a such \exists a(minimum(X,\psi,lambda z.equal(z,x)\vee equal(z,y),a)) {
+          some a such \exists a(minimum(X,\psi,lambda z.equal(z,x)\vee equal(z,y),a)) {
             split minimum(X,\psi,lambda z.equal(z,x)\vee equal(z,y),a)
             apply law_of_excluded_middle for lambda.equal(x,y)
             divide equal(x,y)\vee neq(x,y)
@@ -149,7 +149,7 @@ theorem wellorder_implies_wellfounded \forall X\forall^T\psi[2](wellorder(X,\psi
       any template \phi[1] {
         assume \exists z(in(z,X)\wedge\phi(z)) {
           apply invoke \forall^T\phi[1](\exists z(in(z,X)\wedge\phi(z))\to\exists a(minimum(X,\psi,\phi,a))) for \phi
-          some a:a such \exists a(minimum(X,\psi,\phi,a)) {
+          some a such \exists a(minimum(X,\psi,\phi,a)) {
             connect antisymrelon(X,\psi)\wedge minimum(X,\psi,\phi,a)
             apply invoke minimum_implies_minimal for X,\psi,\phi,a
             lift for a:a conclude \exists a(minimal(X,\psi,\phi,a))
@@ -257,7 +257,7 @@ theorem wellorder_subset \forall X\forall^T\psi[2]\forall Y(wellorder(X,\psi)\we
       apply invoke orderon_subset for X,\psi,Y
       any template \chi[1] {
         assume \exists z(in(z,Y)\wedge\chi(z)) {
-          some z:z such \exists z(in(z,Y)\wedge\chi(z)) {
+          some z such \exists z(in(z,Y)\wedge\chi(z)) {
             split in(z,Y)\wedge\chi(z)
             connect in(z,Y)\wedge subset(Y,X)
             apply invoke subset(Y,X) for z
@@ -265,7 +265,7 @@ theorem wellorder_subset \forall X\forall^T\psi[2]\forall Y(wellorder(X,\psi)\we
             lift for z:z conclude \exists z(in(z,X)\wedge in(z,Y)\wedge\chi(z))
           }
           apply invoke \forall^T\phi[1](\exists z(in(z,X)\wedge\phi(z))\to\exists a(minimum(X,\psi,\phi,a))) for lambda w.in(w,Y)\wedge\chi(w)
-          some a:a such \exists a(minimum(X,\psi,lambda w.in(w,Y)\wedge\chi(w),a)) {
+          some a such \exists a(minimum(X,\psi,lambda w.in(w,Y)\wedge\chi(w),a)) {
             split minimum(X,\psi,lambda w.in(w,Y)\wedge\chi(w),a)
             any x {
               assume in(x,Y)\wedge\chi(x)\wedge neq(x,a) {

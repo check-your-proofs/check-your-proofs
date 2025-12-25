@@ -335,22 +335,24 @@ class Parser:
     
     def parse_some(self, context: Context) -> Some:
         start_token = self.stream.consume("SOME")
-        env: dict[Var, Var] = {}
+        items: list[Var | Template | None] = []
         while True:
-            bound = self.parse_var()
-            self.stream.consume("COLON")
-            free = self.parse_var()
-            env[bound] = free
+            if self.stream.peek().type == "UNDERSCORE":
+                items.append(None)
+            else:
+                items.append(self.parse_var())
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
-                continue
-            break
+            else:
+                break
         self.stream.consume("SUCH")
         fact = self.parse_reference_or_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.add_ctrl(list(env.values()), [], []))
+        local_vars = [item for item in items if isinstance(item, Var)]
+        local_templates = [item for item in items if isinstance(item, Template)]
+        body = self.parse_block(context.add_ctrl(local_vars, [], local_templates))
         self.stream.consume("RBRACE")
-        return Some(token=start_token, env=env, fact=fact, body=body)
+        return Some(token=start_token, items=items, fact=fact, body=body)
     
     def parse_deny(self, context: Context) -> Deny:
         start_token = self.stream.consume("DENY")

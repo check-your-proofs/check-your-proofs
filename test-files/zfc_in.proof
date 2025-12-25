@@ -98,7 +98,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
         }
         contradict \forall z(in(z,x)\leftrightarrow in(z,y))
       }
-      some z:z such \exists z(\neg(in(z,x)\leftrightarrow in(z,y))) {
+      some z such \exists z(\neg(in(z,x)\leftrightarrow in(z,y))) {
         deny (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x)) {
           split (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x))
           connect in(z,x)\leftrightarrow in(z,y)
@@ -145,7 +145,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
       }
     }
     assume \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
-      some z:z such \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
+      some z such \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
         deny equal(x,y) {
           divide (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
             case in(z,x)\wedge notin(z,y) {
@@ -235,13 +235,13 @@ theorem neg_subset \forall x\forall y(\neg(subset(x,y))\leftrightarrow\exists z(
     assume \neg(subset(x,y)) {
       expand \neg(subset(x,y)) for subset
       apply invoke leftward exist_neg_leftrightarrow_neg_forall for lambda z.in(z,x)\to in(z,y)
-      some z:z such \exists z(\neg(in(z,x)\to in(z,y))) {
+      some z such \exists z(\neg(in(z,x)\to in(z,y))) {
         apply invoke rightward neg_implication for lambda.in(z,x),lambda.in(z,y)
         lift for z:z conclude \exists z(in(z,x)\wedge notin(z,y))
       }
     }
     assume \exists z(in(z,x)\wedge notin(z,y)) {
-      some z:z such \exists z(in(z,x)\wedge notin(z,y)) {
+      some z such \exists z(in(z,x)\wedge notin(z,y)) {
         apply invoke leftward neg_implication for lambda.in(z,x),lambda.in(z,y)
         lift for z:z conclude \exists z(\neg(in(z,x)\to in(z,y)))
       }
@@ -275,7 +275,7 @@ theorem subsetneq_implies_exist \forall x\forall y(subsetneq(x,y)\to\exists z(in
     assume subsetneq(x,y) {
       split subsetneq(x,y)
       apply invoke rightward neq_cor1 for x,y
-      some z:z such \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
+      some z such \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
         divide (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
           case in(z,x)\wedge notin(z,y) {
             split in(z,x)\wedge notin(z,y)
