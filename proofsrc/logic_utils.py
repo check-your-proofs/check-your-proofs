@@ -428,7 +428,7 @@ class Substitutor:
             if isinstance(new_template, Template):
                 return TemplateCall(new_template, tuple(self.substitute_term(arg) for arg in expr.args))
             elif isinstance(new_template, Lambda):
-                lambda_mapping: dict[Var, Term] = {}
+                lambda_mapping: dict[Term, Term] = {}
                 for a, b in zip(new_template.args, expr.args):
                     lambda_mapping[a] = b
                 subst = Substitutor(lambda_mapping)

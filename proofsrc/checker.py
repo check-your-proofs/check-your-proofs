@@ -526,7 +526,7 @@ def check_some(node: Some, context: Context, indent: int):
         logger.error(f"{error_prefix}len(vars)={len(vars)}, len(node.vars)={len(node.items)}")
         node.proofinfo.status = "ERROR"
         return False
-    env: dict[Var | Template, Var | Template] = {}
+    env: dict[Term, Term] = {}
     for bound, free in zip(vars, node.items):
         if free is None:
             continue
@@ -763,7 +763,7 @@ def check_lift(node: Lift, context: Context, indent: int):
         logger.error(f"{error_prefix}len(items)={len(items)}, len(node.terms)={len(node.terms)}")
         node.proofinfo.status = "ERROR"
         return False
-    env: dict[Var | Template, Term] = {}
+    env: dict[Term, Term] = {}
     for item, term in zip(items, node.terms):
         if term is None:
             continue

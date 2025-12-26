@@ -511,7 +511,7 @@ class Parser:
         fact = self.parse_reference_or_formula(context)
         self.stream.consume("FOR")
         env: dict[Term, Term] = {}
-        indexes: dict[Term, set[int]] = {}
+        indexes: dict[Term, list[int]] = {}
         while True:
             key = self.parse_term(context)
             if self.stream.peek().type == "LBRACKET":
