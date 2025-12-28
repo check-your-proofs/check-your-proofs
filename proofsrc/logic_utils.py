@@ -174,6 +174,12 @@ def collect_quantifier_vars(e: Formula, quantifier_type: type[Forall] | type[Exi
         body = body.body
     return vars_, body
 
+def make_quantifier_vars(e: Formula, quantifier_type: type[Forall] | type[Exists] | type[ExistsUniq], vars_: list[Var | Template]) -> Formula:
+    body = e
+    for var in reversed(vars_):
+        body = quantifier_type(var, body)
+    return body
+
 def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bt: set[Template] | None = None) -> tuple[set[Var], set[Var], set[Template], set[Template]]:
     if used_bv is None:
         used_bv = set()
@@ -514,17 +520,19 @@ def alpha_safe_formula(expr: Formula, terms: Sequence[Term], context: Context) -
     rename_map_var, rename_map_template = alpha_safe(expr, terms, context)
     return AlphaRename(rename_map_var, rename_map_template).alpha_rename_formula(expr)
 
-def type_safe(items: Sequence[Var | Template], terms: Sequence[Term | None]) -> bool:
+def type_safe(items: Sequence[Var | Template], terms: Sequence[Term | None], strict: bool = False) -> bool:
     if len(items) != len(terms):
         return False
     for item, term in zip(items, terms):
         if term is None:
             continue
         if isinstance(item, Var):
-            if not isinstance(term, (Compound, Con, Var)):
+            allowed = Var if strict else (Var, Con, Compound)
+            if not isinstance(term, allowed):
                 return False
         elif isinstance(item, Template):
-            if not isinstance(term, (Template, Lambda)):
+            allowed = Template if strict else (Template, Lambda)
+            if not isinstance(term, allowed):
                 return False
         else:
             return False
