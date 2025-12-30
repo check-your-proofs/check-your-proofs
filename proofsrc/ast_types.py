@@ -393,8 +393,13 @@ class DeclarationContext:
         if len(args1) != len(args2):
             return False
         for arg1, arg2 in zip(args1, args2):
-            if self.get_type_of(arg1) != self.get_type_of(arg2):
-                return False
+            type1 = self.get_type_of(arg1)
+            type2 = self.get_type_of(arg2)
+            if type1 == type2:
+                continue
+            if self.membership is not None and type1 == (Template, 1) and type2 == Var:
+                continue
+            return False
         return True
 
     def add(self, declaration: Declaration):

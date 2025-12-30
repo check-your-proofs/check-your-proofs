@@ -2,43 +2,23 @@ include "zfc_predicate_in.proof"
 
 definition predicate transrelon(template \phi[1], template \psi[2]) as \forall x \forall y \forall z (\phi(x) \wedge \phi(y) \wedge \phi(z) \wedge \psi(x, y) \wedge \psi(y, z) \to \psi(x, z))
 
-definition predicate transrelon(X, template \psi[2]) as transrelon(lambda x. in(x, X), \psi)
-
 definition predicate antisymrelon(template \phi[1], template \psi[2]) as \forall x \forall y (\phi(x) \wedge \phi(y) \wedge \psi(x, y) \wedge \psi(y, x) \to equal(x, y))
-
-definition predicate antisymrelon(X, template \psi[2]) as antisymrelon(lambda x. in(x, X), \psi)
 
 definition predicate orderon(template \phi[1], template \psi[2]) as transrelon(\phi, \psi) \wedge antisymrelon(\phi, \psi)
 
-definition predicate orderon(X, template \psi[2]) as orderon(lambda x. in(x, X), \psi)
-
 definition predicate irrefrelon(template \phi[1], template \psi[2]) as \forall x (\phi(x) \to \neg(\psi(x, x)))
-
-definition predicate irrefrelon(X, template \psi[2]) as irrefrelon(lambda x. in(x, X), \psi)
 
 definition predicate linorder_core(template \phi[1], template \psi[2]) as \forall x \forall y (\phi(x) \wedge \phi(y) \to \psi(x, y) \vee equal(x, y) \vee \psi(y, x))
 
-definition predicate linorder_core(X, template \psi[2]) as linorder_core(lambda x. in(x, X), \psi)
-
 definition predicate linorder(template \phi[1], template \psi[2]) as orderon(\phi, \psi) \wedge linorder_core(\phi, \psi)
-
-definition predicate linorder(X, template \psi[2]) as linorder(lambda x. in(x, X), \psi)
 
 definition predicate minimal_core(template \chi[1], template \psi[2], template \phi[1], a) as \forall x (\chi(x) \wedge \phi(x) \wedge neq(x, a) \to \neg(\psi(x, a)))
 
-definition predicate minimal_core(X, template \psi[2], template \phi[1], a) as minimal_core(lambda x. in(x, X), \psi, \phi, a)
-
 definition predicate minimal(template \chi[1], template \psi[2], template \phi[1], a) as \chi(a) \wedge \phi(a) \wedge minimal_core(\chi, \psi, \phi, a)
-
-definition predicate minimal(X, template \psi[2], template \phi[1], a) as minimal(lambda x. in(x, X), \psi, \phi, a)
 
 definition predicate minimum_core(template \chi[1], template \psi[2], template \phi[1], a) as \forall x (\chi(x) \wedge \phi(x) \wedge neq(x, a) \to \psi(a, x))
 
-definition predicate minimum_core(X, template \psi[2], template \phi[1], a) as minimum_core(lambda x. in(x, X), \psi, \phi, a)
-
 definition predicate minimum(template \chi[1], template \psi[2], template \phi[1], a) as \chi(a) \wedge \phi(a) \wedge minimum_core(\chi, \psi, \phi, a)
-
-definition predicate minimum(X, template \psi[2], template \phi[1], a) as minimum(lambda x. in(x, X), \psi, \phi, a)
 
 theorem irrefrelon_and_transrelon_implies_antisymrelon \forall^T \phi[1] \forall^T \psi[2] (irrefrelon(\phi, \psi) \wedge transrelon(\phi, \psi) \to antisymrelon(\phi, \psi)) {
   any template \phi[1], template \psi[2] {
@@ -125,15 +105,9 @@ theorem linorder_and_minmal_implies_minimum \forall^T \chi[1] \forall^T \psi[2] 
 
 definition predicate wellfounded(template \chi[1], template \psi[2]) as \forall^T \phi[1] (\exists z(\chi(z) \wedge \phi(z)) \to \exists a (minimal(\chi, \psi, \phi, a)))
 
-definition predicate wellfounded(X, template \psi[2]) as wellfounded(lambda x. in(x, X), \psi)
-
 definition predicate wellorder_core(template \chi[1], template \psi[2]) as \forall^T \phi[1] (\exists z(\chi(z) \wedge \phi(z)) \to \exists a (minimum(\chi, \psi, \phi, a)))
 
-definition predicate wellorder_core(X, template \psi[2]) as wellorder_core(lambda x. in(x, X), \psi)
-
 definition predicate wellorder(template \chi[1], template \psi[2]) as orderon(\chi, \psi) \wedge wellorder_core(\chi, \psi)
-
-definition predicate wellorder(X, template \psi[2]) as wellorder(lambda x. in(x, X), \psi)
 
 theorem linorder_and_wellfounded_implies_wellorder \forall^T \chi[1] \forall^T \psi[2] (linorder(\chi, \psi) \wedge wellfounded(\chi, \psi) \to wellorder(\chi, \psi)) {
   any template \chi[1], template \psi[2] {

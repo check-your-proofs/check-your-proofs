@@ -291,9 +291,9 @@ class DefExpander:
                         should_expand = True
                 if should_expand:
                     renamed_term, renamed_mapping = alpha_safe_term(deffunterm.term, dict(zip(deffunterm.args, expr.args)), self.context)
-                    if not type_safe(renamed_mapping):
+                    if not type_safe(renamed_mapping, self.context):
                         raise Exception("type_safe() failed")
-                    expanded = Substitutor(renamed_mapping).substitute_term(renamed_term)
+                    expanded = Substitutor(renamed_mapping, self.context).substitute_term(renamed_term)
                     return self.expand_defs_term(expanded, bound_templates)
                 else:
                     return Compound(expr.fun, tuple(self.expand_defs_term(arg, bound_templates) for arg in expr.args))
@@ -324,9 +324,9 @@ class DefExpander:
                         should_expand = True
                 if should_expand:
                     renamed_formula, renamed_mapping = alpha_safe_formula(defpred.formula, dict(zip(defpred.args, expr.args)), self.context)
-                    if not type_safe(renamed_mapping):
+                    if not type_safe(renamed_mapping, self.context):
                         raise Exception("type_safe() failed")
-                    expanded = Substitutor(renamed_mapping).substitute_formula(renamed_formula)                    
+                    expanded = Substitutor(renamed_mapping, self.context).substitute_formula(renamed_formula)
                     return self.expand_defs_formula(expanded, bound_templates)
                 else:
                     return Symbol(expr.pred, tuple(self.expand_defs_term(arg, bound_templates) for arg in expr.args))
@@ -387,6 +387,7 @@ def fresh_template(template: Template, used_items: set[Var | Template], context:
 @dataclass
 class Substitutor:
     mapping: Mapping[Term, Term]
+    context: Context
     indexes: Mapping[Term, list[int]] = field(default_factory=dict[Term, list[int]])
     counter: dict[Term, int] = field(init=False, default_factory=dict[Term, int])
 
@@ -438,9 +439,15 @@ class Substitutor:
                 lambda_mapping: dict[Term, Term] = {}
                 for a, b in zip(new_template.args, expr.args):
                     lambda_mapping[a] = b
-                subst = Substitutor(lambda_mapping)
+                subst = Substitutor(lambda_mapping, self.context)
                 lambda_mapped = subst.substitute_formula(new_template.body)
                 return self.substitute_formula(lambda_mapped)
+            elif isinstance(new_template, (Var, Con, Compound)):
+                if self.context.decl.membership is None:
+                    raise Exception(f"{type(new_template)} cannot be substituted into TemplateCall since membership has not been declared.")
+                if len(expr.args) != 1:
+                    raise Exception(f"{type(new_template)} cannot be substituted into TemplateCall with {len(expr.args)} args")
+                return Symbol(Pred(self.context.decl.membership.name), (expr.args[0], new_template))
             else:
                 raise Exception(f"Unexpected type: {type(new_template)}")
 
@@ -537,14 +544,19 @@ def alpha_safe_formula(expr: Formula, mapping: dict[Term, Term], context: Contex
     renamer, renamed_mapping = alpha_safe(expr, mapping, context, skip_key)
     return renamer.alpha_rename_formula(expr), renamed_mapping
 
-def type_safe(mapping: dict[Term, Term], strict: bool = False) -> bool:
+def type_safe(mapping: dict[Term, Term], context: Context, strict: bool = False) -> bool:
     for item, term in mapping.items():
         if isinstance(item, Var):
             allowed = Var if strict else (Var, Con, Compound)
             if not isinstance(term, allowed):
                 return False
         elif isinstance(item, Template):
-            allowed = Template if strict else (Template, Lambda)
+            if strict:
+                allowed = Template
+            elif context.decl.membership is not None and item.arity == 1:
+                allowed = (Var, Con, Compound, Template, Lambda)
+            else:
+                allowed = (Template, Lambda)
             if not isinstance(term, allowed):
                 return False
         else:

@@ -94,8 +94,6 @@ definition predicate autoexpand notin(x,y) as \neg(in(x,y)) tex "","\notin",""
 
 definition predicate autoexpand neq(template \phi[1], template \chi[1]) as \neg(equal(\phi, \chi)) tex "", "\neq", ""
 
-definition predicate autoexpand neq(x,y) as \neg(equal(x,y)) tex "","\neq",""
-
 theorem neq_cor1 \forall^T \phi[1] \forall^T \chi[1] (neq(\phi, \chi) \leftrightarrow \exists x ((\phi(x) \wedge \neg(\chi(x))) \vee (\neg(\phi(x)) \wedge \chi(x)))) {
   any template \phi[1], template \chi[1] {
     assume neq(\phi, \chi) {
@@ -203,10 +201,6 @@ theorem neq_cor1_set \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x
 
 definition predicate subset(template \phi[1], template \chi[1]) as \forall x (\phi(x) \to \chi(x)) tex "", "\subset", ""
 
-definition predicate subset(x, template \chi[1]) as subset(lambda z. in(z, x), \chi) tex "", "\subset", ""
-
-definition predicate subset(x, y) as subset(lambda z. in(z, x), lambda z. in(z, y)) tex "", "\subset", ""
-
 theorem subset_reflection \forall^T \phi[1] (subset(\phi, \phi)) {
   any template \phi[1] {
     any x {
@@ -304,8 +298,6 @@ theorem neq_iff_subset \forall^T \phi[1] \forall^T \chi[1] (neq(\phi, \chi) \lef
 }
 
 definition predicate subsetneq(template \phi[1], template \chi[1]) as subset(\phi, \chi) \wedge neq(\phi, \chi) tex "", "\subsetneq", ""
-
-definition predicate subsetneq(x, y) as subset(lambda z. in(z, x), lambda z. in(z, y)) tex "", "\subsetneq", ""
 
 theorem subsetneq_implies_exist \forall^T \phi[1] \forall^T \chi[1] (subsetneq(\phi, \chi) \to \exists x(\neg(\phi(x)) \wedge \chi(x))) {
   any template \phi[1], template \chi[1] {
