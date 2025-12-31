@@ -349,7 +349,6 @@ class Equality(Declaration):
 @dataclass
 class Membership(Declaration):
     membership: PrimPred | DefPred
-    extensionality: str
 
 @dataclass
 class DeclarationContext:

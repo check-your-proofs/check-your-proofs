@@ -317,30 +317,7 @@ def check_equality_replacement(node: EqualityReplacement, context: Context, inde
 
 def check_membership(node: Membership, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
-    error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}name: {node.membership.name}")
-    if node.extensionality in context.decl.axioms:
-        reference = context.decl.axioms[node.extensionality].conclusion
-    elif node.extensionality in context.decl.theorems:
-        reference = context.decl.theorems[node.extensionality].conclusion
-    else:
-        logger.error(f"{error_prefix}{node.extensionality} is not found in axioms or theorems")
-        node.proofinfo.status = "ERROR"
-        return False
-    if context.decl.equality is None:
-        logger.error(f"{error_prefix}equality has not been declared")
-        node.proofinfo.status = "ERROR"
-        return False
-    x = Var("x")
-    y = Var("y")
-    z = Var("z")
-    pred_in = Pred(node.membership.name)
-    equal = Pred(context.decl.equality.equal.name)
-    extentionality = Forall(x, Forall(y, Implies(Forall(z, Iff(Symbol(pred_in, (z, x)), Symbol(pred_in, (z, y)))), Symbol(equal, (x, y)))))
-    if not alpha_equiv_with_defs(reference, extentionality, context):
-        logger.error(f"{error_prefix}Expected extentionality: {pretty_expr(extentionality, context)}, {node.extensionality}: {pretty_expr(extentionality, context)}")
-        node.proofinfo.status = "ERROR"
-        return False
     context.add_decl(node)
     logger.debug(f"{debug_prefix}{node.membership.name} is registered as membership")
     node.proofinfo.status = "OK"

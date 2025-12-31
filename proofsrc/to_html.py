@@ -305,16 +305,11 @@ class Renderer:
     def render_membership(self, node: Membership):
         header_parts = [self.bullet,
                         self.render_keyword("membership"),
-                        self.render_identifier(node.membership.name),
-                        self.render_keyword("by"),
-                        self.render_identifier(node.extensionality)]
+                        self.render_identifier(node.membership.name)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("帰属関係宣言"),
                            self.render_identifier(node.membership.name),
-                           "は帰属関係である。",
-                           "外延性は",
-                           self.render_identifier(node.extensionality),
-                           "で示された。"]
+                           "は帰属関係である。"]
         return header_parts, header_parts_jp, ""
 
     def render_declaration(self, node: Declaration):

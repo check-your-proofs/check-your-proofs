@@ -261,9 +261,7 @@ class Parser:
                 raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {len(membership.args)}")
         else:
             raise Exception(f"{start_token.info()} primpred or defpred is required, but {name} is unknown")
-        self.stream.consume("BY")
-        extentionality = self.stream.consume("IDENT").value
-        membership = Membership(name=name, token=start_token, membership=membership, extensionality=extentionality)
+        membership = Membership(name=name, token=start_token, membership=membership)
         context.add_decl(membership)
         logger.debug(f"[membership] {type(membership)}: {membership.name}")
         return membership
