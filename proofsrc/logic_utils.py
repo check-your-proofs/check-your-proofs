@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, Template, Lambda, TemplateCall
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, Template, Lambda, TemplateCall, MembershipLambda, VarTerm, TemplateTerm
 from itertools import permutations
 from copy import deepcopy
 from typing import Mapping
@@ -43,6 +43,9 @@ class AlphaEquiv:
             newenv[a] = b
         return self.alpha_equiv_formula(e1.body, e2.body, newenv, depth+1)
 
+    def alpha_equiv_membership_lambda(self, e1: MembershipLambda, e2: MembershipLambda, env: dict[Var | Template, Var | Template], depth: int) -> bool:
+        return self.alpha_equiv_term(e1.varterm, e2.varterm, env, depth+1)
+
     def alpha_equiv_term(self, e1: Term, e2: Term, env: dict[Var | Template, Var | Template], depth: int) -> bool:
         self.log(depth, e1, e2)
         if isinstance(e1, Var) and isinstance(e2, Var):
@@ -59,6 +62,8 @@ class AlphaEquiv:
             return self.alpha_equiv_compound(e1, e2, env, depth)
         elif isinstance(e1, Lambda) and isinstance(e2, Lambda):
             return self.alpha_equiv_lambda(e1, e2, env, depth)
+        elif isinstance(e1, MembershipLambda) and isinstance(e2, MembershipLambda):
+            return self.alpha_equiv_membership_lambda(e1, e2, env, depth)
         else:
             return False
 
@@ -245,6 +250,8 @@ def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bt:
     elif isinstance(expr, Lambda):
         found_fv, found_bv, found_ft, found_bt = collect_vars(expr.body, used_bv | set(expr.args), used_bt)
         return found_fv, found_bv | set(expr.args), found_ft, found_bt
+    elif isinstance(expr, MembershipLambda):
+        return collect_vars(expr.varterm, used_bv, used_bt)
     else:
         raise Exception(f"Unexpected type {type(expr)}")
 
@@ -301,6 +308,11 @@ class DefExpander:
                 raise Exception(f"Unexpected function name: {expr.fun.name}")
         elif isinstance(expr, Lambda):
             return Lambda(expr.args, self.expand_defs_formula(expr.body, bound_templates))
+        elif isinstance(expr, MembershipLambda):
+            expanded = self.expand_defs_term(expr.varterm, bound_templates)
+            if not isinstance(expanded, VarTerm):
+                raise Exception(f"Unexpected type: {type(expanded)}")
+            return MembershipLambda(expanded)
         else:
             raise Exception(f"Unexpected type: {type(expr)}")
 
@@ -415,6 +427,12 @@ class Substitutor:
         elif isinstance(expr, Lambda):
             return Lambda(expr.args, self.substitute_formula(expr.body))
 
+        elif isinstance(expr, MembershipLambda):
+            substituted = self.substitute_term(expr.varterm)
+            if not isinstance(substituted, VarTerm):
+                raise Exception(f"Unexpected type: {type(substituted)}")
+            return MembershipLambda(substituted)
+
         else:
             raise Exception(f"Unexpected type: {type(expr)}")
 
@@ -442,12 +460,12 @@ class Substitutor:
                 subst = Substitutor(lambda_mapping, self.context)
                 lambda_mapped = subst.substitute_formula(new_template.body)
                 return self.substitute_formula(lambda_mapped)
-            elif isinstance(new_template, (Var, Con, Compound)):
+            elif isinstance(new_template, MembershipLambda):
                 if self.context.decl.membership is None:
                     raise Exception(f"{type(new_template)} cannot be substituted into TemplateCall since membership has not been declared.")
                 if len(expr.args) != 1:
                     raise Exception(f"{type(new_template)} cannot be substituted into TemplateCall with {len(expr.args)} args")
-                return Symbol(Pred(self.context.decl.membership.name), (self.substitute_term(expr.args[0]), new_template))
+                return Symbol(Pred(self.context.decl.membership.name), (self.substitute_term(expr.args[0]), new_template.varterm))
             else:
                 raise Exception(f"Unexpected type: {type(new_template)}")
 
@@ -482,6 +500,11 @@ class AlphaRename:
             return Compound(expr.fun, tuple(self.alpha_rename_term(a) for a in expr.args))
         elif isinstance(expr, Lambda):
             return Lambda(tuple(self.alpha_rename_var(a) for a in expr.args), self.alpha_rename_formula(expr.body))
+        elif isinstance(expr, MembershipLambda):
+            renamed = self.alpha_rename_term(expr.varterm)
+            if not isinstance(renamed, VarTerm):
+                raise Exception(f"Unexpected type: {type(renamed)}")
+            return MembershipLambda(renamed)
         else:
             raise Exception(f"Unexpected type: {type(expr)}")
 
@@ -547,16 +570,11 @@ def alpha_safe_formula(expr: Formula, mapping: dict[Term, Term], context: Contex
 def type_safe(mapping: dict[Term, Term], context: Context, strict: bool = False) -> bool:
     for item, term in mapping.items():
         if isinstance(item, Var):
-            allowed = Var if strict else (Var, Con, Compound)
+            allowed = Var if strict else VarTerm
             if not isinstance(term, allowed):
                 return False
         elif isinstance(item, Template):
-            if strict:
-                allowed = Template
-            elif context.decl.membership is not None and item.arity == 1:
-                allowed = (Var, Con, Compound, Template, Lambda)
-            else:
-                allowed = (Template, Lambda)
+            allowed = Template if strict else TemplateTerm
             if not isinstance(term, allowed):
                 return False
         else:
@@ -628,6 +646,8 @@ def pretty_term(expr: Term, context: Context, parent_prec: int = TERM_PRECEDENCE
         return text if prec > parent_prec or parent_prec == TERM_PRECEDENCE["CompoundFunction"] else f"({text})"
     elif isinstance(expr, Lambda):
         return f"\\lambda {",".join([var.name for var in expr.args])}. {pretty_formula(expr.body, context)}"
+    elif isinstance(expr, MembershipLambda):
+        return pretty_term(expr.varterm, context)
     else:
         raise TypeError(f"Unsupported node type: {type(expr)}")
 

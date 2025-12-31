@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, TemplateCall, Include, Assert, Fold, Membership
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, TemplateCall, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, TemplateTerm
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import collect_quantifier_vars
@@ -634,8 +634,28 @@ class Parser:
                     if len(args) != arity:
                         raise SyntaxError(f"{tok.info()} arity of {name} is {arity}, but length of args is {len(args)}")
                 else:
-                    if not context.decl.match_defpred(name, args):
-                        raise Exception(f"{tok.info()} signature of {name} is not matched")
+                    resolved_args: list[Term] = []
+                    defpred = context.decl.get_defpred(name, args)
+                    for defarg, subarg in zip(defpred.args, args):
+                        if isinstance(defarg, VarTerm):
+                            if isinstance(subarg, VarTerm):
+                                resolved_args.append(subarg)
+                            else:
+                                raise Exception(f"{tok.info()} VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
+                        elif isinstance(defarg, TemplateTerm):
+                            if isinstance(subarg, TemplateTerm):
+                                resolved_args.append(subarg)
+                            elif isinstance(subarg, VarTerm):
+                                if defarg.arity == 1:
+                                    if context.decl.membership is None:
+                                        raise Exception(f"{tok.info()} VarTerm is substituted into TemplateTerm with arity 1, but membership has not been declared")
+                                    else:
+                                        resolved_args.append(MembershipLambda(subarg))
+                                else:
+                                    raise Exception(f"{tok.info()} VarTerm cannot be substituted into TemplateTerm with arity {defarg.arity}")
+                            else:
+                                raise Exception(f"{tok.info()} Unexpected type: {type(subarg)}")
+                    args = resolved_args
                 return Symbol(Pred(name), tuple(args))
             else:
                 raise SyntaxError(f"{tok.info()} Formula object is required, but {name} is unknown")

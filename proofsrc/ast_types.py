@@ -6,7 +6,15 @@ import logging
 logger = logging.getLogger("proof")
 
 @dataclass(frozen=True)
-class Term():
+class Term:
+    pass
+
+@dataclass(frozen=True)
+class VarTerm(Term):
+    pass
+
+@dataclass(frozen=True)
+class TemplateTerm(Term):
     pass
 
 @dataclass(frozen=True)
@@ -14,16 +22,16 @@ class Fun:
     name: str
 
 @dataclass(frozen=True)
-class Compound(Term):
+class Compound(VarTerm):
     fun: Fun
     args: tuple[Term, ...]
 
 @dataclass(frozen=True)
-class Con(Term):
+class Con(VarTerm):
     name: str
 
 @dataclass(frozen=True)
-class Var(Term):
+class Var(VarTerm):
     name: str
 
 @dataclass(frozen=True)
@@ -40,7 +48,7 @@ class Symbol(Formula):
     args: tuple[Term, ...]
 
 @dataclass(frozen=True)
-class Template(Term):
+class Template(TemplateTerm):
     name: str
     arity: int
 
@@ -75,9 +83,13 @@ class TemplateCall(Formula):
             raise Exception(f"arity of {self.template.name} is {self.template.arity}, but length of args is {len(self.args)}")
 
 @dataclass(frozen=True)
-class Lambda(Term):
+class Lambda(TemplateTerm):
     args: tuple[Var, ...]
     body: Formula
+
+@dataclass(frozen=True)
+class MembershipLambda(TemplateTerm):
+    varterm: VarTerm
 
 @dataclass(frozen=True)
 class Forall(Formula):
@@ -371,35 +383,8 @@ class DeclarationContext:
     def init() -> "DeclarationContext":
         return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None, membership=None, used_names=set())
 
-    def get_type_of(self, item: Term) -> type[Var] | tuple[type[Template], int]:
-        if isinstance(item, (Var, Con)):
-            return Var
-        elif isinstance(item, Template):
-            return Template, item.arity
-        elif isinstance(item, Lambda):
-            return Template, len(item.args)
-        elif isinstance(item, Compound):
-            if item.fun.name in self.deffuns:
-                return self.get_type_of(self.get_deffun(item.fun.name, item.args).returned)
-            elif item.fun.name in self.deffunterms:
-                return self.get_type_of(self.get_deffunterm(item.fun.name, item.args).term)
-            else:
-                raise Exception(f"Unexpected function name: {item.fun.name}")
-        else:
-            raise Exception(f"Unexpected type: {type(item)}")
-
     def match_signature(self, args1: Sequence[Term], args2: Sequence[Term]) -> bool:
-        if len(args1) != len(args2):
-            return False
-        for arg1, arg2 in zip(args1, args2):
-            type1 = self.get_type_of(arg1)
-            type2 = self.get_type_of(arg2)
-            if type1 == type2:
-                continue
-            if self.membership is not None and type1 == (Template, 1) and type2 == Var:
-                continue
-            return False
-        return True
+        return len(args1) == len(args2)
 
     def add(self, declaration: Declaration):
         if isinstance(declaration, Equality):
