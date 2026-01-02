@@ -445,3 +445,125 @@ theorem ordinal_is_trans trans(ordinal) {
   }
   fold for trans conclude trans(ordinal)
 }
+
+theorem ordinal_is_irrefrelon irrefrelon(ordinal, in) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      apply invoke ordinal_not_contain_itself for \alpha
+    }
+  }
+  fold for irrefrelon conclude irrefrelon(ordinal, in)
+}
+
+theorem ordinal_is_transrelon transrelon(ordinal, in) {
+  any \alpha, \beta, \gamma {
+    assume ordinal(\alpha) \wedge ordinal(\beta) \wedge ordinal(\gamma) \wedge in(\alpha, \beta) \wedge in(\beta, \gamma) {
+      split ordinal(\alpha) \wedge ordinal(\beta) \wedge ordinal(\gamma) \wedge in(\alpha, \beta) \wedge in(\beta, \gamma)
+      split ordinal(\gamma)
+      connect in(\alpha, \beta) \wedge in(\beta, \gamma)
+      apply invoke trans(\gamma) for \beta, \alpha
+    }
+  }
+  fold for transrelon conclude transrelon(ordinal, in)
+}
+
+theorem ordinal_is_orderon orderon(ordinal, in) {
+  assert ordinal_is_irrefrelon
+  assert ordinal_is_transrelon
+  connect irrefrelon(ordinal, in) \wedge transrelon(ordinal, in)
+  apply invoke irrefrelon_and_transrelon_implies_orderon for ordinal, in
+}
+
+theorem ordinal_is_linorder linorder(ordinal, in) {
+  assert ordinal_is_orderon
+  any \alpha, \beta {
+    assume ordinal(\alpha) \wedge ordinal(\beta) {
+      apply invoke ordinals_trichotomy_in for \alpha, \beta
+    }
+  }
+  fold for linorder_core conclude linorder_core(ordinal, in)
+  connect linorder(ordinal, in)
+}
+
+theorem ordinal_is_wellfounded wellfounded(ordinal, in) {
+  any template \phi[1] {
+    assume \exists \alpha (ordinal(\alpha) \wedge \phi(\alpha)) {
+      some \alpha such \exists \alpha (ordinal(\alpha) \wedge \phi(\alpha)) {
+        split ordinal(\alpha) \wedge \phi(\alpha)
+        split ordinal(\alpha)
+        apply invoke wellorder_implies_wellfounded for \alpha, in
+        apply law_of_excluded_middle for lambda. \exists \beta (in(\beta, \alpha) \wedge \phi(\beta))
+        divide \exists \beta (in(\beta, \alpha) \wedge \phi(\beta)) \vee \neg(\exists \beta (in(\beta, \alpha) \wedge \phi(\beta)))
+          case \exists \beta (in(\beta, \alpha) \wedge \phi(\beta)) {
+            apply invoke wellfounded(\alpha, in) for \phi
+            some \beta such \exists \beta (minimal(\alpha, in, \phi, \beta)) {
+              split minimal(\alpha, in, \phi, \beta)
+              apply invoke element_of_ordinal_is_ordinal for \alpha
+              apply invoke \forall \beta (in(\beta, \alpha) \to ordinal(\beta)) for \beta
+              deny \exists \gamma (in(\gamma, \beta) \wedge \phi(\gamma)) {
+                some \gamma such \exists \gamma (in(\gamma, \beta) \wedge \phi(\gamma)) {
+                  split in(\gamma, \beta) \wedge \phi(\gamma)
+                  connect in(\gamma, \beta) \wedge in(\beta, \alpha)
+                  apply invoke trans(\alpha) for \beta, \gamma
+                  deny equal(\gamma, \beta) {
+                    substitute in(\gamma, \beta) for \gamma: \beta
+                    apply invoke irrefrelon(\alpha, in) for \beta
+                    contradict in(\beta, \beta)
+                  }
+                  connect in(\gamma, \alpha) \wedge \phi(\gamma) \wedge neq(\gamma, \beta)
+                  apply invoke minimal_core(\alpha, in, \phi, \beta) for \gamma
+                  contradict in(\gamma, \beta)
+                }
+              }
+              apply invoke rightward neg_exist_leftrightarrow_forall_neg for lambda \gamma. (in(\gamma, \beta) \wedge \phi(\gamma))
+              any \gamma {
+                assume ordinal(\gamma) \wedge \phi(\gamma) \wedge neq(\gamma, \beta) {
+                  split ordinal(\gamma) \wedge \phi(\gamma) \wedge neq(\gamma, \beta)
+                  deny in(\gamma, \beta) {
+                    connect in(\gamma, \beta) \wedge \phi(\gamma)
+                    apply \forall \gamma (\neg(in(\gamma, \beta) \wedge \phi(\gamma))) for \gamma
+                    contradict in(\gamma, \beta) \wedge \phi(\gamma)
+                  }
+                }
+              }
+              fold for minimal_core conclude minimal_core(ordinal, in, \phi, \beta)
+              connect minimal(ordinal, in, \phi, \beta)
+              lift for \beta conclude \exists \beta (minimal(ordinal, in, \phi, \beta))
+            }
+          }
+          case \neg(\exists \beta (in(\beta, \alpha) \wedge \phi(\beta))) {
+            apply invoke rightward neg_exist_leftrightarrow_forall_neg for lambda \beta. (in(\beta, \alpha) \wedge \phi(\beta))
+            any \beta {
+              assume ordinal(\beta) \wedge \phi(\beta) \wedge neq(\beta, \alpha) {
+                split ordinal(\beta) \wedge \phi(\beta) \wedge neq(\beta, \alpha)
+                deny in(\beta, \alpha) {
+                  connect in(\beta, \alpha) \wedge \phi(\beta)
+                  apply \forall \beta (\neg(in(\beta, \alpha) \wedge \phi(\beta))) for \beta
+                  contradict in(\beta, \alpha) \wedge \phi(\beta)
+                }
+              }
+            }
+            fold for minimal_core conclude minimal_core(ordinal, in, \phi, \alpha)
+            connect minimal(ordinal, in, \phi, \alpha)
+            lift for \alpha conclude \exists \alpha (minimal(ordinal, in, \phi, \alpha))
+          }
+      }
+    }
+  }
+  fold for wellfounded conclude wellfounded(ordinal, in)
+}
+
+theorem ordinal_is_wellorder wellorder(ordinal, in) {
+  assert ordinal_is_linorder
+  assert ordinal_is_wellfounded
+  connect linorder(ordinal, in) \wedge wellfounded(ordinal, in)
+  apply invoke leftward wellorder_equivalent_linorder_and_wellfounded for ordinal, in
+}
+
+/* theorem ordinal_is_ordinal ordinal(ordinal) {
+  assert ordinal_is_trans
+  assert ordinal_is_irrefrelon
+  assert ordinal_is_wellorder
+  connect trans(ordinal) \wedge irrefrelon(ordinal, in) \wedge wellorder(ordinal, in)
+  fold for ordinal conclude ordinal(ordinal)
+} */

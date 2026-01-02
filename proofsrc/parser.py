@@ -756,12 +756,23 @@ class Parser:
             elif name in context.decl.primpreds or name in context.decl.defpreds:
                 if name in context.decl.primpreds:
                     arity = context.decl.primpreds[name].arity
+                    args = [Var(f"x_{i}") for i in range(arity)]
+                    return Lambda(tuple(args), Symbol(Pred(name), tuple(args)))
                 else:
                     if len(context.decl.defpreds[name]) > 1:
                         raise Exception(f"{name} is found in defpreds, but signature is ambiguous due to overloading")
-                    arity = len(context.decl.defpreds[name][0].args)
-                args = [Var(f"x_{i}") for i in range(arity)]
-                return Lambda(tuple(args), Symbol(Pred(name), tuple(args)))
+                    vars: list[Var] = []
+                    items: list[Var | MembershipLambda] = []
+                    for i, arg in enumerate(context.decl.defpreds[name][0].args):
+                        var = Var(f"x_{i}")
+                        vars.append(var)
+                        if isinstance(arg, Var):
+                            items.append(var)
+                        elif isinstance(arg, Template):
+                            items.append(MembershipLambda(var))
+                        else:
+                            raise Exception(f"Unexpected type: {type(arg)}")
+                    return Lambda(tuple(vars), Symbol(Pred(name), tuple(items)))
             else:
                 raise SyntaxError(f"{tok.info()} Term object is required, but {name} is unknown")
         elif tok.type == "LAMBDA":
