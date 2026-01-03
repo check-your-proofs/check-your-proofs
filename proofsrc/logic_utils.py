@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, Template, Lambda, MembershipLambda, VarTerm, TemplateTerm
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, Template, Lambda, MembershipLambda, VarTerm, TemplateTerm, CompoundTemplate
 from itertools import permutations
 from copy import deepcopy
 from typing import Mapping
@@ -200,24 +200,22 @@ def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bt:
             return set(), set(), set(), set()
         else:
             return set(), set(), {expr}, set()
-    elif isinstance(expr, Con):
+    elif isinstance(expr, (Con, Pred)):
         return set(), set(), set(), set()
-    elif isinstance(expr, (Symbol, Compound)):
-        found_fv: set[Var] = set()
-        found_bv: set[Var] = set()
-        found_ft: set[Template] = set()
-        found_bt: set[Template] = set()
+    elif isinstance(expr, (Symbol, Compound, CompoundTemplate)):
+        if isinstance(expr, Symbol):
+            found_fv, found_bv, found_ft, found_bt = collect_vars(expr.pred, used_bv, used_bt)
+        else:
+            found_fv: set[Var] = set()
+            found_bv: set[Var] = set()
+            found_ft: set[Template] = set()
+            found_bt: set[Template] = set()
         for arg in expr.args:
             fv, bv, ft, bt = collect_vars(arg, used_bv, used_bt)
             found_fv.update(fv)
             found_bv.update(bv)
             found_ft.update(ft)
             found_bt.update(bt)
-        if isinstance(expr, Symbol) and isinstance(expr.pred, Template):
-            if expr.pred in used_bt:
-                found_bt.add(expr.pred)
-            else:
-                found_ft.add(expr.pred)
         return found_fv, found_bv, found_ft, found_bt
     elif isinstance(expr, Not):
         return collect_vars(expr.body, used_bv, used_bt)
@@ -628,7 +626,7 @@ FORMULA_PRECEDENCE = {
     "Quantifier": 5,
 }
 
-def pretty_expr_fragments(expr: Symbol | Compound, context: Context) -> list[str]:
+def pretty_expr_fragments(expr: Symbol | Compound | CompoundTemplate, context: Context) -> list[str]:
     if isinstance(expr, Symbol) and isinstance(expr.pred, Pred):
         if expr.pred.name in context.decl.primpreds:
             tex = context.decl.primpreds[expr.pred.name].tex
@@ -644,6 +642,12 @@ def pretty_expr_fragments(expr: Symbol | Compound, context: Context) -> list[str
             tex = context.decl.deffunterms[expr.fun.name].tex
         else:
             raise Exception(f"{expr.fun.name} is not in deffuns or deffunterms")
+        return tex
+    elif isinstance(expr, CompoundTemplate):
+        if expr.fun.name in context.decl.deffuntemplateterms:
+            tex = context.decl.deffuntemplateterms[expr.fun.name].tex
+        else:
+            raise Exception(f"{expr.fun.name} is not in deffuntemplateterms")
         return tex
     else:
         raise TypeError(f"Unsupported node type: {type(expr)}")
@@ -700,6 +704,18 @@ def pretty_formula(expr: Formula, context: Context, parent_prec: int = FORMULA_P
                 return expr.pred.name
             else:
                 return f"{expr.pred.name}({",".join([pretty_term(arg, context) for arg in expr.args])})"
+        elif isinstance(expr.pred, CompoundTemplate):
+            tex = pretty_expr_fragments(expr.pred, context)
+            if len(tex) != len(expr.args) + 1:
+                raise Exception("arity is different")
+            text = ""
+            for i in range(len(expr.args)):
+                text += tex[i]
+                text += " "
+                text += pretty_term(expr.args[i], context)
+                text += " "
+            text += tex[-1]
+            return text if FORMULA_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
         else:
             raise Exception(f"Unexpected type: {type(expr.pred)}")
     elif isinstance(expr, Not):

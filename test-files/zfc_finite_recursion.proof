@@ -20,9 +20,9 @@ definition predicate finite(template \phi[1]) as \exists n (natural(n) \wedge eq
 
 definition function template[2] recursion(template \phi[1], template \psi[2]) as lambda n, x. natural(n) \wedge \exists g (fun(g) \wedge dom(g, suc(n)) \wedge \exists a (in(op(emptyset, a), g) \wedge \phi(a)) \wedge \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \psi(p, q))) \wedge in(op(n, x), g))
 
-/* definition function template[1] tc(template \phi[1], template \psi[2]) as lambda e. \exists n \exists s (recursion(\phi, \psi)(n, s) \wedge in(e, s))
+definition function template[1] tc(template \phi[1], template \psi[2]) as lambda e. \exists n \exists s (recursion(\phi, \psi)(n, s) \wedge in(e, s))
 
-definition function template[1] tcin(x) as tc(singleton(x), lambda p, q. in(q, p))
+/* definition function template[1] tcin(x) as tc(singleton(x), lambda p, q. in(q, p))
 
 definition predicate hf(x) as finite(tcin(x)) \wedge irrefrelon(tcin(x), in) \wedge wellfounded(tcin(x), in)
 

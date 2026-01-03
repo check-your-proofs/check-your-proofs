@@ -27,6 +27,11 @@ class Compound(VarTerm):
     args: tuple[Term, ...]
 
 @dataclass(frozen=True)
+class CompoundTemplate(TemplateTerm):
+    fun: Fun
+    args: tuple[Term, ...]
+
+@dataclass(frozen=True)
 class Con(VarTerm):
     name: str
 

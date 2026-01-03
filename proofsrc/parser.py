@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, TemplateTerm, DefFunTemplateTerm
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, TemplateTerm, DefFunTemplateTerm, CompoundTemplate
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import collect_quantifier_vars
@@ -644,54 +644,54 @@ class Parser:
         tok = self.stream.peek()
         if tok.type == "IDENT":
             name = self.stream.consume("IDENT").value
-            if any(template.name == name for template in context.form.templates) or any(template.name == name for template in context.ctrl.templates):
-                if any(template.name == name for template in context.form.templates):
-                    template = next(template for template in context.form.templates if template.name == name)
-                else:
-                    template = next(template for template in context.ctrl.templates if template.name == name)
-                if template.arity == 0:
-                    vars: list[Term] = []
-                else:
-                    self.stream.consume("LPAREN")
-                    vars = self.parse_terms(context)
-                    self.stream.consume("RPAREN")
-                    if len(vars) != template.arity:
-                        raise SyntaxError(f"{tok.info()} arity of {template.name} is {template.arity}, but length of args is {len(vars)}")
-                return Symbol(template, tuple(vars))
-            elif name in context.decl.primpreds or name in context.decl.defpreds:
+            if any(template.name == name for template in context.form.templates):
+                pred = next(template for template in context.form.templates if template.name == name)
+                defargs = [Var(f"x_{i}") for i in range(pred.arity)]
+            elif any(template.name == name for template in context.ctrl.templates):
+                pred = next(template for template in context.ctrl.templates if template.name == name)
+                defargs = [Var(f"x_{i}") for i in range(pred.arity)]
+            elif name in context.decl.primpreds:
+                pred = Pred(name)
+                defargs = [Var(f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
+            elif name in context.decl.defpreds:
+                pred = Pred(name)
+                defargs = context.decl.defpreds[name].args
+            elif name in context.decl.deffuntemplateterms:
+                deffuntemplateterm = context.decl.deffuntemplateterms[name]
                 self.stream.consume("LPAREN")
-                args = self.parse_terms(context)
+                terms = self.parse_terms(context)
                 self.stream.consume("RPAREN")
-                if name in context.decl.primpreds:
-                    arity = context.decl.primpreds[name].arity
-                    if len(args) != arity:
-                        raise SyntaxError(f"{tok.info()} arity of {name} is {arity}, but length of args is {len(args)}")
-                else:
-                    resolved_args: list[Term] = []
-                    defpred = context.decl.defpreds[name]
-                    for defarg, subarg in zip(defpred.args, args):
-                        if isinstance(defarg, VarTerm):
-                            if isinstance(subarg, VarTerm):
-                                resolved_args.append(subarg)
-                            else:
-                                raise Exception(f"{tok.info()} VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
-                        elif isinstance(defarg, TemplateTerm):
-                            if isinstance(subarg, TemplateTerm):
-                                resolved_args.append(subarg)
-                            elif isinstance(subarg, VarTerm):
-                                if defarg.arity == 1:
-                                    if context.decl.membership is None:
-                                        raise Exception(f"{tok.info()} VarTerm is substituted into TemplateTerm with arity 1, but membership has not been declared")
-                                    else:
-                                        resolved_args.append(MembershipLambda(subarg))
-                                else:
-                                    raise Exception(f"{tok.info()} VarTerm cannot be substituted into TemplateTerm with arity {defarg.arity}")
-                            else:
-                                raise Exception(f"{tok.info()} Unexpected type: {type(subarg)}")
-                    args = resolved_args
-                return Symbol(Pred(name), tuple(args))
+                pred = CompoundTemplate(Fun(name), tuple(terms))
+                defargs = [Var(f"x_{i}") for i in range(deffuntemplateterm.arity)]
             else:
-                raise SyntaxError(f"{tok.info()} Formula object is required, but {name} is unknown")
+                raise Exception(f"{tok.info()} Unexpected name: {name}")
+            if self.stream.peek().type == "LPAREN":
+                self.stream.consume("LPAREN")
+                subargs = self.parse_terms(context)
+                self.stream.consume("RPAREN")
+            else:
+                subargs: list[Term] = []
+            resolved_args: list[Term] = []
+            for defarg, subarg in zip(defargs, subargs):
+                if isinstance(defarg, VarTerm):
+                    if isinstance(subarg, VarTerm):
+                        resolved_args.append(subarg)
+                    else:
+                        raise Exception(f"{tok.info()} VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
+                elif isinstance(defarg, TemplateTerm):
+                    if isinstance(subarg, TemplateTerm):
+                        resolved_args.append(subarg)
+                    elif isinstance(subarg, VarTerm):
+                        if defarg.arity == 1:
+                            if context.decl.membership is None:
+                                raise Exception(f"{tok.info()} VarTerm is substituted into TemplateTerm with arity 1, but membership has not been declared")
+                            else:
+                                resolved_args.append(MembershipLambda(subarg))
+                        else:
+                            raise Exception(f"{tok.info()} VarTerm cannot be substituted into TemplateTerm with arity {defarg.arity}")
+                    else:
+                        raise Exception(f"{tok.info()} Unexpected type: {type(subarg)}")
+            return Symbol(pred, tuple(resolved_args))
 
         elif tok.type == "LPAREN":
             self.stream.consume("LPAREN")
