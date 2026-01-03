@@ -1,0 +1,31 @@
+include "zfc_finite_pair.proof"
+
+definition predicate rel(R) as \forall z (in(z, R) \to \exists x \exists y (equal(z, op(x, y))))
+
+definition predicate indom(R, x) as \exists y (in(op(x, y), R))
+
+definition predicate dom(R, template \phi[1]) as \forall x (\phi(x) \leftrightarrow indom(R, x))
+
+definition predicate inran(R, y) as \exists x (in(op(x, y), R))
+
+definition predicate ran(R, template \phi[1]) as \forall y (\phi(y) \leftrightarrow inran(R, y))
+
+definition predicate fun(f) as rel(f) \wedge \forall x \forall y \forall y' (in(op(x, y), f) \wedge in(op(x, y'), f) \to equal(y, y'))
+
+definition predicate inj(f) as fun(f) \wedge \forall x \forall x' \forall y (in(op(x, y), f) \wedge in(op(x', y), f) \to equal(x, x'))
+
+definition predicate equipotent(template \phi[1], template \chi[1]) as \exists f (inj(f) \wedge dom(f, \phi) \wedge ran(f, \chi))
+
+definition predicate finite(template \phi[1]) as \exists n (natural(n) \wedge equipotent(n, \phi))
+
+definition function template[2] recursion(template \phi[1], template \psi[2]) as lambda n, x. natural(n) \wedge \exists g (fun(g) \wedge dom(g, suc(n)) \wedge \exists a (in(op(emptyset, a), g) \wedge \phi(a)) \wedge \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \psi(p, q))) \wedge in(op(n, x), g))
+
+/* definition function template[1] tc(template \phi[1], template \psi[2]) as lambda e. \exists n \exists s (recursion(\phi, \psi)(n, s) \wedge in(e, s))
+
+definition function template[1] tcin(x) as tc(singleton(x), lambda p, q. in(q, p))
+
+definition predicate hf(x) as finite(tcin(x)) \wedge irrefrelon(tcin(x), in) \wedge wellfounded(tcin(x), in)
+
+definition predicate add(n, m, x) as recursion(lambda a. equal(a, n), lambda p, q. equal(q, suc(p)))(m, x)
+
+theorem recursion_is_unique \forall^T \phi[1] \forall^T \psi[2] \forall n \exists! x recursion(\phi, \psi)(n, x) */

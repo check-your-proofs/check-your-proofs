@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, TemplateCall, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, TemplateTerm
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, TemplateCall, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, TemplateTerm, DefFunTemplateTerm
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import collect_quantifier_vars
@@ -78,7 +78,7 @@ class Parser:
         logger.debug(f"[theorem] {name}")
         return theorem
 
-    def parse_definition(self, context: Context) -> DefPred | DefCon | DefFun | DefFunTerm:
+    def parse_definition(self, context: Context) -> DefPred | DefCon | DefFun | DefFunTerm | DefFunTemplateTerm:
         start_token = self.stream.consume("DEFINITION")
         tok = self.stream.peek()
         if tok.type == "PREDICATE":
@@ -86,7 +86,7 @@ class Parser:
         elif tok.type == "CONSTANT":
             return self.parse_defcon(context, start_token)
         elif tok.type == "FUNCTION":
-            return self.parse_deffun_or_deffunterm(context, start_token)
+            return self.parse_deffun_or_deffunterm_or_deffuntemplateterm(context, start_token)
         else:
             raise SyntaxError(f"{start_token.info()} predicate, constant or function is required after definition")
 
@@ -124,8 +124,17 @@ class Parser:
         logger.debug(f"[defcon] {name}")
         return defcon
 
-    def parse_deffun_or_deffunterm(self, context: Context, start_token: Token) -> DefFun | DefFunTerm:
+    def parse_deffun_or_deffunterm_or_deffuntemplateterm(self, context: Context, start_token: Token) -> DefFun | DefFunTerm | DefFunTemplateTerm:
         self.stream.consume("FUNCTION")
+        token = self.stream.peek()
+        if token.type == "IDENT":
+            return self.parse_deffun_or_deffunterm(context, start_token)
+        elif token.type == "TEMPLATE":
+            return self.parse_deffuntemplateterm(context, start_token)
+        else:
+            raise Exception(f"{token.info()} IDENT or TEMPLATE is required, but got {token.type}")
+
+    def parse_deffun_or_deffunterm(self, context: Context, start_token: Token) -> DefFun | DefFunTerm:
         name = self.stream.consume("IDENT").value
         if self.stream.peek().type == "BY":
             return self.parse_deffun(context, start_token, name)
@@ -147,7 +156,7 @@ class Parser:
         logger.debug(f"[deffun] {name}")
         return deffun
 
-    def parse_deffunterm(self, context: Context, start_token: Token, name: str):
+    def parse_deffunterm(self, context: Context, start_token: Token, name: str) -> DefFunTerm:
         self.stream.consume("LPAREN")
         args, local_vars, local_templates = self.parse_vars_or_templates()
         self.stream.consume("RPAREN")
@@ -160,6 +169,30 @@ class Parser:
         context.add_decl(deffunterm)
         logger.debug(f"[deffunterm] {name}")
         return deffunterm
+
+    def parse_deffuntemplateterm(self, context: Context, start_token: Token) -> DefFunTemplateTerm:
+        self.stream.consume("TEMPLATE")
+        self.stream.consume("LBRACKET")
+        arity = int(self.stream.consume("NUMBER").value)
+        self.stream.consume("RBRACKET")
+        name = self.stream.consume("IDENT").value
+        self.stream.consume("LPAREN")
+        args, local_vars, local_templates = self.parse_vars_or_templates()
+        self.stream.consume("RPAREN")
+        self.stream.consume("AS")
+        term = self.parse_term(context.add_form(local_vars, local_templates))
+        if isinstance(term, Lambda):
+            if len(term.args) != arity:
+                raise Exception(f"arity is {arity}, but length of term.args is {len(term.args)}")
+        else:
+            raise Exception(f"{start_token.info()} Unexpected type: {type(term)}")
+        tex = self.parse_or_create_tex(name, len(args))
+        if len(tex) != len(args) + 1:
+            raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
+        deffuntemplateterm = DefFunTemplateTerm(name=name, token=start_token, args=args, term=term, arity=arity, tex=tex)
+        context.add_decl(deffuntemplateterm)
+        logger.debug(f"[deffuntemplateterm] {name}")
+        return deffuntemplateterm
 
     def parse_existence(self, context: Context) -> DefConExist | DefFunExist:
         start_token = self.stream.consume("EXISTENCE")

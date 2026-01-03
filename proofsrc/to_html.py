@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, Template, Membership
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, Template, Membership, DefFunTemplateTerm
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from logic_utils import pretty_expr
@@ -291,6 +291,15 @@ class Renderer:
                            "により定める。"]
         return header_parts, header_parts_jp, ""
 
+    def render_deffuntemplateterm(self, node: DefFunTemplateTerm):
+        header_parts = [self.bullet,
+                        self.render_keyword("definition function template"),
+                        self.render_identifier(node.name)]
+        header_parts_jp = [self.bullet,
+                           self.render_keyword("関数記号定義(テンプレート)"),
+                           self.render_identifier(node.name)]
+        return header_parts, header_parts_jp, ""
+
     def render_equality(self, node: Equality):
         header_parts = [self.toggle,
                         self.render_keyword("equality"),
@@ -335,6 +344,8 @@ class Renderer:
             return self.render_deffununiq(node)
         elif isinstance(node, DefFunTerm):
             return self.render_deffunterm(node)
+        elif isinstance(node, DefFunTemplateTerm):
+            return self.render_deffuntemplateterm(node)
         elif isinstance(node, Equality):
             return self.render_equality(node)
         elif isinstance(node, Membership):

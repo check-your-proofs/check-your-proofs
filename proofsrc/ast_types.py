@@ -343,6 +343,13 @@ class DefFunTerm(Declaration):
     tex: list[str]
 
 @dataclass
+class DefFunTemplateTerm(Declaration):
+    args: list[Var | Template]
+    term: Lambda
+    arity: int
+    tex: list[str]
+
+@dataclass
 class EqualityReflection(DeclarationSupport):
     equal: PrimPred | DefPred
     evidence: Axiom | Theorem
@@ -375,13 +382,14 @@ class DeclarationContext:
     deffunexists: dict[str, DefFunExist]
     deffununiqs: dict[str, DefFunUniq]
     deffunterms: dict[str, DefFunTerm]
+    deffuntemplateterms: dict[str, DefFunTemplateTerm]
     equality: Equality | None
     membership: Membership | None
     used_names: set[str]
 
     @staticmethod
     def init() -> "DeclarationContext":
-        return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None, membership=None, used_names=set())
+        return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, deffuntemplateterms={}, equality=None, membership=None, used_names=set())
 
     def match_signature(self, args1: Sequence[Term], args2: Sequence[Term]) -> bool:
         return len(args1) == len(args2)
@@ -428,6 +436,8 @@ class DeclarationContext:
             self.deffununiqs[declaration.name] = declaration
         elif isinstance(declaration, DefFunTerm):
             self.deffunterms[declaration.name] = declaration
+        elif isinstance(declaration, DefFunTemplateTerm):
+            self.deffuntemplateterms[declaration.name] = declaration
         else:
             raise Exception(f"Unexpected type: {type(declaration)}")
         self.used_names.add(declaration.name)
