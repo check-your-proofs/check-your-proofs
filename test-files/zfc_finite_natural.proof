@@ -166,6 +166,45 @@ theorem suc_of_natural_is_natural_and_vice_versa \forall n (natural(n) \leftrigh
   }
 }
 
+theorem suc_is_injection \forall n \forall m (natural(n) \wedge natural(m) \wedge equal(suc(n), suc(m)) \to equal(n, m)) {
+  any n, m {
+    assume natural(n) \wedge natural(m) \wedge equal(suc(n), suc(m)) {
+      split natural(n) \wedge natural(m) \wedge equal(suc(n), suc(m))
+      apply suc_implies_in for n
+      substitute in(n, suc(n)) for suc(n): suc(m)
+      apply invoke rightward suc_characterization for m, n
+      apply suc_implies_in for m
+      substitute in(m, suc(m)) for suc(m): suc(n)
+      apply invoke rightward suc_characterization for n, m
+      divide in(n, m) \vee equal(n, m)
+        case in(n, m) {
+          divide in(m, n) \vee equal(m, n)
+            case in(m, n) {
+              connect natural(n) \wedge natural(m) \wedge in(n, m) \wedge in(m, n)
+              split 1 natural_is_wellorder
+              split 2 orderon(natural, in)
+              apply invoke antisymrelon(natural, in) for m, n
+            }
+            case equal(m, n) {}
+        }
+        case equal(n, m) {}
+    }
+  }
+}
+
+theorem suc_is_injection_cor1 \forall n \forall m (natural(n) \wedge natural(m) \wedge neq(n, m) \to neq(suc(n), suc(m))) {
+  any n, m {
+    assume natural(n) \wedge natural(m) \wedge neq(n, m) {
+      split natural(n) \wedge natural(m) \wedge neq(n, m)
+      deny equal(suc(n), suc(m)) {
+        connect natural(n) \wedge natural(m) \wedge equal(suc(n), suc(m))
+        apply invoke suc_is_injection for n, m
+        contradict equal(n, m)
+      }
+    }
+  }
+}
+
 definition predicate inductive(template \phi[1]) as \phi(emptyset) \wedge \forall x (\phi(x) \to \phi(suc(x)))
 
 theorem natural_induction \forall^T \phi[1] (inductive(\phi) \to subset(natural, \phi)) {

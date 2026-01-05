@@ -45,6 +45,14 @@ theorem suc_implies_in \forall x (in(x, suc(x))) {
   }
 }
 
+theorem suc_neq_emptyset \forall x (neq(suc(x), emptyset)) {
+  any x {
+    apply suc_implies_in for x
+    lift for x conclude \exists y (in(y, suc(x)))
+    apply invoke has_a_member_not_emptyset for suc(x)
+  }
+}
+
 theorem suc_of_trans_is_trans \forall x (trans(x) \to trans(suc(x))) {
   any x {
     assume trans(x) {
