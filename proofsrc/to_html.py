@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, Template, Membership, DefFunTemplateTerm, CompoundTemplate
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, AtomicFormula, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, PredTemplate, Membership, DefFunTemplateTerm, CompoundPredTerm
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from logic_utils import pretty_expr
@@ -170,14 +170,14 @@ class Renderer:
                         self.render_keyword("definition predicate"),
                         self.render_keyword("autoexpand") if node.autoexpand else "",
                         self.render_identifier(node.name),
-                        self.render_expr(Symbol(Pred(node.name), tuple(node.args))),
+                        self.render_expr(AtomicFormula(Pred(node.name), tuple(node.args))),
                         self.render_keyword("as"),
                         self.render_expr(node.formula)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("述語記号定義"),
                            self.render_keyword("autoexpand") if node.autoexpand else "",
                            self.render_identifier(node.name),
-                           self.render_expr(Symbol(Pred(node.name), tuple(node.args))),
+                           self.render_expr(AtomicFormula(Pred(node.name), tuple(node.args))),
                            "を",
                            self.render_expr(node.formula),
                            "により定める。"]
@@ -296,14 +296,14 @@ class Renderer:
                         self.render_keyword("definition function template"),
                         f"[{node.arity}]",
                         self.render_identifier(node.name),
-                        self.render_expr(CompoundTemplate(Fun(node.name), tuple(node.args))),
+                        self.render_expr(CompoundPredTerm(Fun(node.name), tuple(node.args))),
                         self.render_keyword("as"),
                         self.render_expr(node.term)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("関数記号定義(テンプレート)"),
                            f"[{node.arity}]",
                            self.render_identifier(node.name),
-                           self.render_expr(CompoundTemplate(Fun(node.name), tuple(node.args))),
+                           self.render_expr(CompoundPredTerm(Fun(node.name), tuple(node.args))),
                            "を",
                            self.render_expr(node.term),
                            "により定める。"]
@@ -524,7 +524,7 @@ class Renderer:
     def render_some(self, node: Some):
         items_str: list[str] = []
         for item in node.items:
-            if isinstance(item, (Var, Template)):
+            if isinstance(item, (Var, PredTemplate)):
                 items_str.append(self.render_expr(item))
             elif item is None:
                 items_str.append("_")
@@ -648,7 +648,7 @@ class Renderer:
         header_parts_jp = [self.bullet,
                         self.render_expr(node.fact),
                         "に",
-                        ",".join([self.render_expr(Symbol(Pred(self.context.decl.equality.equal.name), (k, v))) for k, v in node.env.items()]),
+                        ",".join([self.render_expr(AtomicFormula(Pred(self.context.decl.equality.equal.name), (k, v))) for k, v in node.env.items()]),
                         "を代入する。"]
         return header_parts, header_parts_jp, ""
 
@@ -722,7 +722,7 @@ class Renderer:
         context_vars_html = f"<div class='context-vars' hidden>{context_vars}</div>"
         context_formulas = self.render_expr_list(node.proofinfo.ctrl_ctx.formulas)
         context_formulas_html = f"<div class='context-formulas' hidden>{context_formulas}</div>"
-        context_templates = self.render_expr_list(node.proofinfo.ctrl_ctx.templates)
+        context_templates = self.render_expr_list(node.proofinfo.ctrl_ctx.pred_tmpls)
         context_templates_html = f"<div class='context-templates' hidden>{context_templates}</div>"
         premises = self.render_expr_list(node.proofinfo.premises)
         premises_html = f"<div class='premises' hidden>{premises}</div>"

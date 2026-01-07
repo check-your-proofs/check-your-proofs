@@ -10,12 +10,20 @@ class Term:
     pass
 
 @dataclass(frozen=True)
+class Formula:
+    pass
+
+@dataclass(frozen=True)
 class VarTerm(Term):
     pass
 
 @dataclass(frozen=True)
-class TemplateTerm(Term):
-    pass
+class Var(VarTerm):
+    name: str
+
+@dataclass(frozen=True)
+class Con(VarTerm):
+    name: str
 
 @dataclass(frozen=True)
 class Fun:
@@ -27,85 +35,61 @@ class Compound(VarTerm):
     args: tuple[Term, ...]
 
 @dataclass(frozen=True)
-class CompoundTemplate(TemplateTerm):
+class PredTerm(Term):
+    pass
+
+@dataclass(frozen=True)
+class Pred(PredTerm):
+    name: str
+
+@dataclass(frozen=True)
+class CompoundPredTerm(PredTerm):
     fun: Fun
     args: tuple[Term, ...]
 
 @dataclass(frozen=True)
-class Con(VarTerm):
-    name: str
-
-@dataclass(frozen=True)
-class Var(VarTerm):
-    name: str
-
-@dataclass(frozen=True)
-class Formula:
-    pass
-
-@dataclass(frozen=True)
-class Pred(TemplateTerm):
-    name: str
-
-@dataclass(frozen=True)
-class Symbol(Formula):
-    pred: TemplateTerm
-    args: tuple[Term, ...]
-
-@dataclass(frozen=True)
-class Template(TemplateTerm):
+class PredTemplate(PredTerm):
     name: str
     arity: int
 
-@dataclass
-class FormulaContext:
-    vars: list[Var]
-    templates: list[Template]
-    used_names: set[str]
-
-    @staticmethod
-    def init() -> "FormulaContext":
-        return FormulaContext(vars=[], templates=[], used_names=set())
-
-    def copy(self) -> "FormulaContext":
-        return FormulaContext(list(self.vars), list(self.templates), self.used_names.copy())
-
-    def add(self, new_vars: list[Var], new_templates: list[Template]) -> "FormulaContext":
-        new_used_names = self.used_names.copy()
-        for item in new_vars + new_templates:
-            if item.name in new_used_names:
-                raise Exception(f"{item.name} is already used")
-            new_used_names.add(item.name)
-        return FormulaContext(list(self.vars + new_vars), list(self.templates + new_templates), new_used_names)
-
 @dataclass(frozen=True)
-class Lambda(TemplateTerm):
+class Lambda(PredTerm):
     args: tuple[Var, ...]
     body: Formula
 
 @dataclass(frozen=True)
-class MembershipLambda(TemplateTerm):
+class MembershipLambda(PredTerm):
     varterm: VarTerm
 
-@dataclass(frozen=True)
-class Forall(Formula):
-    var: Var | Template
-    body: Formula
+@dataclass
+class FormulaContext:
+    vars: list[Var]
+    pred_tmpls: list[PredTemplate]
+    used_names: set[str]
+
+    @staticmethod
+    def init() -> "FormulaContext":
+        return FormulaContext(vars=[], pred_tmpls=[], used_names=set())
+
+    def copy(self) -> "FormulaContext":
+        return FormulaContext(list(self.vars), list(self.pred_tmpls), self.used_names.copy())
+
+    def add(self, new_vars: list[Var], new_pred_tmpls: list[PredTemplate]) -> "FormulaContext":
+        new_used_names = self.used_names.copy()
+        for item in new_vars + new_pred_tmpls:
+            if item.name in new_used_names:
+                raise Exception(f"{item.name} is already used")
+            new_used_names.add(item.name)
+        return FormulaContext(list(self.vars + new_vars), list(self.pred_tmpls + new_pred_tmpls), new_used_names)
 
 @dataclass(frozen=True)
-class Exists(Formula):
-    var: Var | Template
-    body: Formula
+class AtomicFormula(Formula):
+    pred: PredTerm
+    args: tuple[Term, ...]
 
 @dataclass(frozen=True)
-class ExistsUniq(Formula):
-    var: Var | Template
+class Not(Formula):
     body: Formula
-
-@dataclass(frozen=True)
-class Implies(Formula):
-    left: Formula
-    right: Formula
 
 @dataclass(frozen=True)
 class And(Formula):
@@ -118,13 +102,29 @@ class Or(Formula):
     right: Formula
 
 @dataclass(frozen=True)
-class Not(Formula):
-    body: Formula
+class Implies(Formula):
+    left: Formula
+    right: Formula
 
 @dataclass(frozen=True)
 class Iff(Formula):
     left: Formula
     right: Formula
+
+@dataclass(frozen=True)
+class Forall(Formula):
+    var: Var | PredTemplate
+    body: Formula
+
+@dataclass(frozen=True)
+class Exists(Formula):
+    var: Var | PredTemplate
+    body: Formula
+
+@dataclass(frozen=True)
+class ExistsUniq(Formula):
+    var: Var | PredTemplate
+    body: Formula
 
 @dataclass(frozen=True)
 class Bottom:
@@ -134,23 +134,23 @@ class Bottom:
 class ControlContext:
     vars: list[Var]
     formulas: list[Bottom | Formula]
-    templates: list[Template]
+    pred_tmpls: list[PredTemplate]
     used_names: set[str]
 
     @staticmethod
     def init() -> "ControlContext":
-        return ControlContext(vars=[], formulas=[], templates=[], used_names=set())
+        return ControlContext(vars=[], formulas=[], pred_tmpls=[], used_names=set())
 
     def copy(self) -> "ControlContext":
-        return ControlContext(list(self.vars), list(self.formulas), list(self.templates), self.used_names.copy())
+        return ControlContext(list(self.vars), list(self.formulas), list(self.pred_tmpls), self.used_names.copy())
 
-    def add(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_templates: list[Template]) -> "ControlContext":
+    def add(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_pred_tmpls: list[PredTemplate]) -> "ControlContext":
         new_used_names = self.used_names.copy()
-        for item in new_vars + new_templates:
+        for item in new_vars + new_pred_tmpls:
             if item.name in new_used_names:
                 raise Exception(f"{item.name} is already used")
             new_used_names.add(item.name)
-        return ControlContext(list(self.vars + new_vars), list(self.formulas + new_formulas), list(self.templates + new_templates), new_used_names)
+        return ControlContext(list(self.vars + new_vars), list(self.formulas + new_formulas), list(self.pred_tmpls + new_pred_tmpls), new_used_names)
 
 @dataclass
 class ProofInfo:
@@ -174,7 +174,7 @@ class Assume(Control):
 
 @dataclass
 class Any(Control):
-    items: list[Var | Template]
+    items: list[Var | PredTemplate]
     body: list[Control]
 
 @dataclass
@@ -189,7 +189,7 @@ class Divide(Control):
 
 @dataclass
 class Some(Control):
-    items: list[Var | Template | None]
+    items: list[Var | PredTemplate | None]
     fact: str | Formula
     body: list[Control]
 
@@ -295,7 +295,7 @@ class Theorem(Declaration):
 
 @dataclass
 class DefPred(Declaration):
-    args: list[Var | Template]
+    args: list[Var | PredTemplate]
     formula: Formula
     autoexpand: bool
     tex: list[str]
@@ -327,20 +327,20 @@ class DefFunUniq(Declaration):
 
 @dataclass
 class DefFun(Declaration):
-    args: list[Var | Template]
-    returned: Var | Template
+    args: list[Var | PredTemplate]
+    returned: Var | PredTemplate
     theorem: str
     tex: list[str]
 
 @dataclass
 class DefFunTerm(Declaration):
-    args: list[Var | Template]
+    args: list[Var | PredTemplate]
     term: Term
     tex: list[str]
 
 @dataclass
 class DefFunTemplateTerm(Declaration):
-    args: list[Var | Template]
+    args: list[Var | PredTemplate]
     term: Lambda
     arity: int
     tex: list[str]
@@ -464,14 +464,14 @@ class Context:
     def copy_ctrl(self):
         return Context(self.decl, self.ctrl.copy(), self.form)
 
-    def add_ctrl(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_templates: list[Template]):
-        return Context(self.decl, self.ctrl.add(new_vars, new_formulas, new_templates), self.form)
+    def add_ctrl(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_pred_tmpls: list[PredTemplate]):
+        return Context(self.decl, self.ctrl.add(new_vars, new_formulas, new_pred_tmpls), self.form)
 
     def copy_form(self):
         return Context(self.decl, self.ctrl, self.form.copy())
 
-    def add_form(self, new_vars: list[Var], new_templates: list[Template]):
-        return Context(self.decl, self.ctrl, self.form.add(new_vars, new_templates))
+    def add_form(self, new_vars: list[Var], new_pred_tmpls: list[PredTemplate]):
+        return Context(self.decl, self.ctrl, self.form.add(new_vars, new_pred_tmpls))
 
 @dataclass
 class Include:

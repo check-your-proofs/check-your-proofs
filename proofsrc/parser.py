@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, TemplateTerm, DefFunTemplateTerm, CompoundTemplate
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, Lambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import collect_quantifier_vars
@@ -99,10 +99,10 @@ class Parser:
             autoexpand =False
         name = self.stream.consume("IDENT").value
         self.stream.consume("LPAREN")
-        args, local_vars, local_templates = self.parse_vars_or_templates()
+        args, local_vars, local_pred_tmpls = self.parse_vars_or_pred_tmpls()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        formula = self.parse_formula(context.add_form(local_vars, local_templates))
+        formula = self.parse_formula(context.add_form(local_vars, local_pred_tmpls))
         tex = self.parse_or_create_tex(name, len(args))
         if len(tex) != len(args) + 1:
             raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
@@ -158,10 +158,10 @@ class Parser:
 
     def parse_deffunterm(self, context: Context, start_token: Token, name: str) -> DefFunTerm:
         self.stream.consume("LPAREN")
-        args, local_vars, local_templates = self.parse_vars_or_templates()
+        args, local_vars, local_pred_tmpls = self.parse_vars_or_pred_tmpls()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        term = self.parse_term(context.add_form(local_vars, local_templates))
+        term = self.parse_term(context.add_form(local_vars, local_pred_tmpls))
         tex = self.parse_or_create_tex(name, len(args))
         if len(tex) != len(args) + 1:
             raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
@@ -177,10 +177,10 @@ class Parser:
         self.stream.consume("RBRACKET")
         name = self.stream.consume("IDENT").value
         self.stream.consume("LPAREN")
-        args, local_vars, local_templates = self.parse_vars_or_templates()
+        args, local_vars, local_pred_tmpls = self.parse_vars_or_pred_tmpls()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        term = self.parse_term(context.add_form(local_vars, local_templates))
+        term = self.parse_term(context.add_form(local_vars, local_pred_tmpls))
         if isinstance(term, Lambda):
             if len(term.args) != arity:
                 raise Exception(f"arity is {arity}, but length of term.args is {len(term.args)}")
@@ -354,9 +354,9 @@ class Parser:
 
     def parse_any(self, context: Context) -> Any:
         start_token = self.stream.consume("ANY")
-        items, local_vars, local_templates = self.parse_vars_or_templates()
+        items, local_vars, local_pred_tmpls = self.parse_vars_or_pred_tmpls()
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.add_ctrl(local_vars, [], local_templates))
+        body = self.parse_block(context.add_ctrl(local_vars, [], local_pred_tmpls))
         self.stream.consume("RBRACE")
         return Any(token=start_token, items=items, body=body)
 
@@ -388,7 +388,7 @@ class Parser:
     
     def parse_some(self, context: Context) -> Some:
         start_token = self.stream.consume("SOME")
-        items: list[Var | Template | None] = []
+        items: list[Var | PredTemplate | None] = []
         while True:
             if self.stream.peek().type == "UNDERSCORE":
                 items.append(None)
@@ -402,8 +402,8 @@ class Parser:
         fact = self.parse_reference_or_formula(context)
         self.stream.consume("LBRACE")
         local_vars = [item for item in items if isinstance(item, Var)]
-        local_templates = [item for item in items if isinstance(item, Template)]
-        body = self.parse_block(context.add_ctrl(local_vars, [], local_templates))
+        local_pred_tmpls = [item for item in items if isinstance(item, PredTemplate)]
+        body = self.parse_block(context.add_ctrl(local_vars, [], local_pred_tmpls))
         self.stream.consume("RBRACE")
         return Some(token=start_token, items=items, fact=fact, body=body)
     
@@ -644,15 +644,15 @@ class Parser:
         tok = self.stream.peek()
         if tok.type == "IDENT":
             name = self.stream.consume("IDENT").value
-            if any(template.name == name for template in context.form.templates):
-                pred = next(template for template in context.form.templates if template.name == name)
-                defargs: list[Var | Template] = [Var(f"x_{i}") for i in range(pred.arity)]
-            elif any(template.name == name for template in context.ctrl.templates):
-                pred = next(template for template in context.ctrl.templates if template.name == name)
-                defargs: list[Var | Template] = [Var(f"x_{i}") for i in range(pred.arity)]
+            if any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
+                pred = next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
+                defargs: list[Var | PredTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
+            elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
+                pred = next(pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name)
+                defargs: list[Var | PredTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
             elif name in context.decl.primpreds:
                 pred = Pred(name)
-                defargs: list[Var | Template] = [Var(f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
+                defargs: list[Var | PredTemplate] = [Var(f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
             elif name in context.decl.defpreds:
                 pred = Pred(name)
                 defargs = context.decl.defpreds[name].args
@@ -661,8 +661,8 @@ class Parser:
                 self.stream.consume("LPAREN")
                 terms = self.parse_terms(context)
                 self.stream.consume("RPAREN")
-                pred = CompoundTemplate(Fun(name), tuple(terms))
-                defargs: list[Var | Template] = [Var(f"x_{i}") for i in range(deffuntemplateterm.arity)]
+                pred = CompoundPredTerm(Fun(name), tuple(terms))
+                defargs: list[Var | PredTemplate] = [Var(f"x_{i}") for i in range(deffuntemplateterm.arity)]
             else:
                 raise Exception(f"{tok.info()} Unexpected name: {name}")
             if self.stream.peek().type == "LPAREN":
@@ -672,7 +672,7 @@ class Parser:
             else:
                 subargs: list[Term] = []
             resolved_args = self.match_args(defargs, subargs, context, tok)
-            return Symbol(pred, tuple(resolved_args))
+            return AtomicFormula(pred, tuple(resolved_args))
 
         elif tok.type == "LPAREN":
             self.stream.consume("LPAREN")
@@ -689,9 +689,9 @@ class Parser:
 
         elif tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_TEMPLATE"):
             quantifiers: list[str] = []
-            items: list[Var | Template] = []
+            items: list[Var | PredTemplate] = []
             local_bound_vars: list[Var] = []
-            local_bound_templates: list[Template] = []
+            local_bound_pred_tmpls: list[PredTemplate] = []
             while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_TEMPLATE"):
                 if tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
                     quantifiers.append(self.stream.consume(tok.type).type)
@@ -701,12 +701,12 @@ class Parser:
                     tok = self.stream.peek()
                 else:
                     quantifiers.append(self.stream.consume(tok.type).type)
-                    template = self.parse_template()
-                    items.append(template)
-                    local_bound_templates.append(template)
+                    pred_tmpl = self.parse_pred_tmpl()
+                    items.append(pred_tmpl)
+                    local_bound_pred_tmpls.append(pred_tmpl)
                     tok = self.stream.peek()
             self.stream.consume("LPAREN")
-            body = self.parse_formula(context.add_form(local_bound_vars, local_bound_templates))
+            body = self.parse_formula(context.add_form(local_bound_vars, local_bound_pred_tmpls))
             self.stream.consume("RPAREN")
             for quantifier, item in zip(reversed(quantifiers), reversed(items)):
                 if quantifier == "FORALL" or quantifier == "FORALL_TEMPLATE":
@@ -746,12 +746,12 @@ class Parser:
             name = self.stream.consume("IDENT").value
             if any(var.name == name for var in context.form.vars):
                 return next(var for var in context.form.vars if var.name == name)
-            elif any(template.name == name for template in context.form.templates):
-                return next(template for template in context.form.templates if template.name == name)
+            elif any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
+                return next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
             elif any(var.name == name for var in context.ctrl.vars):
                 return next((var for var in context.ctrl.vars if var.name == name))
-            elif any(template.name == name for template in context.ctrl.templates):
-                return next((template for template in context.ctrl.templates if template.name == name))
+            elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
+                return next((pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name))
             elif name in context.decl.defcons:
                 return Con(name)
             elif name in context.decl.deffuns or name in context.decl.deffunterms:
@@ -771,7 +771,7 @@ class Parser:
                 if name in context.decl.primpreds:
                     arity = context.decl.primpreds[name].arity
                     args = [Var(f"x_{i}") for i in range(arity)]
-                    return Lambda(tuple(args), Symbol(Pred(name), tuple(args)))
+                    return Lambda(tuple(args), AtomicFormula(Pred(name), tuple(args)))
                 else:
                     vars: list[Var] = []
                     items: list[Var | MembershipLambda] = []
@@ -780,18 +780,18 @@ class Parser:
                         vars.append(var)
                         if isinstance(arg, Var):
                             items.append(var)
-                        elif isinstance(arg, Template):
+                        elif isinstance(arg, PredTemplate):
                             items.append(MembershipLambda(var))
                         else:
                             raise Exception(f"Unexpected type: {type(arg)}")
-                    return Lambda(tuple(vars), Symbol(Pred(name), tuple(items)))
+                    return Lambda(tuple(vars), AtomicFormula(Pred(name), tuple(items)))
             elif name in context.decl.deffuntemplateterms:
                 defargs = context.decl.deffuntemplateterms[name].args
                 self.stream.consume("LPAREN")
                 subargs = self.parse_terms(context)
                 self.stream.consume("RPAREN")
                 resolved_args = self.match_args(defargs, subargs, context, tok)
-                return CompoundTemplate(Fun(name), tuple(resolved_args))
+                return CompoundPredTerm(Fun(name), tuple(resolved_args))
             else:
                 raise SyntaxError(f"{tok.info()} Term object is required, but {name} is unknown")
         elif tok.type == "LAMBDA":
@@ -832,16 +832,16 @@ class Parser:
             tex.append(")")
         return tex
 
-    def parse_vars_or_templates(self) -> tuple[list[Var | Template], list[Var], list[Template]]:
-        items: list[Var | Template] = []
+    def parse_vars_or_pred_tmpls(self) -> tuple[list[Var | PredTemplate], list[Var], list[PredTemplate]]:
+        items: list[Var | PredTemplate] = []
         vars: list[Var] = []
-        templates: list[Template] = []
+        pred_tmpls: list[PredTemplate] = []
         while True:
             if self.stream.peek().type == "TEMPLATE":
                 self.stream.consume("TEMPLATE")
-                template = self.parse_template()
-                items.append(template)
-                templates.append(template)
+                pred_tmpl = self.parse_pred_tmpl()
+                items.append(pred_tmpl)
+                pred_tmpls.append(pred_tmpl)
             else:
                 var = self.parse_var()
                 items.append(var)
@@ -850,7 +850,7 @@ class Parser:
                 self.stream.consume("COMMA")
             else:
                 break
-        return items, vars, templates
+        return items, vars, pred_tmpls
 
     def parse_vars(self) -> list[Var]:
         vars: list[Var] = []
@@ -866,14 +866,14 @@ class Parser:
         var_name = self.stream.consume("IDENT").value
         return Var(var_name)
 
-    def parse_template(self) -> Template:
-        template_name = self.stream.consume("IDENT").value
+    def parse_pred_tmpl(self) -> PredTemplate:
+        pred_tmpl_name = self.stream.consume("IDENT").value
         self.stream.consume("LBRACKET")
         arity = int(self.stream.consume("NUMBER").value)
         self.stream.consume("RBRACKET")
-        return Template(template_name, arity)
+        return PredTemplate(pred_tmpl_name, arity)
 
-    def match_args(self, defargs: list[Var | Template], subargs: list[Term], context: Context, tok: Token) -> list[Term]:
+    def match_args(self, defargs: list[Var | PredTemplate], subargs: list[Term], context: Context, tok: Token) -> list[Term]:
         resolved_args: list[Term] = []
         for defarg, subarg in zip(defargs, subargs):
             if isinstance(defarg, VarTerm):
@@ -881,17 +881,17 @@ class Parser:
                     resolved_args.append(subarg)
                 else:
                     raise Exception(f"{tok.info()} VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
-            elif isinstance(defarg, TemplateTerm):
-                if isinstance(subarg, TemplateTerm):
+            elif isinstance(defarg, PredTerm):
+                if isinstance(subarg, PredTerm):
                     resolved_args.append(subarg)
                 elif isinstance(subarg, VarTerm):
                     if defarg.arity == 1:
                         if context.decl.membership is None:
-                            raise Exception(f"{tok.info()} VarTerm is substituted into TemplateTerm with arity 1, but membership has not been declared")
+                            raise Exception(f"{tok.info()} VarTerm is substituted into PredTerm with arity 1, but membership has not been declared")
                         else:
                             resolved_args.append(MembershipLambda(subarg))
                     else:
-                        raise Exception(f"{tok.info()} VarTerm cannot be substituted into TemplateTerm with arity {defarg.arity}")
+                        raise Exception(f"{tok.info()} VarTerm cannot be substituted into PredTerm with arity {defarg.arity}")
                 else:
                     raise Exception(f"{tok.info()} Unexpected type: {type(subarg)}")
         return resolved_args
