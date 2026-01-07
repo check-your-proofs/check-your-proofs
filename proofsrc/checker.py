@@ -167,8 +167,8 @@ def check_defconuniq(node: DefConUniq, context: Context, indent: int):
         logger.error(f"{error_prefix}Unexpected type: {type(existsuniq.var)}")
         node.proofinfo.status = "ERROR"
         return False
-    fv, bv, ft, bt = collect_vars(existsuniq.body)
-    var = fresh_var(existsuniq.var, fv | bv | ft | bt, context)
+    fv, bv, fpt, bpt, fft, bft = collect_vars(existsuniq.body)
+    var = fresh_var(existsuniq.var, fv | bv | fpt | bpt | fft | bft, context)
     body = Substitutor({existsuniq.var: var}, context).substitute_formula(existsuniq.body)
     if context.decl.equality is None:
         logger.error(f"{error_prefix}equality has not been declared yet")
@@ -245,12 +245,12 @@ def check_deffunterm(node: DefFunTerm, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}name: {node.name}, args: {node.args}, term: {pretty_expr(node.term, context)}")
-    fv, _, ft, _ = collect_vars(node.term)
-    if set(node.args) != set(fv) | set(ft):
-        logger.error(f"{error_prefix}args are not matched with free vars: {set(fv) | set(ft)}")
+    fv, _, fpt, _, fft, _ = collect_vars(node.term)
+    if set(node.args) != set(fv) | set(fpt) | set(fft):
+        logger.error(f"{error_prefix}args are not matched with free vars: {set(fv) | set(fpt) | set(fft)}")
         node.proofinfo.status = "ERROR"
         return False
-    logger.debug(f"{debug_prefix}args are mathced with free vars of term: {set(fv) | set(ft)}")
+    logger.debug(f"{debug_prefix}args are mathced with free vars of term: {set(fv) | set(fpt) | set(fft)}")
     context.add_decl(node)
     node.proofinfo.status = "OK"
     return True
@@ -259,12 +259,12 @@ def check_deffuntemplateterm(node: DefFunTemplateTerm, context: Context, indent:
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}name: {node.name}, args: {node.args}, term: {pretty_expr(node.term, context)}")
-    fv, _, ft, _ = collect_vars(node.term)
-    if set(node.args) != set(fv) | set(ft):
-        logger.error(f"{error_prefix}args are not matched with free vars: {set(fv) | set(ft)}")
+    fv, _, fpt, _, fft, _ = collect_vars(node.term)
+    if set(node.args) != set(fv) | set(fpt) | set(fft):
+        logger.error(f"{error_prefix}args are not matched with free vars: {set(fv) | set(fpt) | set(fft)}")
         node.proofinfo.status = "ERROR"
         return False
-    logger.debug(f"{debug_prefix}args are mathced with free vars of term: {set(fv) | set(ft)}")
+    logger.debug(f"{debug_prefix}args are mathced with free vars of term: {set(fv) | set(fpt) | set(fft)}")
     context.add_decl(node)
     node.proofinfo.status = "OK"
     return True
@@ -573,12 +573,12 @@ def check_some(node: Some, context: Context, indent: int):
     if isinstance(fact, Exists):
         premises: list[Bottom | Formula] = [existence]
     else:
-        fv, bv, ft, bt = collect_vars(existence)
+        fv, bv, fpt, bpt, fft, bft = collect_vars(existence)
         if not isinstance(vars[0], Var):
             logger.error(f"{error_prefix}Unexpected type: {type(vars[0])}")
             node.proofinfo.status = "ERROR"
             return False
-        var = fresh_var(vars[0], fv | bv | ft | bt, context)
+        var = fresh_var(vars[0], fv | bv | fpt | bpt | fft | bft, context)
         body = Substitutor({vars[0]: var}, context).substitute_formula(existence)
         if context.decl.equality is None:
             logger.error(f"{error_prefix}equality has not been declared yet")
@@ -600,7 +600,7 @@ def check_some(node: Some, context: Context, indent: int):
     goal = local_ctx.ctrl.formulas[-1]
     logger.debug(f"{debug_prefix}derived goal: {pretty_expr(goal, context)}")
     if isinstance(goal, Formula):
-        goal_fv, _, _, _ = collect_vars(goal)
+        goal_fv, _, _, _, _, _ = collect_vars(goal)
         for fv in goal_fv:
             if fv in local_vars:
                 logger.error(f"{error_prefix}Conclusion depends on local variable {pretty_expr(fv, context)}")
@@ -801,9 +801,9 @@ def check_characterize(node: Characterize, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}Target conclusion is ExistsUniq object: {pretty_expr(node.conclusion, context)}")
-    _, used_bound_vars, _, used_bound_pred_tmpls = collect_vars(node.conclusion.body)
-    fv, bv, ft, bt = collect_vars(node.term)
-    vardash = fresh_var(Var(node.conclusion.var.name + "'"), used_bound_vars | used_bound_pred_tmpls | fv | bv | ft | bt, context)
+    _, used_bound_vars, _, used_bound_pred_tmpls, _, used_bound_fun_tmpls = collect_vars(node.conclusion.body)
+    fv, bv, fpt, bpt, fft, bft = collect_vars(node.term)
+    vardash = fresh_var(Var(node.conclusion.var.name + "'"), used_bound_vars | used_bound_pred_tmpls | used_bound_fun_tmpls | fv | bv | fpt | bpt | fft | bft, context)
     renamed_conclusion, _ = alpha_safe_formula(node.conclusion, {node.conclusion.var: node.term}, context)
     if not isinstance(renamed_conclusion, ExistsUniq):
         logger.error(f"{error_prefix}renamed_conclusion is not ExistsUniq object: {pretty_expr(renamed_conclusion, context)}")

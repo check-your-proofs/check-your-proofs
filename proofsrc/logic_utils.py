@@ -209,60 +209,76 @@ def make_quantifier_vars(e: Formula, quantifier_type: type[Forall] | type[Exists
         body = quantifier_type(var, body)
     return body
 
-def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bt: set[PredTemplate] | None = None) -> tuple[set[Var], set[Var], set[PredTemplate], set[PredTemplate]]:
+def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bpt: set[PredTemplate] | None = None, used_bft: set[FunTemplate] | None = None) -> tuple[set[Var], set[Var], set[PredTemplate], set[PredTemplate], set[FunTemplate], set[FunTemplate]]:
     if used_bv is None:
         used_bv = set()
-    if used_bt is None:
-        used_bt = set()
+    if used_bpt is None:
+        used_bpt = set()
+    if used_bft is None:
+        used_bft = set()
 
     if isinstance(expr, Var):
         if expr in used_bv:
-            return set(), set(), set(), set()
+            return set(), set(), set(), set(), set(), set()
         else:
-            return {expr}, set(), set(), set()
+            return {expr}, set(), set(), set(), set(), set()
     elif isinstance(expr, PredTemplate):
-        if expr in used_bt:
-            return set(), set(), set(), set()
+        if expr in used_bpt:
+            return set(), set(), set(), set(), set(), set()
         else:
-            return set(), set(), {expr}, set()
-    elif isinstance(expr, (Con, Pred)):
-        return set(), set(), set(), set()
+            return set(), set(), {expr}, set(), set(), set()
+    elif isinstance(expr, FunTemplate):
+        if expr in used_bft:
+            return set(), set(), set(), set(), set(), set()
+        else:
+            return set(), set(), set(), set(), {expr}, set()
+    elif isinstance(expr, (Con, Pred, Fun)):
+        return set(), set(), set(), set(), set(), set()
     elif isinstance(expr, (AtomicFormula, Compound, CompoundPredTerm)):
         if isinstance(expr, AtomicFormula):
-            found_fv, found_bv, found_ft, found_bt = collect_vars(expr.pred, used_bv, used_bt)
+            found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft = collect_vars(expr.pred, used_bv, used_bpt, used_bft)
+        elif isinstance(expr, Compound):
+            found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft = collect_vars(expr.fun, used_bv, used_bpt, used_bft)
         else:
             found_fv: set[Var] = set()
             found_bv: set[Var] = set()
-            found_ft: set[PredTemplate] = set()
-            found_bt: set[PredTemplate] = set()
+            found_fpt: set[PredTemplate] = set()
+            found_bpt: set[PredTemplate] = set()
+            found_fft: set[FunTemplate] = set()
+            found_bft: set[FunTemplate] = set()
         for arg in expr.args:
-            fv, bv, ft, bt = collect_vars(arg, used_bv, used_bt)
+            fv, bv, fpt, bpt, fft, bft = collect_vars(arg, used_bv, used_bpt, used_bft)
             found_fv.update(fv)
             found_bv.update(bv)
-            found_ft.update(ft)
-            found_bt.update(bt)
-        return found_fv, found_bv, found_ft, found_bt
+            found_fpt.update(fpt)
+            found_bpt.update(bpt)
+            found_fft.update(fft)
+            found_bft.update(bft)
+        return found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft
     elif isinstance(expr, Not):
-        return collect_vars(expr.body, used_bv, used_bt)
+        return collect_vars(expr.body, used_bv, used_bpt, used_bft)
     elif isinstance(expr, (And, Or, Implies, Iff)):
-        found_fv1, found_bv1, found_ft1, found_bt1 = collect_vars(expr.left, used_bv, used_bt)
-        found_fv2, found_bv2, found_ft2, found_bt2 = collect_vars(expr.right, used_bv, used_bt)
-        return found_fv1 | found_fv2, found_bv1 | found_bv2, found_ft1 | found_ft2, found_bt1 | found_bt2
+        found_fv1, found_bv1, found_fpt1, found_bpt1, found_fft1, found_bft1 = collect_vars(expr.left, used_bv, used_bpt, used_bft)
+        found_fv2, found_bv2, found_fpt2, found_bpt2, found_fft2, found_bft2 = collect_vars(expr.right, used_bv, used_bpt, used_bft)
+        return found_fv1 | found_fv2, found_bv1 | found_bv2, found_fpt1 | found_fpt2, found_bpt1 | found_bpt2, found_fft1 | found_fft2, found_bft1 | found_bft2
     elif isinstance(expr, (Forall, Exists, ExistsUniq)):
         if isinstance(expr.var, Var):
-            found_fv, found_bv, found_ft, found_bt = collect_vars(expr.body, used_bv | {expr.var}, used_bt)
+            found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft = collect_vars(expr.body, used_bv | {expr.var}, used_bpt, used_bft)
             found_bv.add(expr.var)
         elif isinstance(expr.var, PredTemplate):
-            found_fv, found_bv, found_ft, found_bt = collect_vars(expr.body, used_bv, used_bt | {expr.var})
-            found_bt.add(expr.var)
+            found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft = collect_vars(expr.body, used_bv, used_bpt | {expr.var}, used_bft)
+            found_bpt.add(expr.var)
+        elif isinstance(expr.var, FunTemplate):
+            found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft = collect_vars(expr.body, used_bv, used_bpt, used_bft | {expr.var})
+            found_bft.add(expr.var)
         else:
             raise Exception(f"Unexpected type: {type(expr.var)}")
-        return found_fv, found_bv, found_ft, found_bt
+        return found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft
     elif isinstance(expr, Lambda):
-        found_fv, found_bv, found_ft, found_bt = collect_vars(expr.body, used_bv | set(expr.args), used_bt)
-        return found_fv, found_bv | set(expr.args), found_ft, found_bt
+        found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft = collect_vars(expr.body, used_bv | set(expr.args), used_bpt, used_bft)
+        return found_fv, found_bv | set(expr.args), found_fpt, found_bpt, found_fft, found_bft
     elif isinstance(expr, MembershipLambda):
-        return collect_vars(expr.varterm, used_bv, used_bt)
+        return collect_vars(expr.varterm, used_bv, used_bpt, used_bft)
     else:
         raise Exception(f"Unexpected type {type(expr)}")
 
@@ -427,7 +443,7 @@ def normalize_neg(expr: Formula) -> Formula:
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
-def fresh_name(item: Var | PredTemplate, used_items: set[Var | PredTemplate], context: Context) -> str:
+def fresh_name(item: Var | PredTemplate | FunTemplate, used_items: set[Var | PredTemplate | FunTemplate], context: Context) -> str:
     used_names = {item.name for item in used_items} | context.ctrl.used_names | context.decl.used_names
     if item.name not in used_names:
         return item.name
@@ -444,11 +460,14 @@ def fresh_name(item: Var | PredTemplate, used_items: set[Var | PredTemplate], co
         new_name = f"{base_name}_{i}"
     return new_name
 
-def fresh_var(var: Var, used_items: set[Var | PredTemplate], context: Context) -> Var:
+def fresh_var(var: Var, used_items: set[Var | PredTemplate | FunTemplate], context: Context) -> Var:
     return Var(fresh_name(var, used_items, context))
 
-def fresh_pred_tmpl(pred_tmpl: PredTemplate, used_items: set[Var | PredTemplate], context: Context) -> PredTemplate:
+def fresh_pred_tmpl(pred_tmpl: PredTemplate, used_items: set[Var | PredTemplate | FunTemplate], context: Context) -> PredTemplate:
     return PredTemplate(fresh_name(pred_tmpl, used_items, context), pred_tmpl.arity)
+
+def fresh_fun_tmpl(fun_tmpl: FunTemplate, used_items: set[Var | PredTemplate | FunTemplate], context: Context) -> FunTemplate:
+    return FunTemplate(fresh_name(fun_tmpl, used_items, context), fun_tmpl.arity)
 
 @dataclass
 class Substitutor:
@@ -472,11 +491,14 @@ class Substitutor:
                     else:
                         return expr
 
-        if isinstance(expr, (Var, Con, PredTemplate)):
+        if isinstance(expr, (Var, Con, PredTemplate, Fun, FunTemplate)):
             return expr
 
         elif isinstance(expr, Compound):
-            return Compound(expr.fun, tuple(self.substitute_term(arg) for arg in expr.args))
+            fun = self.substitute_term(expr.fun)
+            if not isinstance(fun, FunTerm):
+                raise Exception(f"Unexpected type: {type(fun)}")
+            return Compound(fun, tuple(self.substitute_term(arg) for arg in expr.args))
 
         elif isinstance(expr, Lambda):
             return Lambda(expr.args, self.substitute_formula(expr.body))
@@ -562,9 +584,10 @@ class Substitutor:
             raise Exception(f"Unexpected type: {type(expr)}")
 
 class AlphaRename:
-    def __init__(self, rename_map_var: dict[Var, Var], rename_map_pred_tmpl: dict[PredTemplate, PredTemplate]) -> None:
+    def __init__(self, rename_map_var: dict[Var, Var], rename_map_pred_tmpl: dict[PredTemplate, PredTemplate], rename_map_fun_tmpl: dict[FunTemplate, FunTemplate]) -> None:
         self.rename_map_var = rename_map_var
         self.rename_map_pred_tmpl = rename_map_pred_tmpl
+        self.rename_map_fun_tmpl = rename_map_fun_tmpl
 
     def alpha_rename_var(self, expr: Var) -> Var:
         return self.rename_map_var.get(expr, expr)
@@ -572,17 +595,22 @@ class AlphaRename:
     def alpha_rename_pred_tmpl(self, expr: PredTemplate) -> PredTemplate:
         return self.rename_map_pred_tmpl.get(expr, expr)
 
-    def alpha_rename_var_or_pred_tmpl(self, expr: Var | PredTemplate) -> Var | PredTemplate:
+    def alpha_rename_fun_tmpl(self, expr: FunTemplate) -> FunTemplate:
+        return self.rename_map_fun_tmpl.get(expr, expr)
+
+    def alpha_rename_var_or_pred_tmpl_or_fun_tmpl(self, expr: Var | PredTemplate | FunTemplate) -> Var | PredTemplate | FunTemplate:
         if isinstance(expr, Var):
             return self.alpha_rename_var(expr)
         elif isinstance(expr, PredTemplate):
             return self.alpha_rename_pred_tmpl(expr)
+        elif isinstance(expr, FunTemplate):
+            return self.alpha_rename_fun_tmpl(expr)
         else:
             raise Exception(f"Unexpected type: {type(expr)}")
 
     def alpha_rename_term(self, expr: Term) -> Term:
-        if isinstance(expr, (Var, PredTemplate)):
-            return self.alpha_rename_var_or_pred_tmpl(expr)
+        if isinstance(expr, (Var, PredTemplate, FunTemplate)):
+            return self.alpha_rename_var_or_pred_tmpl_or_fun_tmpl(expr)
         elif isinstance(expr, Con):
             return expr
         elif isinstance(expr, Compound):
@@ -613,35 +641,41 @@ class AlphaRename:
         elif isinstance(expr, (And, Or, Implies, Iff)):
             return type(expr)(self.alpha_rename_formula(expr.left), self.alpha_rename_formula(expr.right))
         elif isinstance(expr, Forall):
-            return Forall(self.alpha_rename_var_or_pred_tmpl(expr.var), self.alpha_rename_formula(expr.body))
+            return Forall(self.alpha_rename_var_or_pred_tmpl_or_fun_tmpl(expr.var), self.alpha_rename_formula(expr.body))
         elif isinstance(expr, (Exists, ExistsUniq)):
             return type(expr)(self.alpha_rename_var(expr.var), self.alpha_rename_formula(expr.body))
         else:
             raise Exception(f"Unexpected type: {type(expr)}")
 
 def alpha_safe(expr: Formula | Term, mapping: dict[Term, Term], context: Context, skip_key: bool = False) -> tuple[AlphaRename, dict[Term, Term]]:
-    items_to_substitute: set[Var | PredTemplate] = set()
+    items_to_substitute: set[Var | PredTemplate | FunTemplate] = set()
     for term in mapping.values():
-        fv, bv, ft, bt = collect_vars(term)
-        items_to_substitute.update(fv | bv | ft | bt)
-    _, used_bound_vars, _, used_bound_pred_tmpls = collect_vars(expr)
+        fv, bv, fpt, bpt, fft, bft = collect_vars(term)
+        items_to_substitute.update(fv | bv | fpt | bpt | fft | bft)
+    _, used_bound_vars, _, used_bound_pred_tmpls, _, used_bound_fun_tmpls = collect_vars(expr)
     keys: set[Term] = set() if skip_key else set(mapping.keys())
     rename_map_var: dict[Var, Var] = {}
     rename_map_pred_tmpl: dict[PredTemplate, PredTemplate] = {}
-    for target in keys | used_bound_vars | used_bound_pred_tmpls:
+    rename_map_fun_tmpl: dict[FunTemplate, FunTemplate] = {}
+    for target in keys | used_bound_vars | used_bound_pred_tmpls | used_bound_fun_tmpls:
         if isinstance(target, Var):
             new_v = fresh_var(target, items_to_substitute, context)
             if new_v != target:
                 rename_map_var[target] = new_v
             items_to_substitute.add(new_v)
         elif isinstance(target, PredTemplate):
-            new_t = fresh_pred_tmpl(target, items_to_substitute, context)
-            if new_t != target:
-                rename_map_pred_tmpl[target] = new_t
-            items_to_substitute.add(new_t)
+            new_pt = fresh_pred_tmpl(target, items_to_substitute, context)
+            if new_pt != target:
+                rename_map_pred_tmpl[target] = new_pt
+            items_to_substitute.add(new_pt)
+        elif isinstance(target, FunTemplate):
+            new_ft = fresh_fun_tmpl(target, items_to_substitute, context)
+            if new_ft != target:
+                rename_map_fun_tmpl[target] = new_ft
+            items_to_substitute.add(new_ft)
         else:
             raise Exception(f"Unexpected type: {type(target)}")
-    renamer = AlphaRename(rename_map_var, rename_map_pred_tmpl)
+    renamer = AlphaRename(rename_map_var, rename_map_pred_tmpl, rename_map_fun_tmpl)
     new_mapping: dict[Term, Term] = {}
     if skip_key:
         new_mapping = mapping
@@ -651,6 +685,8 @@ def alpha_safe(expr: Formula | Term, mapping: dict[Term, Term], context: Context
                 new_k = rename_map_var.get(k, k)
             elif isinstance(k, PredTemplate):
                 new_k = rename_map_pred_tmpl.get(k, k)
+            elif isinstance(k, FunTemplate):
+                new_k = rename_map_fun_tmpl.get(k, k)
             else:
                 raise Exception(f"Unexpected type: {type(k)}")
             new_mapping[new_k] = v
@@ -672,6 +708,10 @@ def type_safe(mapping: dict[Term, Term], context: Context, strict: bool = False)
                 return False
         elif isinstance(item, PredTemplate):
             allowed = PredTemplate if strict else PredTerm
+            if not isinstance(term, allowed):
+                return False
+        elif isinstance(item, FunTemplate):
+            allowed = FunTemplate if strict else FunTerm
             if not isinstance(term, allowed):
                 return False
         else:
