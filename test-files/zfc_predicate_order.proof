@@ -1,27 +1,27 @@
 include "zfc_predicate_in.proof"
 
-definition predicate transrelon(template \phi[1], template \psi[2]) as \forall x \forall y \forall z (\phi(x) \wedge \phi(y) \wedge \phi(z) \wedge \psi(x, y) \wedge \psi(y, z) \to \psi(x, z))
+definition predicate transrelon(predicate \phi[1], predicate \psi[2]) as \forall x \forall y \forall z (\phi(x) \wedge \phi(y) \wedge \phi(z) \wedge \psi(x, y) \wedge \psi(y, z) \to \psi(x, z))
 
-definition predicate antisymrelon(template \phi[1], template \psi[2]) as \forall x \forall y (\phi(x) \wedge \phi(y) \wedge \psi(x, y) \wedge \psi(y, x) \to equal(x, y))
+definition predicate antisymrelon(predicate \phi[1], predicate \psi[2]) as \forall x \forall y (\phi(x) \wedge \phi(y) \wedge \psi(x, y) \wedge \psi(y, x) \to equal(x, y))
 
-definition predicate orderon(template \phi[1], template \psi[2]) as transrelon(\phi, \psi) \wedge antisymrelon(\phi, \psi)
+definition predicate orderon(predicate \phi[1], predicate \psi[2]) as transrelon(\phi, \psi) \wedge antisymrelon(\phi, \psi)
 
-definition predicate irrefrelon(template \phi[1], template \psi[2]) as \forall x (\phi(x) \to \neg(\psi(x, x)))
+definition predicate irrefrelon(predicate \phi[1], predicate \psi[2]) as \forall x (\phi(x) \to \neg(\psi(x, x)))
 
-definition predicate linorder_core(template \phi[1], template \psi[2]) as \forall x \forall y (\phi(x) \wedge \phi(y) \to \psi(x, y) \vee equal(x, y) \vee \psi(y, x))
+definition predicate linorder_core(predicate \phi[1], predicate \psi[2]) as \forall x \forall y (\phi(x) \wedge \phi(y) \to \psi(x, y) \vee equal(x, y) \vee \psi(y, x))
 
-definition predicate linorder(template \phi[1], template \psi[2]) as orderon(\phi, \psi) \wedge linorder_core(\phi, \psi)
+definition predicate linorder(predicate \phi[1], predicate \psi[2]) as orderon(\phi, \psi) \wedge linorder_core(\phi, \psi)
 
-definition predicate minimal_core(template \chi[1], template \psi[2], template \phi[1], a) as \forall x (\chi(x) \wedge \phi(x) \wedge neq(x, a) \to \neg(\psi(x, a)))
+definition predicate minimal_core(predicate \chi[1], predicate \psi[2], predicate \phi[1], a) as \forall x (\chi(x) \wedge \phi(x) \wedge neq(x, a) \to \neg(\psi(x, a)))
 
-definition predicate minimal(template \chi[1], template \psi[2], template \phi[1], a) as \chi(a) \wedge \phi(a) \wedge minimal_core(\chi, \psi, \phi, a)
+definition predicate minimal(predicate \chi[1], predicate \psi[2], predicate \phi[1], a) as \chi(a) \wedge \phi(a) \wedge minimal_core(\chi, \psi, \phi, a)
 
-definition predicate minimum_core(template \chi[1], template \psi[2], template \phi[1], a) as \forall x (\chi(x) \wedge \phi(x) \wedge neq(x, a) \to \psi(a, x))
+definition predicate minimum_core(predicate \chi[1], predicate \psi[2], predicate \phi[1], a) as \forall x (\chi(x) \wedge \phi(x) \wedge neq(x, a) \to \psi(a, x))
 
-definition predicate minimum(template \chi[1], template \psi[2], template \phi[1], a) as \chi(a) \wedge \phi(a) \wedge minimum_core(\chi, \psi, \phi, a)
+definition predicate minimum(predicate \chi[1], predicate \psi[2], predicate \phi[1], a) as \chi(a) \wedge \phi(a) \wedge minimum_core(\chi, \psi, \phi, a)
 
-theorem irrefrelon_and_transrelon_implies_antisymrelon \forall^T \phi[1] \forall^T \psi[2] (irrefrelon(\phi, \psi) \wedge transrelon(\phi, \psi) \to antisymrelon(\phi, \psi)) {
-  any template \phi[1], template \psi[2] {
+theorem irrefrelon_and_transrelon_implies_antisymrelon \forall^P \phi[1] \forall^P \psi[2] (irrefrelon(\phi, \psi) \wedge transrelon(\phi, \psi) \to antisymrelon(\phi, \psi)) {
+  any predicate \phi[1], predicate \psi[2] {
     assume irrefrelon(\phi, \psi)\wedge transrelon(\phi, \psi) {
       any x, y {
         assume \phi(x) \wedge \phi(y) \wedge \psi(x, y) \wedge \psi(y, x) {
@@ -39,8 +39,8 @@ theorem irrefrelon_and_transrelon_implies_antisymrelon \forall^T \phi[1] \forall
   }
 }
 
-theorem irrefrelon_and_transrelon_implies_orderon \forall^T \phi[1] \forall^T \psi[2] (irrefrelon(\phi, \psi)\wedge transrelon(\phi, \psi)\to orderon(\phi, \psi)) {
-  any template \phi[1], template \psi[2] {
+theorem irrefrelon_and_transrelon_implies_orderon \forall^P \phi[1] \forall^P \psi[2] (irrefrelon(\phi, \psi)\wedge transrelon(\phi, \psi)\to orderon(\phi, \psi)) {
+  any predicate \phi[1], predicate \psi[2] {
     assume irrefrelon(\phi, \psi) \wedge transrelon(\phi, \psi) {
       split irrefrelon(\phi, \psi) \wedge transrelon(\phi, \psi)
       apply invoke irrefrelon_and_transrelon_implies_antisymrelon for \phi, \psi
@@ -49,8 +49,8 @@ theorem irrefrelon_and_transrelon_implies_orderon \forall^T \phi[1] \forall^T \p
   }
 }
 
-theorem minimum_implies_minimal \forall^T \chi[1] \forall^T \psi[2] \forall^T \phi[1] \forall a (antisymrelon(\chi, \psi) \wedge minimum(\chi, \psi, \phi, a) \to minimal(\chi, \psi, \phi, a)) {
-  any template \chi[1], template \psi[2], template \phi[1], a {
+theorem minimum_implies_minimal \forall^P \chi[1] \forall^P \psi[2] \forall^P \phi[1] \forall a (antisymrelon(\chi, \psi) \wedge minimum(\chi, \psi, \phi, a) \to minimal(\chi, \psi, \phi, a)) {
+  any predicate \chi[1], predicate \psi[2], predicate \phi[1], a {
     assume antisymrelon(\chi, \psi) \wedge minimum(\chi, \psi, \phi, a) {
       split antisymrelon(\chi, \psi) \wedge minimum(\chi, \psi, \phi, a)
       split minimum(\chi, \psi, \phi, a)
@@ -71,8 +71,8 @@ theorem minimum_implies_minimal \forall^T \chi[1] \forall^T \psi[2] \forall^T \p
   }
 }
 
-theorem linorder_and_minmal_implies_minimum \forall^T \chi[1] \forall^T \psi[2] \forall^T \phi[1] \forall a (linorder(\chi, \psi) \wedge minimal(\chi, \psi, \phi, a) \to minimum(\chi, \psi, \phi, a)) {
-  any template \chi[1], template \psi[2], template \phi[1], a {
+theorem linorder_and_minmal_implies_minimum \forall^P \chi[1] \forall^P \psi[2] \forall^P \phi[1] \forall a (linorder(\chi, \psi) \wedge minimal(\chi, \psi, \phi, a) \to minimum(\chi, \psi, \phi, a)) {
+  any predicate \chi[1], predicate \psi[2], predicate \phi[1], a {
     assume linorder(\chi, \psi) \wedge minimal(\chi, \psi, \phi, a) {
       split linorder(\chi, \psi) \wedge minimal(\chi, \psi, \phi, a)
       split minimal(\chi, \psi, \phi, a)
@@ -103,18 +103,18 @@ theorem linorder_and_minmal_implies_minimum \forall^T \chi[1] \forall^T \psi[2] 
   }
 }
 
-definition predicate wellfounded(template \chi[1], template \psi[2]) as \forall^T \phi[1] (\exists z(\chi(z) \wedge \phi(z)) \to \exists a (minimal(\chi, \psi, \phi, a)))
+definition predicate wellfounded(predicate \chi[1], predicate \psi[2]) as \forall^P \phi[1] (\exists z(\chi(z) \wedge \phi(z)) \to \exists a (minimal(\chi, \psi, \phi, a)))
 
-definition predicate wellorder_core(template \chi[1], template \psi[2]) as \forall^T \phi[1] (\exists z(\chi(z) \wedge \phi(z)) \to \exists a (minimum(\chi, \psi, \phi, a)))
+definition predicate wellorder_core(predicate \chi[1], predicate \psi[2]) as \forall^P \phi[1] (\exists z(\chi(z) \wedge \phi(z)) \to \exists a (minimum(\chi, \psi, \phi, a)))
 
-definition predicate wellorder(template \chi[1], template \psi[2]) as orderon(\chi, \psi) \wedge wellorder_core(\chi, \psi)
+definition predicate wellorder(predicate \chi[1], predicate \psi[2]) as orderon(\chi, \psi) \wedge wellorder_core(\chi, \psi)
 
-theorem linorder_and_wellfounded_implies_wellorder \forall^T \chi[1] \forall^T \psi[2] (linorder(\chi, \psi) \wedge wellfounded(\chi, \psi) \to wellorder(\chi, \psi)) {
-  any template \chi[1], template \psi[2] {
+theorem linorder_and_wellfounded_implies_wellorder \forall^P \chi[1] \forall^P \psi[2] (linorder(\chi, \psi) \wedge wellfounded(\chi, \psi) \to wellorder(\chi, \psi)) {
+  any predicate \chi[1], predicate \psi[2] {
     assume linorder(\chi, \psi) \wedge wellfounded(\chi, \psi) {
       split linorder(\chi, \psi) \wedge wellfounded(\chi ,\psi)
       split linorder(\chi, \psi)
-      any template \phi[1] {
+      any predicate \phi[1] {
         assume \exists z (\chi(z) \wedge \phi(z)) {
           apply invoke wellfounded(\chi, \psi) for \phi
           some a such \exists a (minimal(\chi, \psi, \phi, a)) {
@@ -130,8 +130,8 @@ theorem linorder_and_wellfounded_implies_wellorder \forall^T \chi[1] \forall^T \
   }
 }
 
-theorem wellorder_implies_linorder \forall^T \chi[1] \forall^T \psi[2] (wellorder(\chi, \psi) \to linorder(\chi, \psi)) {
-  any template \chi[1], template \psi[2] {
+theorem wellorder_implies_linorder \forall^P \chi[1] \forall^P \psi[2] (wellorder(\chi, \psi) \to linorder(\chi, \psi)) {
+  any predicate \chi[1], predicate \psi[2] {
     assume wellorder(\chi, \psi) {
       split wellorder(\chi, \psi)
       any x, y {
@@ -174,12 +174,12 @@ theorem wellorder_implies_linorder \forall^T \chi[1] \forall^T \psi[2] (wellorde
   }
 }
 
-theorem wellorder_implies_wellfounded \forall^T \chi[1] \forall^T \psi[2] (wellorder(\chi, \psi) \to wellfounded(\chi, \psi)) {
-  any template \chi[1], template \psi[2] {
+theorem wellorder_implies_wellfounded \forall^P \chi[1] \forall^P \psi[2] (wellorder(\chi, \psi) \to wellfounded(\chi, \psi)) {
+  any predicate \chi[1], predicate \psi[2] {
     assume wellorder(\chi, \psi) {
       split wellorder(\chi, \psi)
       split 2 orderon(\chi, \psi)
-      any template \phi[1] {
+      any predicate \phi[1] {
         assume \exists z (\chi(z) \wedge \phi(z)) {
           apply invoke wellorder_core(\chi, \psi) for \phi
           some a such \exists a (minimum(\chi, \psi, \phi, a)) {
@@ -194,8 +194,8 @@ theorem wellorder_implies_wellfounded \forall^T \chi[1] \forall^T \psi[2] (wello
   }
 }
 
-theorem wellorder_equivalent_linorder_and_wellfounded \forall^T \chi[1] \forall^T \psi[2] (wellorder(\chi, \psi) \leftrightarrow linorder(\chi, \psi) \wedge wellfounded(\chi, \psi)) {
-  any template \chi[1], template \psi[2] {
+theorem wellorder_equivalent_linorder_and_wellfounded \forall^P \chi[1] \forall^P \psi[2] (wellorder(\chi, \psi) \leftrightarrow linorder(\chi, \psi) \wedge wellfounded(\chi, \psi)) {
+  any predicate \chi[1], predicate \psi[2] {
     assume wellorder(\chi, \psi) {
       apply invoke wellorder_implies_linorder for \chi, \psi
       apply invoke wellorder_implies_wellfounded for \chi, \psi
@@ -208,8 +208,8 @@ theorem wellorder_equivalent_linorder_and_wellfounded \forall^T \chi[1] \forall^
   }
 }
 
-theorem transrelon_subset \forall^T \phi[1] \forall^T \psi[2] \forall^T \chi[1] (transrelon(\phi, \psi) \wedge subset(\chi, \phi) \to transrelon(\chi, \psi)) {
-  any template \phi[1], template \psi[2], template \chi[1] {
+theorem transrelon_subset \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (transrelon(\phi, \psi) \wedge subset(\chi, \phi) \to transrelon(\chi, \psi)) {
+  any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
     assume transrelon(\phi, \psi) \wedge subset(\chi, \phi) {
       split transrelon(\phi, \psi) \wedge subset(\chi, \phi)
       any x,y,z {
@@ -227,8 +227,8 @@ theorem transrelon_subset \forall^T \phi[1] \forall^T \psi[2] \forall^T \chi[1] 
   }
 }
 
-theorem antisymrelon_subset \forall^T \phi[1] \forall^T \psi[2] \forall^T \chi[1] (antisymrelon(\phi, \psi) \wedge subset(\chi, \phi) \to antisymrelon(\chi, \psi)) {
-  any template \phi[1], template \psi[2], template \chi[1] {
+theorem antisymrelon_subset \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (antisymrelon(\phi, \psi) \wedge subset(\chi, \phi) \to antisymrelon(\chi, \psi)) {
+  any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
     assume antisymrelon(\phi, \psi) \wedge subset(\chi, \phi) {
       split antisymrelon(\phi, \psi) \wedge subset(\chi, \phi)
       any x,y {
@@ -245,8 +245,8 @@ theorem antisymrelon_subset \forall^T \phi[1] \forall^T \psi[2] \forall^T \chi[1
   }
 }
 
-theorem orderon_subset \forall^T \phi[1] \forall^T \psi[2] \forall^T \chi[1] (orderon(\phi, \psi) \wedge subset(\chi, \phi) \to orderon(\chi, \psi)) {
-  any template \phi[1], template \psi[2], template \chi[1] {
+theorem orderon_subset \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (orderon(\phi, \psi) \wedge subset(\chi, \phi) \to orderon(\chi, \psi)) {
+  any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
     assume orderon(\phi, \psi) \wedge subset(\chi, \phi) {
       split orderon(\phi, \psi) \wedge subset(\chi, \phi)
       split orderon(\phi, \psi)
@@ -260,8 +260,8 @@ theorem orderon_subset \forall^T \phi[1] \forall^T \psi[2] \forall^T \chi[1] (or
   }
 }
 
-theorem irrefrelon_subset \forall^T \phi[1] \forall^T \psi[2] \forall^T \chi[1] (irrefrelon(\phi, \psi) \wedge subset(\chi, \phi) \to irrefrelon(\chi, \psi)) {
-  any template \phi[1], template \psi[2], template \chi[1] {
+theorem irrefrelon_subset \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (irrefrelon(\phi, \psi) \wedge subset(\chi, \phi) \to irrefrelon(\chi, \psi)) {
+  any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
     assume irrefrelon(\phi, \psi) \wedge subset(\chi, \phi) {
       split irrefrelon(\phi, \psi) \wedge subset(\chi, \phi)
       any x {
@@ -275,14 +275,14 @@ theorem irrefrelon_subset \forall^T \phi[1] \forall^T \psi[2] \forall^T \chi[1] 
   }
 }
 
-theorem wellorder_subset \forall^T \phi[1] \forall^T \psi[2] \forall^T \chi[1] (wellorder(\phi, \psi) \wedge subset(\chi, \phi) \to wellorder(\chi, \psi)) {
-  any template \phi[1], template \psi[2], template \chi[1] {
+theorem wellorder_subset \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (wellorder(\phi, \psi) \wedge subset(\chi, \phi) \to wellorder(\chi, \psi)) {
+  any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
     assume wellorder(\phi, \psi) \wedge subset(\chi, \phi) {
       split wellorder(\phi, \psi) \wedge subset(\chi, \phi)
       split wellorder(\phi, \psi)
       connect orderon(\phi, \psi) \wedge subset(\chi, \phi)
       apply invoke orderon_subset for \phi, \psi, \chi
-      any template \rho[1] {
+      any predicate \rho[1] {
         assume \exists x (\chi(x) \wedge \rho(x)) {
           some x such \exists x (\chi(x) \wedge \rho(x)) {
             split \chi(x) \wedge \rho(x)

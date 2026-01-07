@@ -4,7 +4,7 @@ primitive predicate in arity 2 tex "","\in",""
 
 membership in
 
-definition predicate equal(template \phi[1], template \chi[1]) as \forall x (\phi(x) \leftrightarrow \chi(x)) tex "","=",""
+definition predicate equal(predicate \phi[1], predicate \chi[1]) as \forall x (\phi(x) \leftrightarrow \chi(x)) tex "","=",""
 
 theorem equal_reflection \forall x(equal(x,x)) {
   any x {
@@ -60,8 +60,8 @@ equality equal
   reflection equal_reflection
   replacement equal: equal_replacement, in: in_replacement
 
-theorem set_is_unique_for_each_predicate \forall^T\phi[1]\forall x\forall x'(\forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y))\to equal(x,x')) {
-  any template \phi[1], x, x' {
+theorem set_is_unique_for_each_predicate \forall^P\phi[1]\forall x\forall x'(\forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y))\to equal(x,x')) {
+  any predicate \phi[1], x, x' {
     assume \forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y)) {
       split \forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y))
       any y {
@@ -82,10 +82,10 @@ theorem set_is_unique_for_each_predicate \forall^T\phi[1]\forall x\forall x'(\fo
 
 definition predicate autoexpand notin(x,y) as \neg(in(x,y)) tex "","\notin",""
 
-definition predicate autoexpand neq(template \phi[1], template \chi[1]) as \neg(equal(\phi, \chi)) tex "", "\neq", ""
+definition predicate autoexpand neq(predicate \phi[1], predicate \chi[1]) as \neg(equal(\phi, \chi)) tex "", "\neq", ""
 
-theorem neq_cor1 \forall^T \phi[1] \forall^T \chi[1] (neq(\phi, \chi) \leftrightarrow \exists x ((\phi(x) \wedge \neg(\chi(x))) \vee (\neg(\phi(x)) \wedge \chi(x)))) {
-  any template \phi[1], template \chi[1] {
+theorem neq_cor1 \forall^P \phi[1] \forall^P \chi[1] (neq(\phi, \chi) \leftrightarrow \exists x ((\phi(x) \wedge \neg(\chi(x))) \vee (\neg(\phi(x)) \wedge \chi(x)))) {
+  any predicate \phi[1], predicate \chi[1] {
     assume neq(\phi, \chi) {
       expand neq(\phi, \chi) for neq, equal
       apply invoke leftward exist_neg_leftrightarrow_neg_forall for lambda x. \phi(x) \leftrightarrow \chi(x)
@@ -189,10 +189,10 @@ theorem neq_cor1_set \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x
   }
 }
 
-definition predicate subset(template \phi[1], template \chi[1]) as \forall x (\phi(x) \to \chi(x)) tex "", "\subset", ""
+definition predicate subset(predicate \phi[1], predicate \chi[1]) as \forall x (\phi(x) \to \chi(x)) tex "", "\subset", ""
 
-theorem subset_reflection \forall^T \phi[1] (subset(\phi, \phi)) {
-  any template \phi[1] {
+theorem subset_reflection \forall^P \phi[1] (subset(\phi, \phi)) {
+  any predicate \phi[1] {
     any x {
       assume \phi(x) {}
     }
@@ -200,8 +200,8 @@ theorem subset_reflection \forall^T \phi[1] (subset(\phi, \phi)) {
   }
 }
 
-theorem subset_antisymmetry \forall^T \phi[1] \forall^T \chi[1] (subset(\phi, \chi) \wedge subset(\chi, \phi) \leftrightarrow equal(\phi, \chi)) {
-  any template \phi[1], template \chi[1] {
+theorem subset_antisymmetry \forall^P \phi[1] \forall^P \chi[1] (subset(\phi, \chi) \wedge subset(\chi, \phi) \leftrightarrow equal(\phi, \chi)) {
+  any predicate \phi[1], predicate \chi[1] {
     assume subset(\phi, \chi)\wedge subset(\chi, \phi) {
       split subset(\phi, \chi)\wedge subset(\chi, \phi)
       any x {
@@ -234,8 +234,8 @@ theorem subset_antisymmetry \forall^T \phi[1] \forall^T \chi[1] (subset(\phi, \c
   }
 }
 
-theorem subset_trans \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho[1] (subset(\phi, \chi) \wedge subset(\chi, \rho) \to subset(\phi, \rho)) {
-  any template \phi[1], template \chi[1], template \rho[1] {
+theorem subset_trans \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (subset(\phi, \chi) \wedge subset(\chi, \rho) \to subset(\phi, \rho)) {
+  any predicate \phi[1], predicate \chi[1], predicate \rho[1] {
     assume subset(\phi, \chi) \wedge subset(\chi, \rho) {
       split subset(\phi, \chi) \wedge subset(\chi, \rho)
       any x {
@@ -249,8 +249,8 @@ theorem subset_trans \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho[1] (subs
   }
 }
 
-theorem neg_subset \forall^T \phi[1] \forall^T \chi[1] (\neg(subset(\phi, \chi)) \leftrightarrow \exists x (\phi(x) \wedge \neg(\chi(x)))) {
-  any template \phi[1], template \chi[1] {
+theorem neg_subset \forall^P \phi[1] \forall^P \chi[1] (\neg(subset(\phi, \chi)) \leftrightarrow \exists x (\phi(x) \wedge \neg(\chi(x)))) {
+  any predicate \phi[1], predicate \chi[1] {
     assume \neg(subset(\phi, \chi)) {
       expand \neg(subset(\phi, \chi)) for subset
       apply invoke leftward exist_neg_leftrightarrow_neg_forall for lambda x. \phi(x) \to \chi(x)
@@ -271,8 +271,8 @@ theorem neg_subset \forall^T \phi[1] \forall^T \chi[1] (\neg(subset(\phi, \chi))
   }
 }
 
-theorem neq_iff_subset \forall^T \phi[1] \forall^T \chi[1] (neq(\phi, \chi) \leftrightarrow \neg(subset(\phi, \chi)) \vee \neg(subset(\chi, \phi))) {
-  any template \phi[1], template \chi[1] {
+theorem neq_iff_subset \forall^P \phi[1] \forall^P \chi[1] (neq(\phi, \chi) \leftrightarrow \neg(subset(\phi, \chi)) \vee \neg(subset(\chi, \phi))) {
+  any predicate \phi[1], predicate \chi[1] {
     apply subset_antisymmetry for \phi, \chi
     apply invoke neg_iff for lambda. subset(\phi, \chi) \wedge subset(\chi, \phi), lambda.equal(\phi, \chi)
     assume neq(\phi, \chi) {
@@ -287,10 +287,10 @@ theorem neq_iff_subset \forall^T \phi[1] \forall^T \chi[1] (neq(\phi, \chi) \lef
   }
 }
 
-definition predicate subsetneq(template \phi[1], template \chi[1]) as subset(\phi, \chi) \wedge neq(\phi, \chi) tex "", "\subsetneq", ""
+definition predicate subsetneq(predicate \phi[1], predicate \chi[1]) as subset(\phi, \chi) \wedge neq(\phi, \chi) tex "", "\subsetneq", ""
 
-theorem subsetneq_implies_exist \forall^T \phi[1] \forall^T \chi[1] (subsetneq(\phi, \chi) \to \exists x(\neg(\phi(x)) \wedge \chi(x))) {
-  any template \phi[1], template \chi[1] {
+theorem subsetneq_implies_exist \forall^P \phi[1] \forall^P \chi[1] (subsetneq(\phi, \chi) \to \exists x(\neg(\phi(x)) \wedge \chi(x))) {
+  any predicate \phi[1], predicate \chi[1] {
     assume subsetneq(\phi, \chi) {
       split subsetneq(\phi, \chi)
       apply invoke rightward neq_cor1 for \phi, \chi
@@ -309,8 +309,8 @@ theorem subsetneq_implies_exist \forall^T \phi[1] \forall^T \chi[1] (subsetneq(\
   }
 }
 
-theorem subset_subsetneq \forall^T \phi[1] \forall^T \chi[1] (subset(\phi, \chi)\leftrightarrow subsetneq(\phi, \chi)\vee equal(\phi, \chi)) {
-  any template \phi[1], template \chi[1] {
+theorem subset_subsetneq \forall^P \phi[1] \forall^P \chi[1] (subset(\phi, \chi)\leftrightarrow subsetneq(\phi, \chi)\vee equal(\phi, \chi)) {
+  any predicate \phi[1], predicate \chi[1] {
     assume subset(\phi, \chi) {
       apply law_of_excluded_middle for lambda. equal(\phi, \chi)
       divide equal(\phi, \chi) \vee neq(\phi, \chi)

@@ -129,10 +129,10 @@ class Parser:
         token = self.stream.peek()
         if token.type == "IDENT":
             return self.parse_deffun_or_deffunterm(context, start_token)
-        elif token.type == "TEMPLATE":
+        elif token.type == "PREDICATE":
             return self.parse_deffuntemplateterm(context, start_token)
         else:
-            raise Exception(f"{token.info()} IDENT or TEMPLATE is required, but got {token.type}")
+            raise Exception(f"{token.info()} IDENT or PREDICATE is required, but got {token.type}")
 
     def parse_deffun_or_deffunterm(self, context: Context, start_token: Token) -> DefFun | DefFunTerm:
         name = self.stream.consume("IDENT").value
@@ -171,7 +171,7 @@ class Parser:
         return deffunterm
 
     def parse_deffuntemplateterm(self, context: Context, start_token: Token) -> DefFunTemplateTerm:
-        self.stream.consume("TEMPLATE")
+        self.stream.consume("PREDICATE")
         self.stream.consume("LBRACKET")
         arity = int(self.stream.consume("NUMBER").value)
         self.stream.consume("RBRACKET")
@@ -687,12 +687,12 @@ class Parser:
             self.stream.consume("RPAREN")
             return Not(body)
 
-        elif tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_TEMPLATE"):
+        elif tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL"):
             quantifiers: list[str] = []
             items: list[Var | PredTemplate] = []
             local_bound_vars: list[Var] = []
             local_bound_pred_tmpls: list[PredTemplate] = []
-            while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_TEMPLATE"):
+            while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL"):
                 if tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
                     quantifiers.append(self.stream.consume(tok.type).type)
                     var = self.parse_var()
@@ -709,7 +709,7 @@ class Parser:
             body = self.parse_formula(context.add_form(local_bound_vars, local_bound_pred_tmpls))
             self.stream.consume("RPAREN")
             for quantifier, item in zip(reversed(quantifiers), reversed(items)):
-                if quantifier == "FORALL" or quantifier == "FORALL_TEMPLATE":
+                if quantifier == "FORALL" or quantifier == "FORALL_PRED_TMPL":
                     body = Forall(item, body)
                 elif quantifier == "EXISTS":
                     body = Exists(item, body)
@@ -837,8 +837,8 @@ class Parser:
         vars: list[Var] = []
         pred_tmpls: list[PredTemplate] = []
         while True:
-            if self.stream.peek().type == "TEMPLATE":
-                self.stream.consume("TEMPLATE")
+            if self.stream.peek().type == "PREDICATE":
+                self.stream.consume("PREDICATE")
                 pred_tmpl = self.parse_pred_tmpl()
                 items.append(pred_tmpl)
                 pred_tmpls.append(pred_tmpl)

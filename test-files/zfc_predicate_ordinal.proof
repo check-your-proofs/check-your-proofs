@@ -1,9 +1,9 @@
 include "zfc_predicate_order.proof"
 
-definition predicate cap(template \phi[1], template \chi[1], template \rho[1]) as \forall x (\rho(x) \leftrightarrow \phi(x) \wedge \chi(x))
+definition predicate cap(predicate \phi[1], predicate \chi[1], predicate \rho[1]) as \forall x (\rho(x) \leftrightarrow \phi(x) \wedge \chi(x))
 
-theorem cap_is_subset_left \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho[1] (cap(\phi, \chi, \rho) \to subset(\rho, \phi)) {
-  any template \phi[1], template \chi[1], template \rho[1] {
+theorem cap_is_subset_left \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (cap(\phi, \chi, \rho) \to subset(\rho, \phi)) {
+  any predicate \phi[1], predicate \chi[1], predicate \rho[1] {
     assume cap(\phi, \chi, \rho) {
       any x {
         assume \rho(x) {
@@ -16,8 +16,8 @@ theorem cap_is_subset_left \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho[1]
   }
 }
 
-theorem cap_is_subset_right \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho[1] (cap(\phi, \chi, \rho) \to subset(\rho, \chi)) {
-  any template \phi[1], template \chi[1], template \rho[1] {
+theorem cap_is_subset_right \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (cap(\phi, \chi, \rho) \to subset(\rho, \chi)) {
+  any predicate \phi[1], predicate \chi[1], predicate \rho[1] {
     assume cap(\phi, \chi, \rho) {
       any x {
         assume \rho(x) {
@@ -30,10 +30,10 @@ theorem cap_is_subset_right \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho[1
   }
 }
 
-definition predicate setminus(template \phi[1], template \chi[1], template \rho[1]) as \forall x (\rho(x) \leftrightarrow \phi(x) \wedge \neg(\chi(x)))
+definition predicate setminus(predicate \phi[1], predicate \chi[1], predicate \rho[1]) as \forall x (\rho(x) \leftrightarrow \phi(x) \wedge \neg(\chi(x)))
 
-theorem setminus_is_subset \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho[1] (setminus(\phi, \chi, \rho) \to subset(\rho, \phi)) {
-  any template \phi[1], template \chi[1], template \rho[1] {
+theorem setminus_is_subset \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (setminus(\phi, \chi, \rho) \to subset(\rho, \phi)) {
+  any predicate \phi[1], predicate \chi[1], predicate \rho[1] {
     assume setminus(\phi, \chi, \rho) {
       any x {
         assume \rho(x) {
@@ -46,10 +46,10 @@ theorem setminus_is_subset \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho[1]
   }
 }
 
-definition predicate trans(template \phi[1]) as \forall x \forall y (in(y, x) \wedge \phi(x) \to \phi(y))
+definition predicate trans(predicate \phi[1]) as \forall x \forall y (in(y, x) \wedge \phi(x) \to \phi(y))
 
-theorem trans_cor1 \forall^T \phi[1] (trans(\phi) \leftrightarrow \forall x (\phi(x) \to subset(x, \phi))) {
-  any template \phi[1] {
+theorem trans_cor1 \forall^P \phi[1] (trans(\phi) \leftrightarrow \forall x (\phi(x) \to subset(x, \phi))) {
+  any predicate \phi[1] {
     assume trans(\phi) {
       any x {
         assume \phi(x) {
@@ -77,8 +77,8 @@ theorem trans_cor1 \forall^T \phi[1] (trans(\phi) \leftrightarrow \forall x (\ph
   }
 }
 
-theorem cap_of_trans_is_trans \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho[1] (trans(\phi) \wedge trans(\chi) \wedge cap(\phi, \chi, \rho) \to trans(\rho)) {
-  any template \phi[1], template \chi[1], template \rho[1] {
+theorem cap_of_trans_is_trans \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (trans(\phi) \wedge trans(\chi) \wedge cap(\phi, \chi, \rho) \to trans(\rho)) {
+  any predicate \phi[1], predicate \chi[1], predicate \rho[1] {
     assume trans(\phi) \wedge trans(\chi) \wedge cap(\phi, \chi, \rho) {
       split trans(\phi) \wedge trans(\chi) \wedge cap(\phi, \chi, \rho)
       any x, y {
@@ -99,10 +99,10 @@ theorem cap_of_trans_is_trans \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho
   }
 }
 
-definition predicate ordinal(template \phi[1]) as trans(\phi) \wedge irrefrelon(\phi, in) \wedge wellorder(\phi, in)
+definition predicate ordinal(predicate \phi[1]) as trans(\phi) \wedge irrefrelon(\phi, in) \wedge wellorder(\phi, in)
 
-theorem element_of_ordinal_is_trans \forall^T \phi[1] (ordinal(\phi) \to \forall \alpha (\phi(\alpha) \to trans(\alpha))) {
-  any template \phi[1] {
+theorem element_of_ordinal_is_trans \forall^P \phi[1] (ordinal(\phi) \to \forall \alpha (\phi(\alpha) \to trans(\alpha))) {
+  any predicate \phi[1] {
     assume ordinal(\phi) {
       any \alpha {
         assume \phi(\alpha) {
@@ -127,8 +127,8 @@ theorem element_of_ordinal_is_trans \forall^T \phi[1] (ordinal(\phi) \to \forall
   }
 }
 
-theorem element_of_ordinal_is_ordinal \forall^T \phi[1] (ordinal(\phi) \to \forall \alpha (\phi(\alpha) \to ordinal(\alpha))) {
-  any template \phi[1] {
+theorem element_of_ordinal_is_ordinal \forall^P \phi[1] (ordinal(\phi) \to \forall \alpha (\phi(\alpha) \to ordinal(\alpha))) {
+  any predicate \phi[1] {
     assume ordinal(\phi) {
       any \alpha {
         assume \phi(\alpha) {
@@ -486,7 +486,7 @@ theorem ordinal_is_linorder linorder(ordinal, in) {
 }
 
 theorem ordinal_is_wellfounded wellfounded(ordinal, in) {
-  any template \phi[1] {
+  any predicate \phi[1] {
     assume \exists \alpha (ordinal(\alpha) \wedge \phi(\alpha)) {
       some \alpha such \exists \alpha (ordinal(\alpha) \wedge \phi(\alpha)) {
         split ordinal(\alpha) \wedge \phi(\alpha)

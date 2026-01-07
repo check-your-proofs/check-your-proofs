@@ -62,9 +62,9 @@ def lex(path: str) -> list[Token]:
         if c in SYMBOLS:
             tokens.append(Token(SYMBOLS[c], c, path, i, line, column))
             i += 1
-        elif src[i:].startswith("\\forall^T"):
-            tokens.append(Token("FORALL_TEMPLATE", "\\forall^T", path, i, line, column))
-            i += len("\\forall^T")
+        elif src[i:].startswith("\\forall^P"):
+            tokens.append(Token("FORALL_PRED_TMPL", "\\forall^P", path, i, line, column))
+            i += len("\\forall^P")
         elif src[i:].startswith("\\forall"):
             tokens.append(Token("FORALL", "\\forall", path, i, line, column))
             i += len("\\forall")

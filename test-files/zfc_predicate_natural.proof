@@ -93,10 +93,10 @@ theorem natural_is_ordinal ordinal(natural) {
   fold for ordinal conclude ordinal(natural)
 }
 
-definition predicate inductive(template \phi[1]) as \forall x ((emptyset(x) \to \phi(x)) \wedge (\phi(x) \to \forall y (suc(x, y) \to \phi(y))))
+definition predicate inductive(predicate \phi[1]) as \forall x ((emptyset(x) \to \phi(x)) \wedge (\phi(x) \to \forall y (suc(x, y) \to \phi(y))))
 
-theorem natural_induction \forall^T \phi[1] (inductive(\phi) \to subset(natural, \phi)) {
-  any template \phi[1] {
+theorem natural_induction \forall^P \phi[1] (inductive(\phi) \to subset(natural, \phi)) {
+  any predicate \phi[1] {
     assume inductive(\phi) {
       deny \neg(subset(natural, \phi)) {
         apply invoke rightward neg_subset for natural, \phi

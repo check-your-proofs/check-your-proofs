@@ -205,10 +205,10 @@ theorem suc_is_injection_cor1 \forall n \forall m (natural(n) \wedge natural(m) 
   }
 }
 
-definition predicate inductive(template \phi[1]) as \phi(emptyset) \wedge \forall x (\phi(x) \to \phi(suc(x)))
+definition predicate inductive(predicate \phi[1]) as \phi(emptyset) \wedge \forall x (\phi(x) \to \phi(suc(x)))
 
-theorem natural_induction \forall^T \phi[1] (inductive(\phi) \to subset(natural, \phi)) {
-  any template \phi[1] {
+theorem natural_induction \forall^P \phi[1] (inductive(\phi) \to subset(natural, \phi)) {
+  any predicate \phi[1] {
     assume inductive(\phi) {
       deny \neg(subset(natural, \phi)) {
         apply invoke rightward neg_subset for natural, \phi

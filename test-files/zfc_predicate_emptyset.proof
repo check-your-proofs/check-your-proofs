@@ -131,7 +131,7 @@ theorem emptyset_is_wellorder \forall n (emptyset(n) \to wellorder(n, in)) {
   any n {
     assume emptyset(n) {
       apply invoke emptsyet_is_orderon for n
-      any template \phi[1] {
+      any predicate \phi[1] {
         assume \exists m (in(m, n) \wedge \phi(m)) {
           some m such \exists m (in(m, n) \wedge \phi(m)) {
             split 1 in(m, n) \wedge \phi(m)

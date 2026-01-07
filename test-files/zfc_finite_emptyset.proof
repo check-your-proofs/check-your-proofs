@@ -125,7 +125,7 @@ theorem emptyset_is_orderon orderon(emptyset, in) {
 
 theorem emptyset_is_wellorder wellorder(emptyset, in) {
   assert emptyset_is_orderon
-  any template \phi[1] {
+  any predicate \phi[1] {
     assume \exists n (in(n, emptyset) \wedge \phi(n)) {
       some n such \exists n (in(n, emptyset) \wedge \phi(n)) {
         split 1 in(n, emptyset) \wedge \phi(n)

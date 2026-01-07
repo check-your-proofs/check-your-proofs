@@ -148,7 +148,7 @@ theorem suc_of_ordinal_is_ordinal_and_vice_versa \forall \alpha (ordinal(\alpha)
       apply invoke suc_of_trans_transrelon_is_transrelon for \alpha
       connect irrefrelon(suc(\alpha), in) \wedge transrelon(suc(\alpha), in)
       apply invoke irrefrelon_and_transrelon_implies_orderon for suc(\alpha), in
-      any template \phi[1] {
+      any predicate \phi[1] {
         assume \exists \beta (in(\beta, suc(\alpha)) \wedge \phi(\beta)) {
           apply law_of_excluded_middle for lambda. \exists \beta (in(\beta, \alpha) \wedge \phi(\beta))
           divide \exists \beta (in(\beta, \alpha) \wedge \phi(\beta)) \vee \neg(\exists \beta (in(\beta, \alpha) \wedge \phi(\beta)))

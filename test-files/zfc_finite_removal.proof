@@ -151,8 +151,8 @@ theorem removing_op_lem1 \forall R \forall x \forall y \forall p \forall q (in(o
   }
 }
 
-theorem recursion_is_unique \forall^T \phi[1] \forall^T \psi[2] (\exists! a (\phi(a)) \wedge \forall p \exists! q (\psi(p, q)) \to \forall n (natural(n) \to \exists! x (recursion(\phi, \psi)(n, x)))) {
-  any template \phi[1], template \psi[2] {
+theorem recursion_is_unique \forall^P \phi[1] \forall^P \psi[2] (\exists! a (\phi(a)) \wedge \forall p \exists! q (\psi(p, q)) \to \forall n (natural(n) \to \exists! x (recursion(\phi, \psi)(n, x)))) {
+  any predicate \phi[1], predicate \psi[2] {
     assume \exists! a (\phi(a)) \wedge \forall p \exists! q (\psi(p, q)) {
       split \exists! a (\phi(a)) \wedge \forall p \exists! q (\psi(p, q))
       some a such \exists! a (\phi(a)) {

@@ -2,17 +2,17 @@ include "zfc_finite_pair.proof"
 
 definition predicate rel(R) as \forall z (in(z, R) \to \exists x \exists y (equal(z, op(x, y))))
 
-definition predicate dom(R, template \phi[1]) as \forall x (\phi(x) \leftrightarrow \exists y (in(op(x, y), R)))
+definition predicate dom(R, predicate \phi[1]) as \forall x (\phi(x) \leftrightarrow \exists y (in(op(x, y), R)))
 
-definition predicate ran(R, template \phi[1]) as \forall y (\phi(y) \leftrightarrow \exists x (in(op(x, y), R)))
+definition predicate ran(R, predicate \phi[1]) as \forall y (\phi(y) \leftrightarrow \exists x (in(op(x, y), R)))
 
 definition predicate fun(f) as rel(f) \wedge \forall x \forall y \forall y' (in(op(x, y), f) \wedge in(op(x, y'), f) \to equal(y, y'))
 
 definition predicate inj(f) as fun(f) \wedge \forall x \forall x' \forall y (in(op(x, y), f) \wedge in(op(x', y), f) \to equal(x, x'))
 
-definition predicate equipotent(template \phi[1], template \chi[1]) as \exists f (inj(f) \wedge dom(f, \phi) \wedge ran(f, \chi))
+definition predicate equipotent(predicate \phi[1], predicate \chi[1]) as \exists f (inj(f) \wedge dom(f, \phi) \wedge ran(f, \chi))
 
-definition predicate finite(template \phi[1]) as \exists n (natural(n) \wedge equipotent(n, \phi))
+definition predicate finite(predicate \phi[1]) as \exists n (natural(n) \wedge equipotent(n, \phi))
 
 theorem singleton_op_is_rel \forall x \forall y (rel(singleton(op(x, y)))) {
   any x, y {
@@ -185,13 +185,13 @@ theorem adding_op_fun \forall f \forall x \forall y (fun(f) \wedge \neg(\exists 
   }
 }
 
-/* theorem finite_separation \forall x \forall^T \phi[1] (finite(x) \to \exists y \forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))) */
+/* theorem finite_separation \forall x \forall^P \phi[1] (finite(x) \to \exists y \forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))) */
 
-definition predicate approx(g, n, template \phi[1], template \psi[2]) as fun(g) \wedge dom(g, suc(n)) \wedge \exists a (in(op(emptyset, a), g) \wedge \phi(a)) \wedge \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \psi(p, q)))
+definition predicate approx(g, n, predicate \phi[1], predicate \psi[2]) as fun(g) \wedge dom(g, suc(n)) \wedge \exists a (in(op(emptyset, a), g) \wedge \phi(a)) \wedge \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \psi(p, q)))
 
-definition function template[2] recursion(template \phi[1], template \psi[2]) as lambda n, x. natural(n) \wedge \exists g (approx(g, n, \phi, \psi) \wedge in(op(n, x), g))
+definition function predicate[2] recursion(predicate \phi[1], predicate \psi[2]) as lambda n, x. natural(n) \wedge \exists g (approx(g, n, \phi, \psi) \wedge in(op(n, x), g))
 
-definition function template[1] tc(template \phi[1], template \psi[2]) as lambda e. \exists n \exists s (recursion(\phi, \psi)(n, s) \wedge in(e, s))
+definition function predicate[1] tc(predicate \phi[1], predicate \psi[2]) as lambda e. \exists n \exists s (recursion(\phi, \psi)(n, s) \wedge in(e, s))
 
 definition function tcin(x) as tc(singleton(x), lambda p, q. in(q, p))
 

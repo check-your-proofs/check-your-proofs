@@ -782,7 +782,7 @@ def pretty_formula(expr: Formula, context: Context, parent_prec: int = FORMULA_P
             if isinstance(body.var, Var):
                 qvars_text += f" {pretty_term(body.var, context)}"
             elif isinstance(body.var, PredTemplate):
-                qvars_text += f"^T {pretty_term(body.var, context)}"
+                qvars_text += f"^P {pretty_term(body.var, context)}"
             else:
                 raise Exception(f"Unexpected type: {type(body.var)}")
             body = body.body
