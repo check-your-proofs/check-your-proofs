@@ -9,11 +9,11 @@ theorem add_characterization \forall m (equal(add(m, emptyset), m) \wedge \foral
   }
 }
 
-/* definition function mul(m, n) as iterate(emptyset, lambda l. add(l, m), n) tex "", "\cdot", ""
+definition function mul(m, n) as iterate(emptyset, \lambda^F l. add(l, m), n) tex "", "\cdot", ""
 
-theorem mul_characterization \forall m (equal(mul(m, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(mul(m, suc(n)), add(mul(m, n), n)))) {
+/* theorem mul_characterization \forall m (equal(mul(m, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(mul(m, suc(n)), add(mul(m, n), n)))) {
   any m {
-    apply iterate_characterization for m, lambda l. add(l, m)
+    apply iterate_characterization for m, \lambda^F l. add(l, m)
     fold for mul conclude equal(mul(m, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(mul(m, suc(n)), add(mul(m, n), n)))
   }
 } */

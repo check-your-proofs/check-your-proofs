@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate, FunTerm
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate, FunTerm, FunLambda
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import strip_forall_vars
@@ -826,6 +826,15 @@ class Parser:
             self.stream.consume("DOT")
             formula = self.parse_formula(context.add_form(vars, [], []))
             return PredLambda(tuple(vars), formula)
+        elif tok.type == "LAMBDA_FUN":
+            self.stream.consume("LAMBDA_FUN")
+            if self.stream.peek().type == "DOT":
+                vars: list[Var] = []
+            else:
+                vars = self.parse_vars()
+            self.stream.consume("DOT")
+            term = self.parse_term(context.add_form(vars, [], []))
+            return FunLambda(tuple(vars), term)
         else:
             raise SyntaxError(f"{tok.info()} Term object is required, but unknown token is found at")
 

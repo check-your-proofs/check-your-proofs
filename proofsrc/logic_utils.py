@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, PredTemplate, PredLambda, MembershipLambda, VarTerm, PredTerm, CompoundPredTerm, FunTemplate, FunTerm
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, PredTemplate, PredLambda, MembershipLambda, VarTerm, PredTerm, CompoundPredTerm, FunTemplate, FunTerm, FunLambda
 from itertools import permutations
 from copy import deepcopy
 from typing import Mapping
@@ -294,7 +294,7 @@ def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bpt
         else:
             raise Exception(f"Unexpected type: {type(expr.var)}")
         return found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft
-    elif isinstance(expr, PredLambda):
+    elif isinstance(expr, (PredLambda, FunLambda)):
         found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft = collect_vars(expr.body, used_bv | set(expr.args), used_bpt, used_bft)
         return found_fv, found_bv | set(expr.args), found_fpt, found_bpt, found_fft, found_bft
     elif isinstance(expr, MembershipLambda):
@@ -818,6 +818,8 @@ def pretty_term(expr: Term, context: Context, parent_prec: int = TERM_PRECEDENCE
             raise Exception(f"Unexpected type: {type(expr.fun)}")
     elif isinstance(expr, PredLambda):
         return f"\\lambda^P {",".join([var.name for var in expr.args])}. {pretty_formula(expr.body, context)}"
+    elif isinstance(expr, FunLambda):
+        return f"\\lambda^F {",".join([var.name for var in expr.args])}. {pretty_term(expr.body, context)}"
     elif isinstance(expr, MembershipLambda):
         return pretty_term(expr.varterm, context)
     else:

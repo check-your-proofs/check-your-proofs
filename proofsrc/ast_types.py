@@ -39,6 +39,11 @@ class FunTemplate(FunTerm):
     arity: int
 
 @dataclass(frozen=True)
+class FunLambda(FunTerm):
+    args: tuple[Var, ...]
+    body: Term
+
+@dataclass(frozen=True)
 class Compound(VarTerm):
     fun: FunTerm
     args: tuple[Term, ...]

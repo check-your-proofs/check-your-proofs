@@ -65,6 +65,9 @@ def lex(path: str) -> list[Token]:
         elif src[i:].startswith("\\lambda^P"):
             tokens.append(Token("LAMBDA_PRED", "\\lambda^P", path, i, line, column))
             i += len("\\lambda^P")
+        elif src[i:].startswith("\\lambda^F"):
+            tokens.append(Token("LAMBDA_FUN", "\\lambda^F", path, i, line, column))
+            i += len("\\lambda^F")
         elif src[i:].startswith("\\forall^P"):
             tokens.append(Token("FORALL_PRED_TMPL", "\\forall^P", path, i, line, column))
             i += len("\\forall^P")
