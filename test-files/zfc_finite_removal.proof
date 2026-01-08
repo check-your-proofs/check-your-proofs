@@ -151,29 +151,100 @@ theorem removing_op_lem1 \forall R \forall x \forall y \forall p \forall q (in(o
   }
 }
 
+theorem recursion_base_step \forall c \forall^F f[1] (recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(emptyset, c)) {
+  any c, function f[1] {
+    assert emptyset_is_natural
+    apply singleton_op_is_fun for emptyset, c
+    apply singleton_op_dom for emptyset, c
+    assert suc_emptyset_is_singleton_emptyset
+    substitute dom(singleton(op(emptyset, c)), singleton(emptyset)) for singleton(emptyset): suc(emptyset)
+    apply singleton_cor1 for op(emptyset, c)
+    connect in(op(emptyset, c), singleton(op(emptyset, c))) \wedge equal(c, c)
+    lift for c conclude \exists a (in(op(emptyset, a), singleton(op(emptyset, c))) \wedge equal(c, a))
+    any k {
+      assume in(k, emptyset) {
+        apply emptyset_existence for k
+        contradict in(k, emptyset)
+        explode \exists p \exists q (in(op(k, p), singleton(op(emptyset, c))) \wedge in(op(suc(k), q), singleton(op(emptyset, c))) \wedge equal(q, f(p)))
+      }
+    }
+    connect approx(singleton(op(emptyset, c)), emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p)))
+    connect approx(singleton(op(emptyset, c)), emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(emptyset, c), singleton(op(emptyset, c)))
+    lift for singleton(op(emptyset, c)) conclude \exists g (approx(g, emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(emptyset, c), g))
+    connect natural(emptyset) \wedge \exists g (approx(g, emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(emptyset, c), g))
+    fold for recursion conclude recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(emptyset, c)
+  }
+}
+
+theorem recursion_induction_step \forall c \forall^F f[1] \forall n \forall x (natural(n) \wedge recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(n, x) \to recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(suc(n), f(x))) {
+  any c, function f[1], n, x {
+    assume natural(n) \wedge recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(n, x) {
+      split natural(n) \wedge recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(n, x)
+      split 2 recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x)
+      apply invoke rightward suc_of_natural_is_natural_and_vice_versa for n
+      some g such \exists g (approx(g, n, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(n, x), g)) {
+        split approx(g, n, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(n, x), g)
+        split approx(g, n, lambda a. equal(c, a), lambda p, q. equal(q, f(p)))
+        deny \exists q (in(op(suc(n), q), g)) {
+          some q such \exists q (in(op(suc(n), q), g)) {
+            apply invoke leftward dom(g, suc(n)) for suc(n)
+            apply invoke natural_is_irrefrelon for suc(n)
+            contradict in(suc(n), suc(n))
+          }
+        }
+        connect fun(g) \wedge \neg(\exists q (in(op(suc(n), q), g)))
+        apply invoke adding_op_fun for g, suc(n), f(x)
+        apply invoke adding_op_dom for g, suc(n), suc(n), f(x)
+        fold for suc[2] conclude dom(adj(g, op(suc(n), f(x))), suc(suc(n)))
+        some a such \exists a (in(op(emptyset, a), g) \wedge equal(c, a)) {
+          split in(op(emptyset, a), g) \wedge equal(c, a)
+          pad in(op(emptyset, a), g) conclude in(op(emptyset, a), g) \vee equal(op(emptyset, a), op(suc(n), f(x)))
+          apply invoke leftward adj_existence for g, op(suc(n), f(x)), op(emptyset, a)
+          connect in(op(emptyset, a), adj(g, op(suc(n), f(x)))) \wedge equal(c, a)
+          lift for a conclude \exists a (in(op(emptyset, a), adj(g, op(suc(n), f(x)))) \wedge equal(c, a))
+        }
+        pad equal(op(suc(n), f(x)), op(suc(n), f(x))) conclude in(op(suc(n), f(x)), g) \vee equal(op(suc(n), f(x)), op(suc(n), f(x)))
+        apply invoke leftward adj_existence for g, op(suc(n), f(x)), op(suc(n), f(x))
+        any k {
+          assume in(k, suc(n)) {
+            apply invoke rightward suc_characterization for n, k
+            divide in(k, n) \vee equal(k, n)
+              case in(k, n) {
+                apply invoke \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge equal(q, f(p)))) for k
+                some p, q such \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge equal(q, f(p))) {
+                  split in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge equal(q, f(p))
+                  pad in(op(k, p), g) conclude in(op(k, p), g) \vee equal(op(k, p), op(suc(n), f(x)))
+                  apply invoke leftward adj_existence for g, op(suc(n), f(x)), op(k, p)
+                  pad in(op(suc(k), q), g) conclude in(op(suc(k), q), g) \vee equal(op(suc(k), q), op(suc(n), f(x)))
+                  apply invoke leftward adj_existence for g, op(suc(n), f(x)), op(suc(k), q)
+                  connect in(op(k, p), adj(g, op(suc(n), f(x)))) \wedge in(op(suc(k), q), adj(g, op(suc(n), f(x)))) \wedge equal(q, f(p))
+                  lift for p, q conclude \exists p \exists q (in(op(k, p), adj(g, op(suc(n), f(x)))) \wedge in(op(suc(k), q), adj(g, op(suc(n), f(x)))) \wedge equal(q, f(p)))
+                }
+              }
+              case equal(k, n) {
+                pad in(op(n, x), g) conclude in(op(n, x), g) \vee equal(op(n, x), op(suc(n), f(x)))
+                apply invoke leftward adj_existence for g, op(suc(n), f(x)), op(n, x)
+                substitute in(op(n, x), adj(g, op(suc(n), f(x)))) for n[1]: k
+                substitute in(op(suc(n), f(x)), adj(g, op(suc(n), f(x)))) for n[1]: k
+                connect in(op(k, x), adj(g, op(suc(n), f(x)))) \wedge in(op(suc(k), f(x)), adj(g, op(suc(n), f(x)))) \wedge equal(f(x), f(x))
+                lift for x, f(x) conclude \exists p \exists q (in(op(k, p), adj(g, op(suc(n), f(x)))) \wedge in(op(suc(k), q), adj(g, op(suc(n), f(x)))) \wedge equal(q, f(p)))
+              }
+          }
+        }
+        connect approx(adj(g, op(suc(n), f(x))), suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p)))
+        connect approx(adj(g, op(suc(n), f(x))), suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(suc(n), f(x)), adj(g, op(suc(n), f(x))))
+        lift for adj(g, op(suc(n), f(x))) conclude \exists h (approx(h, suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(suc(n), f(x)), h))
+      }
+      connect natural(suc(n)) \wedge \exists h (approx(h, suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(suc(n), f(x)), h))
+      fold for recursion conclude recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(suc(n), f(x))
+    }
+  }
+}
+
 theorem recursion_is_unique \forall c \forall^F g[1] \forall n (natural(n) \to \exists! x (recursion(lambda a. equal(a, c), lambda p, q. equal(q, g(p)))(n, x))) {
   any c, function f[1] {
     show \exists! x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(emptyset, x)) {
-      assert emptyset_is_natural
-      apply singleton_op_is_fun for emptyset, c
-      apply singleton_op_dom for emptyset, c
-      assert suc_emptyset_is_singleton_emptyset
-      substitute dom(singleton(op(emptyset, c)), singleton(emptyset)) for singleton(emptyset): suc(emptyset)
-      apply singleton_cor1 for op(emptyset, c)
-      connect in(op(emptyset, c), singleton(op(emptyset, c))) \wedge equal(c, c)
-      lift for c conclude \exists a (in(op(emptyset, a), singleton(op(emptyset, c))) \wedge equal(c, a))
-      any k {
-        assume in(k, emptyset) {
-          apply emptyset_existence for k
-          contradict in(k, emptyset)
-          explode \exists p \exists q (in(op(k, p), singleton(op(emptyset, c))) \wedge in(op(suc(k), q), singleton(op(emptyset, c))) \wedge equal(q, f(p)))
-        }
-      }
-      connect approx(singleton(op(emptyset, c)), emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p)))
-      connect approx(singleton(op(emptyset, c)), emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(emptyset, c), singleton(op(emptyset, c)))
-      lift for singleton(op(emptyset, c)) conclude \exists g (approx(g, emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(emptyset, c), g))
-      connect natural(emptyset) \wedge \exists g (approx(g, emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(emptyset, c), g))
-      fold for recursion conclude recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(emptyset, c)
+      apply recursion_base_step for c, f
       any x {
         assume recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(emptyset, x) {
           split 2 recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(emptyset, x)
@@ -199,63 +270,9 @@ theorem recursion_is_unique \forall c \forall^F g[1] \forall n (natural(n) \to \
         case natural(n) {
           assume \exists! x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x)) {
             some x such \exists! x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x)) {
-              split 2 recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x)
+              connect natural(n) \wedge recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x)
+              apply invoke recursion_induction_step for c, f, n, x
               apply invoke rightward suc_of_natural_is_natural_and_vice_versa for n
-              some g such \exists g (approx(g, n, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(n, x), g)) {
-                split approx(g, n, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(n, x), g)
-                split approx(g, n, lambda a. equal(c, a), lambda p, q. equal(q, f(p)))
-                deny \exists q (in(op(suc(n), q), g)) {
-                  some q such \exists q (in(op(suc(n), q), g)) {
-                    apply invoke leftward dom(g, suc(n)) for suc(n)
-                    apply invoke natural_is_irrefrelon for suc(n)
-                    contradict in(suc(n), suc(n))
-                  }
-                }
-                connect fun(g) \wedge \neg(\exists q (in(op(suc(n), q), g)))
-                apply invoke adding_op_fun for g, suc(n), f(x)
-                apply invoke adding_op_dom for g, suc(n), suc(n), f(x)
-                fold for suc[2] conclude dom(adj(g, op(suc(n), f(x))), suc(suc(n)))
-                some a such \exists a (in(op(emptyset, a), g) \wedge equal(c, a)) {
-                  split in(op(emptyset, a), g) \wedge equal(c, a)
-                  pad in(op(emptyset, a), g) conclude in(op(emptyset, a), g) \vee equal(op(emptyset, a), op(suc(n), f(x)))
-                  apply invoke leftward adj_existence for g, op(suc(n), f(x)), op(emptyset, a)
-                  connect in(op(emptyset, a), adj(g, op(suc(n), f(x)))) \wedge equal(c, a)
-                  lift for a conclude \exists a (in(op(emptyset, a), adj(g, op(suc(n), f(x)))) \wedge equal(c, a))
-                }
-                pad equal(op(suc(n), f(x)), op(suc(n), f(x))) conclude in(op(suc(n), f(x)), g) \vee equal(op(suc(n), f(x)), op(suc(n), f(x)))
-                apply invoke leftward adj_existence for g, op(suc(n), f(x)), op(suc(n), f(x))
-                any k {
-                  assume in(k, suc(n)) {
-                    apply invoke rightward suc_characterization for n, k
-                    divide in(k, n) \vee equal(k, n)
-                      case in(k, n) {
-                        apply invoke \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge equal(q, f(p)))) for k
-                        some p, q such \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge equal(q, f(p))) {
-                          split in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge equal(q, f(p))
-                          pad in(op(k, p), g) conclude in(op(k, p), g) \vee equal(op(k, p), op(suc(n), f(x)))
-                          apply invoke leftward adj_existence for g, op(suc(n), f(x)), op(k, p)
-                          pad in(op(suc(k), q), g) conclude in(op(suc(k), q), g) \vee equal(op(suc(k), q), op(suc(n), f(x)))
-                          apply invoke leftward adj_existence for g, op(suc(n), f(x)), op(suc(k), q)
-                          connect in(op(k, p), adj(g, op(suc(n), f(x)))) \wedge in(op(suc(k), q), adj(g, op(suc(n), f(x)))) \wedge equal(q, f(p))
-                          lift for p, q conclude \exists p \exists q (in(op(k, p), adj(g, op(suc(n), f(x)))) \wedge in(op(suc(k), q), adj(g, op(suc(n), f(x)))) \wedge equal(q, f(p)))
-                        }
-                      }
-                      case equal(k, n) {
-                        pad in(op(n, x), g) conclude in(op(n, x), g) \vee equal(op(n, x), op(suc(n), f(x)))
-                        apply invoke leftward adj_existence for g, op(suc(n), f(x)), op(n, x)
-                        substitute in(op(n, x), adj(g, op(suc(n), f(x)))) for n[1]: k
-                        substitute in(op(suc(n), f(x)), adj(g, op(suc(n), f(x)))) for n[1]: k
-                        connect in(op(k, x), adj(g, op(suc(n), f(x)))) \wedge in(op(suc(k), f(x)), adj(g, op(suc(n), f(x)))) \wedge equal(f(x), f(x))
-                        lift for x, f(x) conclude \exists p \exists q (in(op(k, p), adj(g, op(suc(n), f(x)))) \wedge in(op(suc(k), q), adj(g, op(suc(n), f(x)))) \wedge equal(q, f(p)))
-                      }
-                  }
-                }
-                connect approx(adj(g, op(suc(n), f(x))), suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p)))
-                connect approx(adj(g, op(suc(n), f(x))), suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(suc(n), f(x)), adj(g, op(suc(n), f(x))))
-                lift for adj(g, op(suc(n), f(x))) conclude \exists h (approx(h, suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(suc(n), f(x)), h))
-              }
-              connect natural(suc(n)) \wedge \exists h (approx(h, suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(suc(n), f(x)), h))
-              fold for recursion conclude recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(suc(n), f(x))
               any y' {
                 assume recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(suc(n), y') {
                   split 2 recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(suc(n), y')
@@ -361,10 +378,23 @@ definition function iterate by recursion_is_unique
 existence iterate_existence \forall c \forall^F f[1] \forall n (natural(n) \to recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(n, iterate(c, f, n))) by iterate
 uniqueness iterate_uniqueness \forall c \forall^F f[1] \forall n (natural(n) \to \forall x (recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(n, x) \to equal(x, iterate(c, f, n)))) by iterate
 
-/* theorem iterate_characterization \forall c \forall^F f[1] (equal(iterate(c, f, emptyset), c) \wedge \forall n (natural(n) \to equal(iterate(c, f, suc(n)), f(iterate(c, f, n))))) {
+theorem iterate_characterization \forall c \forall^F f[1] (equal(iterate(c, f, emptyset), c) \wedge \forall n (natural(n) \to equal(iterate(c, f, suc(n)), f(iterate(c, f, n))))) {
   any c, function f[1] {
     assert emptyset_is_natural
     apply invoke iterate_existence for c, f, emptyset
+    apply recursion_base_step for c, f
     apply invoke iterate_uniqueness for c, f, emptyset
+    apply invoke \forall x (recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(emptyset, x) \to equal(x, iterate(c, f, emptyset))) for c
+    any n {
+      assume natural(n) {
+        apply invoke rightward suc_of_natural_is_natural_and_vice_versa for n
+        apply invoke iterate_existence for c, f, n
+        connect natural(n) \wedge recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(n, iterate(c, f, n))
+        apply invoke recursion_induction_step for c, f, n, iterate(c, f, n)
+        apply invoke iterate_uniqueness for c, f, suc(n)
+        apply invoke \forall x (recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(suc(n), x) \to equal(x, iterate(c, f, suc(n)))) for f(iterate(c, f, n))
+      }
+    }
+    connect equal(iterate(c, f, emptyset), c) \wedge \forall n (natural(n) \to equal(iterate(c, f, suc(n)), f(iterate(c, f, n))))
   }
-} */
+}

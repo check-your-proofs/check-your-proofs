@@ -1,0 +1,19 @@
+include "zfc_finite_removal.proof"
+
+definition function add(m, n) as iterate(m, suc, n) tex "", "+", ""
+
+theorem add_characterization \forall m (equal(add(m, emptyset), m) \wedge \forall n (natural(n) \to equal(add(m, suc(n)), suc(add(m, n))))) {
+  any m {
+    apply iterate_characterization for m, suc
+    fold for add conclude equal(add(m, emptyset), m) \wedge \forall n (natural(n) \to equal(add(m, suc(n)), suc(add(m, n))))
+  }
+}
+
+/* definition function mul(m, n) as iterate(emptyset, lambda l. add(l, m), n) tex "", "\cdot", ""
+
+theorem mul_characterization \forall m (equal(mul(m, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(mul(m, suc(n)), add(mul(m, n), n)))) {
+  any m {
+    apply iterate_characterization for m, lambda l. add(l, m)
+    fold for mul conclude equal(mul(m, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(mul(m, suc(n)), add(mul(m, n), n)))
+  }
+} */

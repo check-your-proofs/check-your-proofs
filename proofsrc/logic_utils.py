@@ -303,7 +303,7 @@ class DefExpander:
     counter: dict[str, int] = field(init=False, default_factory=dict[str, int])
 
     def expand_defs_term(self, expr: Term, context: Context) -> Term:
-        if isinstance(expr, (Var, Con, PredTemplate, FunTemplate)):
+        if isinstance(expr, (Var, Con, PredTemplate, Fun, FunTemplate)):
             return expr
         elif isinstance(expr, Compound):
             if isinstance(expr.fun, Fun):
@@ -611,7 +611,7 @@ class AlphaRename:
     def alpha_rename_term(self, expr: Term) -> Term:
         if isinstance(expr, (Var, PredTemplate, FunTemplate)):
             return self.alpha_rename_var_or_pred_tmpl_or_fun_tmpl(expr)
-        elif isinstance(expr, Con):
+        elif isinstance(expr, (Con, Fun)):
             return expr
         elif isinstance(expr, Compound):
             return Compound(expr.fun, tuple(self.alpha_rename_term(a) for a in expr.args))
@@ -762,7 +762,7 @@ def pretty_expr_fragments(expr: AtomicFormula | Compound | CompoundPredTerm, con
         raise TypeError(f"Unsupported node type: {type(expr)}")
 
 def pretty_term(expr: Term, context: Context, parent_prec: int = TERM_PRECEDENCE["Lowest"]) -> str:
-    if isinstance(expr, Var):
+    if isinstance(expr, (Var, Fun)):
         return expr.name
     elif isinstance(expr, (PredTemplate, FunTemplate)):
         return f"{expr.name}[{str(expr.arity)}]"

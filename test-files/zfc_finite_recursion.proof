@@ -196,5 +196,3 @@ definition function predicate[1] tc(predicate \phi[1], predicate \psi[2]) as lam
 definition function tcin(x) as tc(singleton(x), lambda p, q. in(q, p))
 
 definition predicate hf(x) as finite(tcin(x)) \wedge irrefrelon(tcin(x), in) \wedge wellfounded(tcin(x), in)
-
-definition predicate add(n, m, x) as recursion(lambda a. equal(a, n), lambda p, q. equal(q, suc(p)))(m, x)
