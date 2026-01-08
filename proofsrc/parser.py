@@ -1,7 +1,7 @@
 from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, Lambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate, FunTerm
 from lexer import Token
 from token_stream import TokenStream
-from logic_utils import collect_quantifier_vars
+from logic_utils import strip_forall_vars
 
 from typing import Sequence
 
@@ -146,7 +146,7 @@ class Parser:
     def parse_deffun(self, context: Context, start_token: Token, name: str) -> DefFun:
         self.stream.consume("BY")
         theorem = self.stream.consume("IDENT").value
-        vars_, body = collect_quantifier_vars(context.decl.theorems[theorem].conclusion, Forall)
+        vars_, body = strip_forall_vars(context.decl.theorems[theorem].conclusion)
         if isinstance(body, ExistsUniq):
             existsuniq = body
         elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):

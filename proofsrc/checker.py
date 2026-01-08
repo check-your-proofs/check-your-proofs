@@ -1,5 +1,5 @@
 from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate
-from logic_utils import Substitutor, DefExpander, expr_in_context, collect_quantifier_vars, make_quantifier_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr, alpha_safe_formula, type_safe
+from logic_utils import Substitutor, DefExpander, expr_in_context, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr, alpha_safe_formula, type_safe
 from copy import deepcopy
 
 import logging
@@ -195,7 +195,7 @@ def check_deffunexist(node: DefFunExist, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.fun_name}")
-    args, body = collect_quantifier_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion, Forall)
+    args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion)
     if isinstance(body, ExistsUniq):
         existence_formula = Substitutor({body.var: Compound(Fun(node.fun_name), tuple(args))}, context).substitute_formula(body.body)
     elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
@@ -204,7 +204,7 @@ def check_deffunexist(node: DefFunExist, context: Context, indent: int):
         logger.error(f"{error_prefix}Unexpected formula: {pretty_expr(body, context)}")
         node.proofinfo.status = "ERROR"
         return False
-    existence_formula = make_quantifier_vars(existence_formula, Forall ,args)
+    existence_formula = make_forall_vars(existence_formula, args)
     if not alpha_equiv_with_defs(node.formula, existence_formula, context):
         logger.error(f"{error_prefix}existence_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
         node.proofinfo.status = "ERROR"
@@ -222,7 +222,7 @@ def check_deffununiq(node: DefFunUniq, context: Context, indent: int):
         logger.error(f"{error_prefix}equality has not been declared yet")
         node.proofinfo.status = "ERROR"
         return False
-    args, body = collect_quantifier_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion, Forall)
+    args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion)
     if isinstance(body, ExistsUniq):
         uniqueness_formula = Forall(body.var, Implies(body.body, AtomicFormula(Pred(context.decl.equality.equal.name), (MembershipLambda(Var(body.var.name)), MembershipLambda(Compound(Fun(node.fun_name), tuple(args)))))))
     elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
@@ -231,7 +231,7 @@ def check_deffununiq(node: DefFunUniq, context: Context, indent: int):
         logger.error(f"{error_prefix}Unexpected formula: {pretty_expr(body, context)}")
         node.proofinfo.status = "ERROR"
         return False
-    uniqueness_formula = make_quantifier_vars(uniqueness_formula, Forall, args)
+    uniqueness_formula = make_forall_vars(uniqueness_formula, args)
     if not alpha_equiv_with_defs(node.formula, uniqueness_formula, context):
         logger.error(f"{error_prefix}uniqueness_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
         node.proofinfo.status = "ERROR"
@@ -540,10 +540,10 @@ def check_some(node: Some, context: Context, indent: int):
     logger.debug(f"{debug_prefix}derivable: {pretty_expr(node.fact, context)}")
     fact = get_fact(node.fact, context, True)
     if isinstance(fact, Exists):
-        vars, body = collect_quantifier_vars(fact, Exists)
-        body = make_quantifier_vars(body, Exists, [bound for bound, free in zip(vars, node.items) if free is None])
+        vars, body = strip_exists_vars(fact, Exists)
+        body = make_exists_vars(body, Exists, [bound for bound, free in zip(vars, node.items) if free is None])
     elif isinstance(fact, ExistsUniq):
-        vars, body= collect_quantifier_vars(fact, ExistsUniq)
+        vars, body= strip_exists_vars(fact, ExistsUniq)
         if len(vars) != 1:
             logger.error(f"{error_prefix}Unexpected len(vars): {len(vars)}")
             node.proofinfo.status = "ERROR"
@@ -693,8 +693,8 @@ def check_apply(node: Apply, context: Context, indent: int):
         return False
     logger.debug(f"{debug_prefix}Drivable fact: {pretty_expr(node.fact, context)}")
     fact = get_fact(node.fact, context, True)
-    items, body = collect_quantifier_vars(fact, Forall)
-    body = make_quantifier_vars(body, Forall, [item for item, term in zip(items, node.terms) if term is None])
+    items, body = strip_forall_vars(fact)
+    body = make_forall_vars(body, [item for item, term in zip(items, node.terms) if term is None])
     mapping: dict[Term, Term] = {}
     for item, term in zip(items, node.terms):
         if term is None:
@@ -772,8 +772,8 @@ def check_lift(node: Lift, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}Target conclusion: {pretty_expr(node.conclusion, context)}")
-    items, body = collect_quantifier_vars(node.conclusion, Exists)
-    body = make_quantifier_vars(body, Exists, [item for item, term in zip(items, node.terms) if term is None])
+    items, body = strip_exists_vars(node.conclusion, Exists)
+    body = make_exists_vars(body, Exists, [item for item, term in zip(items, node.terms) if term is None])
     mapping: dict[Term, Term] = {item: term for item, term in zip(items, node.terms) if term is not None}
     renamed_body, renamed_mapping = alpha_safe_formula(body, mapping, context)
     if not type_safe(renamed_mapping, context):

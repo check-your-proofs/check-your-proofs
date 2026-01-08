@@ -139,8 +139,14 @@ class AlphaEquiv:
         return self.alpha_equiv_formula(e1.left, e2.left, env, depth+1) and self.alpha_equiv_formula(e1.right, e2.right, env, depth+1)
 
     def alpha_equiv_quantifier(self, e1: Forall | Exists | ExistsUniq, e2: Forall | Exists | ExistsUniq, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], quantifier_type: type[Forall] | type[Exists] | type[ExistsUniq], depth: int) -> bool:
-        vars1, body1 = collect_quantifier_vars(e1, quantifier_type)
-        vars2, body2 = collect_quantifier_vars(e2, quantifier_type)
+        if type(e1) is not type(e2):
+            return False
+        if isinstance(e1, Forall):
+            vars1, body1 = strip_forall_vars(e1)
+            vars2, body2 = strip_forall_vars(e2)
+        else:
+            vars1, body1 = strip_exists_vars(e1, type(e1))
+            vars2, body2 = strip_exists_vars(e2, type(e1))
 
         if len(vars1) != len(vars2):
             return False
@@ -195,15 +201,29 @@ class AlphaEquiv:
     def alpha_equiv(self, e1: Formula, e2: Formula) -> bool:
         return self.alpha_equiv_formula(e1, e2, {}, 0)
 
-def collect_quantifier_vars(e: Formula, quantifier_type: type[Forall] | type[Exists] | type[ExistsUniq]) -> tuple[list[Var | PredTemplate | FunTemplate], Formula]:
+def strip_forall_vars(e: Formula) -> tuple[list[Var | PredTemplate | FunTemplate], Formula]:
     vars_: list[Var | PredTemplate | FunTemplate] = []
+    body = e
+    while isinstance(body, Forall):
+        vars_.append(body.var)
+        body = body.body
+    return vars_, body
+
+def strip_exists_vars(e: Formula, quantifier_type: type[Exists] | type[ExistsUniq]) -> tuple[list[Var], Formula]:
+    vars_: list[Var] = []
     body = e
     while isinstance(body, quantifier_type):
         vars_.append(body.var)
         body = body.body
     return vars_, body
 
-def make_quantifier_vars(e: Formula, quantifier_type: type[Forall] | type[Exists] | type[ExistsUniq], vars_: list[Var | PredTemplate | FunTemplate]) -> Formula:
+def make_forall_vars(e: Formula, vars_: list[Var | PredTemplate | FunTemplate]) -> Formula:
+    body = e
+    for var in reversed(vars_):
+        body = Forall(var, body)
+    return body
+
+def make_exists_vars(e: Formula, quantifier_type: type[Exists] | type[ExistsUniq], vars_: list[Var]) -> Formula:
     body = e
     for var in reversed(vars_):
         body = quantifier_type(var, body)
