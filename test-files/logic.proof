@@ -22,7 +22,7 @@ theorem neg_exist_leftrightarrow_forall_neg \forall^P\phi[1](\neg(\exists x(\phi
 
 theorem neg_exist_neg_leftrightarrow_forall \forall^P\phi[1](\neg(\exists x(\neg(\phi(x))))\leftrightarrow\forall x(\phi(x))) {
   any predicate \phi[1] {
-    apply neg_exist_leftrightarrow_forall_neg for lambda x.\neg(\phi(x))
+    apply neg_exist_leftrightarrow_forall_neg for \lambda^P x.\neg(\phi(x))
   }
 }
 
@@ -108,7 +108,7 @@ theorem neg_and \forall^P\phi[0]\forall^P\psi[0](\neg(\phi\wedge\psi)\leftrighta
   any predicate \phi[0], predicate \psi[0] {
     assume \neg(\phi\wedge\psi) {
       deny \neg(\neg(\phi)\vee\neg(\psi)) {
-        apply invoke rightward neg_or for lambda.\neg(\phi),lambda.\neg(\psi)
+        apply invoke rightward neg_or for \lambda^P.\neg(\phi),\lambda^P.\neg(\psi)
         split \phi\wedge\psi
         contradict \phi\wedge\psi
       }
@@ -132,7 +132,7 @@ theorem neg_and \forall^P\phi[0]\forall^P\psi[0](\neg(\phi\wedge\psi)\leftrighta
 theorem law_of_excluded_middle \forall^P\phi[0](\phi\vee\neg(\phi)) {
   any predicate \phi[0] {
     deny \neg(\phi\vee\neg(\phi)) {
-      apply invoke rightward neg_or for lambda.\phi,lambda.\neg(\phi)
+      apply invoke rightward neg_or for \lambda^P.\phi,\lambda^P.\neg(\phi)
       split 2 \neg(\phi)\wedge\phi
       pad \phi conclude \phi\vee\neg(\phi)
       contradict \phi\vee\neg(\phi)
@@ -192,7 +192,7 @@ theorem neg_iff_iff \forall^P \phi[0] \forall^P \psi[0] (\neg(\phi \leftrightarr
               assert \neg(\phi)
             }
             connect \neg(\phi) \leftrightarrow \neg(\psi)
-            apply invoke neg_iff for lambda. \neg(\phi), lambda. \neg(\psi)
+            apply invoke neg_iff for \lambda^P. \neg(\phi), \lambda^P. \neg(\psi)
             contradict \phi \leftrightarrow \psi
           }
           connect \neg(\phi) \wedge \psi

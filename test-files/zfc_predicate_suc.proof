@@ -18,7 +18,7 @@ theorem suc_is_unique \forall x \forall y \forall y' (suc(x, y)\wedge suc(x, y')
       expand suc(x, y) for suc
       expand suc(x, y') for suc
       connect \forall z(in(z, y) \leftrightarrow in(z, x) \vee equal(z, x)) \wedge \forall z (in(z, y') \leftrightarrow in(z, x) \vee equal(z, x))
-      apply invoke set_is_unique_for_each_predicate for lambda z. in(z, x) \vee equal(z, x), y, y'
+      apply invoke set_is_unique_for_each_predicate for \lambda^P z. in(z, x) \vee equal(z, x), y, y'
     }
   }
 }
@@ -123,7 +123,7 @@ theorem suc_of_ordinal_is_ordinal_and_vice_versa \forall \alpha \forall \beta (s
         apply invoke irrefrelon_and_transrelon_implies_orderon for \beta, in
         any predicate \phi[1] {
           assume \exists \gamma (in(\gamma, \beta) \wedge \phi(\gamma)) {
-            apply law_of_excluded_middle for lambda. \exists \gamma (in(\gamma, \alpha) \wedge \phi(\gamma))
+            apply law_of_excluded_middle for \lambda^P. \exists \gamma (in(\gamma, \alpha) \wedge \phi(\gamma))
             divide \exists \gamma (in(\gamma, \alpha) \wedge \phi(\gamma)) \vee \neg(\exists \gamma (in(\gamma, \alpha) \wedge \phi(\gamma)))
               case \exists \gamma (in(\gamma, \alpha) \wedge \phi(\gamma)) {
                 apply invoke wellorder_core(\alpha, in) for \phi
@@ -151,7 +151,7 @@ theorem suc_of_ordinal_is_ordinal_and_vice_versa \forall \alpha \forall \beta (s
                 }
               }
               case \neg(\exists \gamma (in(\gamma, \alpha) \wedge \phi(\gamma))) {
-                apply invoke rightward neg_exist_leftrightarrow_forall_neg for lambda \gamma. in(\gamma, \alpha) \wedge \phi(\gamma)
+                apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P \gamma. in(\gamma, \alpha) \wedge \phi(\gamma)
                 some \gamma such \exists \gamma (in(\gamma, \beta) \wedge \phi(\gamma)) {
                   split in(\gamma, \beta) \wedge \phi(\gamma)
                   apply invoke rightward suc(\alpha, \beta) for \gamma

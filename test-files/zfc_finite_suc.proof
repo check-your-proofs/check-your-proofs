@@ -9,7 +9,7 @@ theorem adjunction_exists_uniquely \forall x \forall y \exists! z \forall w (in(
       any z' {
         assume \forall w (in(w, z') \leftrightarrow in(w, x) \vee equal(w, y)) {
           connect \forall w (in(w, z') \leftrightarrow in(w, x) \vee equal(w, y)) \wedge \forall w (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y))
-          apply invoke set_is_unique_for_each_predicate for lambda w. in(w, x) \vee equal(w, y), z', z
+          apply invoke set_is_unique_for_each_predicate for \lambda^P w. in(w, x) \vee equal(w, y), z', z
         }
       }
       connect \forall w (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y)) \wedge \forall z' (\forall w (in(w, z') \leftrightarrow in(w, x) \vee equal(w, y)) \to equal(z', z))
@@ -150,7 +150,7 @@ theorem suc_of_ordinal_is_ordinal_and_vice_versa \forall \alpha (ordinal(\alpha)
       apply invoke irrefrelon_and_transrelon_implies_orderon for suc(\alpha), in
       any predicate \phi[1] {
         assume \exists \beta (in(\beta, suc(\alpha)) \wedge \phi(\beta)) {
-          apply law_of_excluded_middle for lambda. \exists \beta (in(\beta, \alpha) \wedge \phi(\beta))
+          apply law_of_excluded_middle for \lambda^P. \exists \beta (in(\beta, \alpha) \wedge \phi(\beta))
           divide \exists \beta (in(\beta, \alpha) \wedge \phi(\beta)) \vee \neg(\exists \beta (in(\beta, \alpha) \wedge \phi(\beta)))
             case \exists \beta (in(\beta, \alpha) \wedge \phi(\beta)) {
               apply invoke wellorder_core(\alpha, in) for \phi
@@ -178,7 +178,7 @@ theorem suc_of_ordinal_is_ordinal_and_vice_versa \forall \alpha (ordinal(\alpha)
               }
             }
             case \neg(\exists \beta (in(\beta, \alpha) \wedge \phi(\beta))) {
-              apply invoke rightward neg_exist_leftrightarrow_forall_neg for lambda \beta. in(\beta, \alpha) \wedge \phi(\beta)
+              apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P \beta. in(\beta, \alpha) \wedge \phi(\beta)
               some \beta such \exists \beta (in(\beta, suc(\alpha)) \wedge \phi(\beta)) {
                 split in(\beta, suc(\alpha)) \wedge \phi(\beta)
                 apply invoke rightward suc_characterization for \alpha, \beta

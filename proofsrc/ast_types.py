@@ -62,7 +62,7 @@ class PredTemplate(PredTerm):
     arity: int
 
 @dataclass(frozen=True)
-class Lambda(PredTerm):
+class PredLambda(PredTerm):
     args: tuple[Var, ...]
     body: Formula
 
@@ -352,7 +352,7 @@ class DefFunTerm(Declaration):
 @dataclass
 class DefFunTemplateTerm(Declaration):
     args: list[Var | PredTemplate]
-    term: Lambda
+    term: PredLambda
     arity: int
     tex: list[str]
 

@@ -13,7 +13,7 @@ class Token:
     def info(self):
         return f"[{self.file}:{self.line}:{self.column}]"
 
-KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "lift", "primitive", "predicate", "arity", "axiom", "invoke", "expand", "constant", "by", "pad", "split", "connect", "existence", "uniqueness", "autoexpand", "function", "equality", "reflection", "replacement", "substitute", "characterize", "show", "tex", "as", "template", "lambda", "leftward", "rightward", "include", "assert", "fold", "membership"}
+KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "lift", "primitive", "predicate", "arity", "axiom", "invoke", "expand", "constant", "by", "pad", "split", "connect", "existence", "uniqueness", "autoexpand", "function", "equality", "reflection", "replacement", "substitute", "characterize", "show", "tex", "as", "template", "leftward", "rightward", "include", "assert", "fold", "membership"}
 
 SYMBOLS = {
     "{": "LBRACE",
@@ -62,6 +62,9 @@ def lex(path: str) -> list[Token]:
         if c in SYMBOLS:
             tokens.append(Token(SYMBOLS[c], c, path, i, line, column))
             i += 1
+        elif src[i:].startswith("\\lambda^P"):
+            tokens.append(Token("LAMBDA_PRED", "\\lambda^P", path, i, line, column))
+            i += len("\\lambda^P")
         elif src[i:].startswith("\\forall^P"):
             tokens.append(Token("FORALL_PRED_TMPL", "\\forall^P", path, i, line, column))
             i += len("\\forall^P")

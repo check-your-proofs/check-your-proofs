@@ -88,18 +88,18 @@ theorem neq_cor1 \forall^P \phi[1] \forall^P \chi[1] (neq(\phi, \chi) \leftright
   any predicate \phi[1], predicate \chi[1] {
     assume neq(\phi, \chi) {
       expand neq(\phi, \chi) for neq, equal
-      apply invoke leftward exist_neg_leftrightarrow_neg_forall for lambda x. \phi(x) \leftrightarrow \chi(x)
+      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. \phi(x) \leftrightarrow \chi(x)
       some x such \exists x (\neg(\phi(x) \leftrightarrow \chi(x))) {
-        apply invoke rightward neg_iff_iff for lambda. \phi(x), lambda. \chi(x)
+        apply invoke rightward neg_iff_iff for \lambda^P. \phi(x), \lambda^P. \chi(x)
         lift for x conclude \exists x ((\phi(x) \wedge \neg(\chi(x))) \vee (\neg(\phi(x)) \wedge \chi(x)))
       }
     }
     assume \exists x ((\phi(x) \wedge \neg(\chi(x))) \vee (\neg(\phi(x)) \wedge \chi(x))) {
       some x such \exists x ((\phi(x) \wedge \neg(\chi(x))) \vee (\neg(\phi(x)) \wedge \chi(x))) {
-        apply invoke leftward neg_iff_iff for lambda. \phi(x), lambda. \chi(x)
+        apply invoke leftward neg_iff_iff for \lambda^P. \phi(x), \lambda^P. \chi(x)
         lift for x conclude \exists x (\neg(\phi(x) \leftrightarrow \chi(x)))
       }
-      apply invoke rightward exist_neg_leftrightarrow_neg_forall for lambda x. \phi(x) \leftrightarrow \chi(x)
+      apply invoke rightward exist_neg_leftrightarrow_neg_forall for \lambda^P x. \phi(x) \leftrightarrow \chi(x)
       fold for neq, equal conclude neq(\phi, \chi)
     }
     connect neq(\phi, \chi) \leftrightarrow \exists x ((\phi(x) \wedge \neg(\chi(x))) \vee (\neg(\phi(x)) \wedge \chi(x)))
@@ -253,18 +253,18 @@ theorem neg_subset \forall^P \phi[1] \forall^P \chi[1] (\neg(subset(\phi, \chi))
   any predicate \phi[1], predicate \chi[1] {
     assume \neg(subset(\phi, \chi)) {
       expand \neg(subset(\phi, \chi)) for subset
-      apply invoke leftward exist_neg_leftrightarrow_neg_forall for lambda x. \phi(x) \to \chi(x)
+      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. \phi(x) \to \chi(x)
       some x such \exists x (\neg(\phi(x) \to \chi(x))) {
-        apply invoke rightward neg_implication for lambda. \phi(x), lambda. \chi(x)
+        apply invoke rightward neg_implication for \lambda^P. \phi(x), \lambda^P. \chi(x)
         lift for x conclude \exists x (\phi(x) \wedge \neg(\chi(x)))
       }
     }
     assume \exists x (\phi(x) \wedge \neg(\chi(x))) {
       some x such \exists x (\phi(x) \wedge \neg(\chi(x))) {
-        apply invoke leftward neg_implication for lambda. \phi(x), lambda. \chi(x)
+        apply invoke leftward neg_implication for \lambda^P. \phi(x), \lambda^P. \chi(x)
         lift for x conclude \exists x (\neg(\phi(x) \to \chi(x)))
       }
-      apply invoke rightward exist_neg_leftrightarrow_neg_forall for lambda x. \phi(x) \to \chi(x)
+      apply invoke rightward exist_neg_leftrightarrow_neg_forall for \lambda^P x. \phi(x) \to \chi(x)
       fold for subset conclude \neg(subset(\phi, \chi))
     }
     connect \neg(subset(\phi, \chi)) \leftrightarrow \exists x (\phi(x) \wedge \neg(\chi(x)))
@@ -274,13 +274,13 @@ theorem neg_subset \forall^P \phi[1] \forall^P \chi[1] (\neg(subset(\phi, \chi))
 theorem neq_iff_subset \forall^P \phi[1] \forall^P \chi[1] (neq(\phi, \chi) \leftrightarrow \neg(subset(\phi, \chi)) \vee \neg(subset(\chi, \phi))) {
   any predicate \phi[1], predicate \chi[1] {
     apply subset_antisymmetry for \phi, \chi
-    apply invoke neg_iff for lambda. subset(\phi, \chi) \wedge subset(\chi, \phi), lambda.equal(\phi, \chi)
+    apply invoke neg_iff for \lambda^P. subset(\phi, \chi) \wedge subset(\chi, \phi), \lambda^P.equal(\phi, \chi)
     assume neq(\phi, \chi) {
       invoke leftward \neg(subset(\phi, \chi) \wedge subset(\chi, \phi)) \leftrightarrow neq(\phi, \chi)
-      apply invoke rightward neg_and for lambda. subset(\phi, \chi), lambda. subset(\chi, \phi)
+      apply invoke rightward neg_and for \lambda^P. subset(\phi, \chi), \lambda^P. subset(\chi, \phi)
     }
     assume \neg(subset(\phi, \chi)) \vee \neg(subset(\chi, \phi)) {
-      apply invoke leftward neg_and for lambda. subset(\phi, \chi), lambda. subset(\chi, \phi)
+      apply invoke leftward neg_and for \lambda^P. subset(\phi, \chi), \lambda^P. subset(\chi, \phi)
       invoke rightward \neg(subset(\phi, \chi) \wedge subset(\chi, \phi)) \leftrightarrow neq(\phi, \chi)
     }
     connect neq(\phi, \chi) \leftrightarrow \neg(subset(\phi, \chi)) \vee \neg(subset(\chi, \phi))
@@ -312,7 +312,7 @@ theorem subsetneq_implies_exist \forall^P \phi[1] \forall^P \chi[1] (subsetneq(\
 theorem subset_subsetneq \forall^P \phi[1] \forall^P \chi[1] (subset(\phi, \chi)\leftrightarrow subsetneq(\phi, \chi)\vee equal(\phi, \chi)) {
   any predicate \phi[1], predicate \chi[1] {
     assume subset(\phi, \chi) {
-      apply law_of_excluded_middle for lambda. equal(\phi, \chi)
+      apply law_of_excluded_middle for \lambda^P. equal(\phi, \chi)
       divide equal(\phi, \chi) \vee neq(\phi, \chi)
         case equal(\phi, \chi) {
           pad equal(\phi, \chi) conclude subsetneq(\phi, \chi) \vee equal(\phi, \chi)

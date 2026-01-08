@@ -212,9 +212,9 @@ theorem natural_induction \forall^P \phi[1] (inductive(\phi) \to subset(natural,
     assume inductive(\phi) {
       deny \neg(subset(natural, \phi)) {
         apply invoke rightward neg_subset for natural, \phi
-        apply invoke natural_is_wellfounded for lambda n. \neg(\phi(n))
-        some n such \exists n (minimal(natural, in, lambda m. \neg(\phi(m)), n)) {
-          split minimal(natural, in, lambda m. \neg(\phi(m)), n)
+        apply invoke natural_is_wellfounded for \lambda^P n. \neg(\phi(n))
+        some n such \exists n (minimal(natural, in, \lambda^P m. \neg(\phi(m)), n)) {
+          split minimal(natural, in, \lambda^P m. \neg(\phi(m)), n)
           divide natural(n)
             case equal(n, emptyset) {
               split 1 inductive(\phi)
@@ -236,8 +236,8 @@ theorem natural_induction \forall^P \phi[1] (inductive(\phi) \to subset(natural,
                 }
                 deny \neg(\phi(m)) {
                   connect natural(m) \wedge \neg(\phi(m)) \wedge neq(m, suc(m))
-                  substitute minimal_core(natural, in, lambda l. \neg(\phi(l)), n) for n: suc(m)
-                  apply invoke minimal_core(natural, in, lambda l. \neg(\phi(l)), suc(m)) for m
+                  substitute minimal_core(natural, in, \lambda^P l. \neg(\phi(l)), n) for n: suc(m)
+                  apply invoke minimal_core(natural, in, \lambda^P l. \neg(\phi(l)), suc(m)) for m
                   contradict in(m, suc(m))
                 }
                 split 2 inductive(\phi)

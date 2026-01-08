@@ -32,7 +32,7 @@ theorem not_emptyset_has_a_member \forall x(\neg(emptyset(x))\to\exists y(in(y,x
   any x {
     assume \neg(emptyset(x)) {
       expand \neg(emptyset(x)) for emptyset
-      apply invoke leftward exist_neg_leftrightarrow_neg_forall for lambda y.notin(y,x)
+      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P y.notin(y,x)
     }
   }
 }
@@ -42,7 +42,7 @@ theorem has_a_member_not_emptyset \forall x(\exists y(in(y,x))\to\neg(emptyset(x
     assume \exists y(in(y,x)) {
       deny emptyset(x) {
         expand emptyset(x) for emptyset
-        apply invoke leftward neg_exist_leftrightarrow_forall_neg for lambda y.in(y,x)
+        apply invoke leftward neg_exist_leftrightarrow_forall_neg for \lambda^P y.in(y,x)
         contradict \exists y(in(y,x))
       }
     }

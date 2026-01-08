@@ -9,7 +9,7 @@ theorem removal_exists_uniquely \forall x \forall y \exists! z \forall w (in(w, 
       any z' {
         assume \forall w (in(w, z') \leftrightarrow in(w, x) \wedge neq(w, y)) {
           connect \forall w (in(w, z') \leftrightarrow in(w, x) \wedge neq(w, y)) \wedge \forall w (in(w, z) \leftrightarrow in(w, x) \wedge neq(w, y))
-          apply invoke set_is_unique_for_each_predicate for lambda w. in(w, x) \wedge neq(w, y), z', z
+          apply invoke set_is_unique_for_each_predicate for \lambda^P w. in(w, x) \wedge neq(w, y), z', z
         }
       }
       connect \forall w (in(w, z) \leftrightarrow in(w, x) \wedge neq(w, y)) \wedge \forall z' (\forall w (in(w, z') \leftrightarrow in(w, x) \wedge neq(w, y)) \to equal(z', z))
@@ -96,7 +96,7 @@ theorem removing_op_dom \forall f \forall X \forall x \forall y (fun(f) \wedge d
             split in(op(p, q), f) \wedge neq(op(p, q), op(x, y))
             lift for q conclude \exists q (in(op(p, q), f))
             apply invoke leftward dom(f, X) for p
-            apply law_of_excluded_middle for lambda. in(op(x, y), f)
+            apply law_of_excluded_middle for \lambda^P. in(op(x, y), f)
             deny equal(p, x) {
               substitute in(op(x, y), f) for x: p
               connect in(op(p, q), f) \wedge in(op(p, y), f)
@@ -151,7 +151,7 @@ theorem removing_op_lem1 \forall R \forall x \forall y \forall p \forall q (in(o
   }
 }
 
-theorem recursion_base_step \forall c \forall^F f[1] (recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(emptyset, c)) {
+theorem recursion_base_step \forall c \forall^F f[1] (recursion(\lambda^P a. equal(a, c), \lambda^P p, q. equal(q, f(p)))(emptyset, c)) {
   any c, function f[1] {
     assert emptyset_is_natural
     apply singleton_op_is_fun for emptyset, c
@@ -168,23 +168,23 @@ theorem recursion_base_step \forall c \forall^F f[1] (recursion(lambda a. equal(
         explode \exists p \exists q (in(op(k, p), singleton(op(emptyset, c))) \wedge in(op(suc(k), q), singleton(op(emptyset, c))) \wedge equal(q, f(p)))
       }
     }
-    connect approx(singleton(op(emptyset, c)), emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p)))
-    connect approx(singleton(op(emptyset, c)), emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(emptyset, c), singleton(op(emptyset, c)))
-    lift for singleton(op(emptyset, c)) conclude \exists g (approx(g, emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(emptyset, c), g))
-    connect natural(emptyset) \wedge \exists g (approx(g, emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(emptyset, c), g))
-    fold for recursion conclude recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(emptyset, c)
+    connect approx(singleton(op(emptyset, c)), emptyset, \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))
+    connect approx(singleton(op(emptyset, c)), emptyset, \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p))) \wedge in(op(emptyset, c), singleton(op(emptyset, c)))
+    lift for singleton(op(emptyset, c)) conclude \exists g (approx(g, emptyset, \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p))) \wedge in(op(emptyset, c), g))
+    connect natural(emptyset) \wedge \exists g (approx(g, emptyset, \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p))) \wedge in(op(emptyset, c), g))
+    fold for recursion conclude recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(emptyset, c)
   }
 }
 
-theorem recursion_induction_step \forall c \forall^F f[1] \forall n \forall x (natural(n) \wedge recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(n, x) \to recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(suc(n), f(x))) {
+theorem recursion_induction_step \forall c \forall^F f[1] \forall n \forall x (natural(n) \wedge recursion(\lambda^P a. equal(a, c), \lambda^P p, q. equal(q, f(p)))(n, x) \to recursion(\lambda^P a. equal(a, c), \lambda^P p, q. equal(q, f(p)))(suc(n), f(x))) {
   any c, function f[1], n, x {
-    assume natural(n) \wedge recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(n, x) {
-      split natural(n) \wedge recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(n, x)
-      split 2 recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x)
+    assume natural(n) \wedge recursion(\lambda^P a. equal(a, c), \lambda^P p, q. equal(q, f(p)))(n, x) {
+      split natural(n) \wedge recursion(\lambda^P a. equal(a, c), \lambda^P p, q. equal(q, f(p)))(n, x)
+      split 2 recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(n, x)
       apply invoke rightward suc_of_natural_is_natural_and_vice_versa for n
-      some g such \exists g (approx(g, n, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(n, x), g)) {
-        split approx(g, n, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(n, x), g)
-        split approx(g, n, lambda a. equal(c, a), lambda p, q. equal(q, f(p)))
+      some g such \exists g (approx(g, n, \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p))) \wedge in(op(n, x), g)) {
+        split approx(g, n, \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p))) \wedge in(op(n, x), g)
+        split approx(g, n, \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))
         deny \exists q (in(op(suc(n), q), g)) {
           some q such \exists q (in(op(suc(n), q), g)) {
             apply invoke leftward dom(g, suc(n)) for suc(n)
@@ -231,26 +231,26 @@ theorem recursion_induction_step \forall c \forall^F f[1] \forall n \forall x (n
               }
           }
         }
-        connect approx(adj(g, op(suc(n), f(x))), suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p)))
-        connect approx(adj(g, op(suc(n), f(x))), suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(suc(n), f(x)), adj(g, op(suc(n), f(x))))
-        lift for adj(g, op(suc(n), f(x))) conclude \exists h (approx(h, suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(suc(n), f(x)), h))
+        connect approx(adj(g, op(suc(n), f(x))), suc(n), \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))
+        connect approx(adj(g, op(suc(n), f(x))), suc(n), \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p))) \wedge in(op(suc(n), f(x)), adj(g, op(suc(n), f(x))))
+        lift for adj(g, op(suc(n), f(x))) conclude \exists h (approx(h, suc(n), \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p))) \wedge in(op(suc(n), f(x)), h))
       }
-      connect natural(suc(n)) \wedge \exists h (approx(h, suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(suc(n), f(x)), h))
-      fold for recursion conclude recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(suc(n), f(x))
+      connect natural(suc(n)) \wedge \exists h (approx(h, suc(n), \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p))) \wedge in(op(suc(n), f(x)), h))
+      fold for recursion conclude recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(suc(n), f(x))
     }
   }
 }
 
-theorem recursion_is_unique \forall c \forall^F g[1] \forall n (natural(n) \to \exists! x (recursion(lambda a. equal(a, c), lambda p, q. equal(q, g(p)))(n, x))) {
+theorem recursion_is_unique \forall c \forall^F g[1] \forall n (natural(n) \to \exists! x (recursion(\lambda^P a. equal(a, c), \lambda^P p, q. equal(q, g(p)))(n, x))) {
   any c, function f[1] {
-    show \exists! x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(emptyset, x)) {
+    show \exists! x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(emptyset, x)) {
       apply recursion_base_step for c, f
       any x {
-        assume recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(emptyset, x) {
-          split 2 recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(emptyset, x)
-          some g such \exists g (approx(g, emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(emptyset, x), g)) {
-            split approx(g, emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(emptyset, x), g)
-            split approx(g, emptyset, lambda a. equal(c, a), lambda p, q. equal(q, f(p)))
+        assume recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(emptyset, x) {
+          split 2 recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(emptyset, x)
+          some g such \exists g (approx(g, emptyset, \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p))) \wedge in(op(emptyset, x), g)) {
+            split approx(g, emptyset, \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p))) \wedge in(op(emptyset, x), g)
+            split approx(g, emptyset, \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))
             some a' such \exists a' (in(op(emptyset, a'), g) \wedge equal(c, a')) {
               split in(op(emptyset, a'), g) \wedge equal(c, a')
               substitute in(op(emptyset, a'), g) for a': c
@@ -261,24 +261,24 @@ theorem recursion_is_unique \forall c \forall^F g[1] \forall n (natural(n) \to \
           }
         }
       }
-      connect recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(emptyset, c) \wedge \forall x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(emptyset, x) \to equal(x, c))
-      characterize for c conclude \exists! x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(emptyset, x))
+      connect recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(emptyset, c) \wedge \forall x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(emptyset, x) \to equal(x, c))
+      characterize for c conclude \exists! x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(emptyset, x))
     }
     any n {
-      apply law_of_excluded_middle for lambda. natural(n)
+      apply law_of_excluded_middle for \lambda^P. natural(n)
       divide natural(n) \vee \neg(natural(n))
         case natural(n) {
-          assume \exists! x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x)) {
-            some x such \exists! x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x)) {
-              connect natural(n) \wedge recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x)
+          assume \exists! x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(n, x)) {
+            some x such \exists! x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(n, x)) {
+              connect natural(n) \wedge recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(n, x)
               apply invoke recursion_induction_step for c, f, n, x
               apply invoke rightward suc_of_natural_is_natural_and_vice_versa for n
               any y' {
-                assume recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(suc(n), y') {
-                  split 2 recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(suc(n), y')
-                  some h' such \exists h' (approx(h', suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(suc(n), y'), h')) {
-                    split approx(h', suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(suc(n), y'), h')
-                    split approx(h', suc(n), lambda a. equal(c, a), lambda p, q. equal(q, f(p)))
+                assume recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(suc(n), y') {
+                  split 2 recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(suc(n), y')
+                  some h' such \exists h' (approx(h', suc(n), \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p))) \wedge in(op(suc(n), y'), h')) {
+                    split approx(h', suc(n), \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p))) \wedge in(op(suc(n), y'), h')
+                    split approx(h', suc(n), \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))
                     apply suc_implies_in for n
                     apply invoke \forall k (in(k, suc(n)) \to \exists p \exists q (in(op(k, p), h') \wedge in(op(suc(k), q), h') \wedge equal(q, f(p)))) for n
                     some p, q such \exists p \exists q (in(op(n, p), h') \wedge in(op(suc(n), q), h') \wedge equal(q, f(p))) {
@@ -331,7 +331,7 @@ theorem recursion_is_unique \forall c \forall^F g[1] \forall n (natural(n) \to \
                           }
                         }
                       }
-                      connect approx(rem(h', op(suc(n), y')), n, lambda a. equal(c, a), lambda p, q. equal(q, f(p)))
+                      connect approx(rem(h', op(suc(n), y')), n, \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))
                       deny equal(n, suc(n)) {
                         substitute in(n, suc(n)) for suc(n): n
                         apply invoke natural_is_irrefrelon for n
@@ -339,44 +339,44 @@ theorem recursion_is_unique \forall c \forall^F g[1] \forall n (natural(n) \to \
                       }
                       connect in(op(n, p), h') \wedge neq(n, suc(n))
                       apply invoke removing_op_lem1 for h', n, p, suc(n), y'
-                      connect approx(rem(h', op(suc(n), y')), n, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(n, p), rem(h', op(suc(n), y')))
-                      lift for rem(h', op(suc(n), y')) conclude \exists g (approx(g, n, lambda a. equal(c, a), lambda p', q'. equal(q', f(p'))) \wedge in(op(n, p), g))
-                      connect natural(n) \wedge \exists g (approx(g, n, lambda a. equal(c, a), lambda p, q. equal(q, f(p))) \wedge in(op(n, p), g))
-                      fold for recursion conclude recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, p)
-                      apply invoke \forall x' (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x') \to equal(x', x)) for p
+                      connect approx(rem(h', op(suc(n), y')), n, \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p))) \wedge in(op(n, p), rem(h', op(suc(n), y')))
+                      lift for rem(h', op(suc(n), y')) conclude \exists g (approx(g, n, \lambda^P a. equal(c, a), \lambda^P p', q'. equal(q', f(p'))) \wedge in(op(n, p), g))
+                      connect natural(n) \wedge \exists g (approx(g, n, \lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p))) \wedge in(op(n, p), g))
+                      fold for recursion conclude recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(n, p)
+                      apply invoke \forall x' (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(n, x') \to equal(x', x)) for p
                       substitute equal(y', f(p)) for p: x
                     }
                   }
                 }
               }
-              connect recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(suc(n), f(x)) \wedge \forall y' (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(suc(n), y') \to equal(y', f(x)))
-              characterize for f(x) conclude \exists! x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(suc(n), x))
+              connect recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(suc(n), f(x)) \wedge \forall y' (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(suc(n), y') \to equal(y', f(x)))
+              characterize for f(x) conclude \exists! x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(suc(n), x))
             }
           }
         }
         case \neg(natural(n)) {
-          assume \exists! x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x)) {
-            some x such \exists! x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x)) {
-              split 1 recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x)
+          assume \exists! x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(n, x)) {
+            some x such \exists! x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(n, x)) {
+              split 1 recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(n, x)
               contradict natural(n)
-              explode \exists! x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(suc(n), x))
+              explode \exists! x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(suc(n), x))
             }
           }
         }
     }
-    connect inductive(lambda n. \exists! x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x)))
-    apply invoke natural_induction for lambda n. \exists! x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x))
+    connect inductive(\lambda^P n. \exists! x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(n, x)))
+    apply invoke natural_induction for \lambda^P n. \exists! x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(n, x))
     any n {
       assume natural(n) {
-        apply invoke subset(natural, lambda n. \exists! x (recursion(lambda a. equal(c, a), lambda p, q. equal(q, f(p)))(n, x))) for n
+        apply invoke subset(natural, \lambda^P n. \exists! x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)))(n, x))) for n
       }
     }
   }
 }
 
 definition function iterate by recursion_is_unique
-existence iterate_existence \forall c \forall^F f[1] \forall n (natural(n) \to recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(n, iterate(c, f, n))) by iterate
-uniqueness iterate_uniqueness \forall c \forall^F f[1] \forall n (natural(n) \to \forall x (recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(n, x) \to equal(x, iterate(c, f, n)))) by iterate
+existence iterate_existence \forall c \forall^F f[1] \forall n (natural(n) \to recursion(\lambda^P a. equal(a, c), \lambda^P p, q. equal(q, f(p)))(n, iterate(c, f, n))) by iterate
+uniqueness iterate_uniqueness \forall c \forall^F f[1] \forall n (natural(n) \to \forall x (recursion(\lambda^P a. equal(a, c), \lambda^P p, q. equal(q, f(p)))(n, x) \to equal(x, iterate(c, f, n)))) by iterate
 
 theorem iterate_characterization \forall c \forall^F f[1] (equal(iterate(c, f, emptyset), c) \wedge \forall n (natural(n) \to equal(iterate(c, f, suc(n)), f(iterate(c, f, n))))) {
   any c, function f[1] {
@@ -384,15 +384,15 @@ theorem iterate_characterization \forall c \forall^F f[1] (equal(iterate(c, f, e
     apply invoke iterate_existence for c, f, emptyset
     apply recursion_base_step for c, f
     apply invoke iterate_uniqueness for c, f, emptyset
-    apply invoke \forall x (recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(emptyset, x) \to equal(x, iterate(c, f, emptyset))) for c
+    apply invoke \forall x (recursion(\lambda^P a. equal(a, c), \lambda^P p, q. equal(q, f(p)))(emptyset, x) \to equal(x, iterate(c, f, emptyset))) for c
     any n {
       assume natural(n) {
         apply invoke rightward suc_of_natural_is_natural_and_vice_versa for n
         apply invoke iterate_existence for c, f, n
-        connect natural(n) \wedge recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(n, iterate(c, f, n))
+        connect natural(n) \wedge recursion(\lambda^P a. equal(a, c), \lambda^P p, q. equal(q, f(p)))(n, iterate(c, f, n))
         apply invoke recursion_induction_step for c, f, n, iterate(c, f, n)
         apply invoke iterate_uniqueness for c, f, suc(n)
-        apply invoke \forall x (recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(suc(n), x) \to equal(x, iterate(c, f, suc(n)))) for f(iterate(c, f, n))
+        apply invoke \forall x (recursion(\lambda^P a. equal(a, c), \lambda^P p, q. equal(q, f(p)))(suc(n), x) \to equal(x, iterate(c, f, suc(n)))) for f(iterate(c, f, n))
       }
     }
     connect equal(iterate(c, f, emptyset), c) \wedge \forall n (natural(n) \to equal(iterate(c, f, suc(n)), f(iterate(c, f, n))))

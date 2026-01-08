@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, Lambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate, FunTerm
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate, FunTerm
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import strip_forall_vars
@@ -187,7 +187,7 @@ class Parser:
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
         term = self.parse_term(context.add_form(local_vars, local_pred_tmpls, []))
-        if isinstance(term, Lambda):
+        if isinstance(term, PredLambda):
             if len(term.args) != arity:
                 raise Exception(f"arity is {arity}, but length of term.args is {len(term.args)}")
         else:
@@ -794,7 +794,7 @@ class Parser:
                 if name in context.decl.primpreds:
                     arity = context.decl.primpreds[name].arity
                     args = [Var(f"x_{i}") for i in range(arity)]
-                    return Lambda(tuple(args), AtomicFormula(Pred(name), tuple(args)))
+                    return PredLambda(tuple(args), AtomicFormula(Pred(name), tuple(args)))
                 else:
                     vars: list[Var] = []
                     items: list[Var | MembershipLambda] = []
@@ -807,7 +807,7 @@ class Parser:
                             items.append(MembershipLambda(var))
                         else:
                             raise Exception(f"Unexpected type: {type(arg)}")
-                    return Lambda(tuple(vars), AtomicFormula(Pred(name), tuple(items)))
+                    return PredLambda(tuple(vars), AtomicFormula(Pred(name), tuple(items)))
             elif name in context.decl.deffuntemplateterms:
                 defargs = context.decl.deffuntemplateterms[name].args
                 self.stream.consume("LPAREN")
@@ -817,15 +817,15 @@ class Parser:
                 return CompoundPredTerm(Fun(name), tuple(resolved_args))
             else:
                 raise SyntaxError(f"{tok.info()} Term object is required, but {name} is unknown")
-        elif tok.type == "LAMBDA":
-            self.stream.consume("LAMBDA")
+        elif tok.type == "LAMBDA_PRED":
+            self.stream.consume("LAMBDA_PRED")
             if self.stream.peek().type == "DOT":
                 vars: list[Var] = []
             else:
                 vars = self.parse_vars()
             self.stream.consume("DOT")
             formula = self.parse_formula(context.add_form(vars, [], []))
-            return Lambda(tuple(vars), formula)
+            return PredLambda(tuple(vars), formula)
         else:
             raise SyntaxError(f"{tok.info()} Term object is required, but unknown token is found at")
 

@@ -182,9 +182,9 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to
           apply invoke subsetneq_implies_exist for \beta,\alpha
           split ordinal(\alpha)
           split wellorder(\alpha,in)
-          apply invoke wellorder_core(\alpha,in) for lambda\gamma.notin(\gamma,\beta)
-          some \gamma such \exists a(minimum(\alpha,in,lambda\gamma.notin(\gamma,\beta),a)) {
-            split minimum(\alpha,in,lambda\gamma.notin(\gamma,\beta),\gamma)
+          apply invoke wellorder_core(\alpha,in) for \lambda^P\gamma.notin(\gamma,\beta)
+          some \gamma such \exists a(minimum(\alpha,in,\lambda^P\gamma.notin(\gamma,\beta),a)) {
+            split minimum(\alpha,in,\lambda^P\gamma.notin(\gamma,\beta),\gamma)
             any \delta {
               assume in(\delta,\gamma) {
                 deny notin(\delta,\beta) {
@@ -200,7 +200,7 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to
                     }
                   }
                   connect in(\delta,\alpha)\wedge notin(\delta,\beta)\wedge neq(\delta,\gamma)
-                  apply invoke minimum_core(\alpha,in,lambda\gamma.notin(\gamma,\beta),\gamma) for \delta
+                  apply invoke minimum_core(\alpha,in,\lambda^P\gamma.notin(\gamma,\beta),\gamma) for \delta
                   split 2 orderon(\alpha,in)
                   connect in(\delta,\alpha)\wedge in(\gamma,\alpha)\wedge in(\delta,\gamma)\wedge in(\gamma,\delta)
                   apply invoke antisymrelon(\alpha,in) for \delta,\gamma
@@ -297,16 +297,16 @@ theorem ordinals_comparable_subset \forall\alpha\forall\beta(ordinal(\alpha)\wed
       split wellorder(\beta,in)
       split orderon(\beta,in)
       deny \neg(subset(\alpha,\beta)\vee subset(\beta,\alpha)) {
-        apply invoke rightward neg_or for lambda.subset(\alpha,\beta),lambda.subset(\beta,\alpha)
+        apply invoke rightward neg_or for \lambda^P.subset(\alpha,\beta),\lambda^P.subset(\beta,\alpha)
         split \neg(subset(\alpha,\beta))\wedge\neg(subset(\beta,\alpha))
         apply invoke rightward neg_subset for \alpha,\beta
-        apply invoke wellorder_core(\alpha,in) for lambda z.notin(z,\beta)
+        apply invoke wellorder_core(\alpha,in) for \lambda^P z.notin(z,\beta)
         apply invoke rightward neg_subset for \beta,\alpha
-        apply invoke wellorder_core(\beta,in) for lambda z.notin(z,\alpha)
-        some \gamma such \exists\gamma(minimum(\alpha,in,lambda z.notin(z,\beta),\gamma)) {
-          some \delta such \exists\delta(minimum(\beta,in,lambda z.notin(z,\alpha),\delta)) {
-            split minimum(\alpha,in,lambda z.notin(z,\beta),\gamma)
-            split minimum(\beta,in,lambda z.notin(z,\alpha),\delta)
+        apply invoke wellorder_core(\beta,in) for \lambda^P z.notin(z,\alpha)
+        some \gamma such \exists\gamma(minimum(\alpha,in,\lambda^P z.notin(z,\beta),\gamma)) {
+          some \delta such \exists\delta(minimum(\beta,in,\lambda^P z.notin(z,\alpha),\delta)) {
+            split minimum(\alpha,in,\lambda^P z.notin(z,\beta),\gamma)
+            split minimum(\beta,in,\lambda^P z.notin(z,\alpha),\delta)
             deny \neg(subset(\gamma,\delta)) {
               apply invoke rightward neg_subset for \gamma,\delta
               some \varepsilon such \exists\varepsilon(in(\varepsilon,\gamma)\wedge notin(\varepsilon,\delta)) {
@@ -319,12 +319,12 @@ theorem ordinals_comparable_subset \forall\alpha\forall\beta(ordinal(\alpha)\wed
                   contradict in(\gamma,\gamma)
                 }
                 apply irrefrelon(\alpha,in) for \varepsilon
-                connect antisymrelon(\alpha,in)\wedge minimum(\alpha,in,lambda z.notin(z,\beta),\gamma)
-                apply invoke minimum_implies_minimal for \alpha,in,lambda z.notin(z,\beta),\gamma
-                split minimal(\alpha,in,lambda z.notin(z,\beta),\gamma)
+                connect antisymrelon(\alpha,in)\wedge minimum(\alpha,in,\lambda^P z.notin(z,\beta),\gamma)
+                apply invoke minimum_implies_minimal for \alpha,in,\lambda^P z.notin(z,\beta),\gamma
+                split minimal(\alpha,in,\lambda^P z.notin(z,\beta),\gamma)
                 deny notin(\varepsilon,\beta) {
                   connect in(\varepsilon,\alpha)\wedge notin(\varepsilon,\beta)\wedge neq(\varepsilon,\gamma)
-                  apply invoke minimal_core(\alpha,in,lambda z.notin(z,\beta),\gamma) for \varepsilon
+                  apply invoke minimal_core(\alpha,in,\lambda^P z.notin(z,\beta),\gamma) for \varepsilon
                   contradict in(\varepsilon,\gamma)
                 }
                 apply invoke wellorder_implies_linorder for \beta,in
@@ -358,12 +358,12 @@ theorem ordinals_comparable_subset \forall\alpha\forall\beta(ordinal(\alpha)\wed
                   contradict in(\delta,\delta)
                 }
                 apply irrefrelon(\beta,in) for \varepsilon
-                connect antisymrelon(\beta,in)\wedge minimum(\beta,in,lambda z.notin(z,\alpha),\delta)
-                apply invoke minimum_implies_minimal for \beta,in,lambda z.notin(z,\alpha),\delta
-                split minimal(\beta,in,lambda z.notin(z,\alpha),\delta)
+                connect antisymrelon(\beta,in)\wedge minimum(\beta,in,\lambda^P z.notin(z,\alpha),\delta)
+                apply invoke minimum_implies_minimal for \beta,in,\lambda^P z.notin(z,\alpha),\delta
+                split minimal(\beta,in,\lambda^P z.notin(z,\alpha),\delta)
                 deny notin(\varepsilon,\alpha) {
                   connect in(\varepsilon,\beta)\wedge notin(\varepsilon,\alpha)\wedge neq(\varepsilon,\delta)
-                  apply invoke minimal_core(\beta,in,lambda z.notin(z,\alpha),\delta) for \varepsilon
+                  apply invoke minimal_core(\beta,in,\lambda^P z.notin(z,\alpha),\delta) for \varepsilon
                   contradict in(\varepsilon,\delta)
                 }
                 apply invoke wellorder_implies_linorder for \alpha,in
@@ -492,7 +492,7 @@ theorem ordinal_is_wellfounded wellfounded(ordinal, in) {
         split ordinal(\alpha) \wedge \phi(\alpha)
         split ordinal(\alpha)
         apply invoke wellorder_implies_wellfounded for \alpha, in
-        apply law_of_excluded_middle for lambda. \exists \beta (in(\beta, \alpha) \wedge \phi(\beta))
+        apply law_of_excluded_middle for \lambda^P. \exists \beta (in(\beta, \alpha) \wedge \phi(\beta))
         divide \exists \beta (in(\beta, \alpha) \wedge \phi(\beta)) \vee \neg(\exists \beta (in(\beta, \alpha) \wedge \phi(\beta)))
           case \exists \beta (in(\beta, \alpha) \wedge \phi(\beta)) {
             apply invoke wellfounded(\alpha, in) for \phi
@@ -515,7 +515,7 @@ theorem ordinal_is_wellfounded wellfounded(ordinal, in) {
                   contradict in(\gamma, \beta)
                 }
               }
-              apply invoke rightward neg_exist_leftrightarrow_forall_neg for lambda \gamma. (in(\gamma, \beta) \wedge \phi(\gamma))
+              apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P \gamma. (in(\gamma, \beta) \wedge \phi(\gamma))
               any \gamma {
                 assume ordinal(\gamma) \wedge \phi(\gamma) \wedge neq(\gamma, \beta) {
                   split ordinal(\gamma) \wedge \phi(\gamma) \wedge neq(\gamma, \beta)
@@ -532,7 +532,7 @@ theorem ordinal_is_wellfounded wellfounded(ordinal, in) {
             }
           }
           case \neg(\exists \beta (in(\beta, \alpha) \wedge \phi(\beta))) {
-            apply invoke rightward neg_exist_leftrightarrow_forall_neg for lambda \beta. (in(\beta, \alpha) \wedge \phi(\beta))
+            apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P \beta. (in(\beta, \alpha) \wedge \phi(\beta))
             any \beta {
               assume ordinal(\beta) \wedge \phi(\beta) \wedge neq(\beta, \alpha) {
                 split ordinal(\beta) \wedge \phi(\beta) \wedge neq(\beta, \alpha)

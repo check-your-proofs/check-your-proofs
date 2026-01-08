@@ -140,10 +140,10 @@ theorem wellorder_implies_linorder \forall^P \chi[1] \forall^P \psi[2] (wellorde
           pad equal(x, x) conclude equal(x, x) \vee equal(x, y)
           connect \chi(x) \wedge (equal(x, x) \vee equal(x, y))
           lift for x conclude \exists z (\chi(z) \wedge (equal(z, x) \vee equal(z, y)))
-          apply invoke wellorder_core(\chi, \psi) for lambda z. equal(z, x) \vee equal(z, y)
-          some a such \exists a (minimum(\chi, \psi, lambda z. equal(z, x) \vee equal(z, y), a)) {
-            split minimum(\chi, \psi, lambda z. equal(z, x) \vee equal(z, y), a)
-            apply law_of_excluded_middle for lambda. equal(x, y)
+          apply invoke wellorder_core(\chi, \psi) for \lambda^P z. equal(z, x) \vee equal(z, y)
+          some a such \exists a (minimum(\chi, \psi, \lambda^P z. equal(z, x) \vee equal(z, y), a)) {
+            split minimum(\chi, \psi, \lambda^P z. equal(z, x) \vee equal(z, y), a)
+            apply law_of_excluded_middle for \lambda^P. equal(x, y)
             divide equal(x, y) \vee neq(x, y)
               case equal(x, y) {
                 pad equal(x, y) conclude \psi(x, y) \vee equal(x, y )\vee \psi(y, x)
@@ -151,17 +151,17 @@ theorem wellorder_implies_linorder \forall^P \chi[1] \forall^P \psi[2] (wellorde
               case neq(x, y) {
                 divide equal(a, x) \vee equal(a, y)
                   case equal(a, x) {
-                    substitute minimum_core(\chi, \psi, lambda z. equal(z, x) \vee equal(z, y), a) for a: x
+                    substitute minimum_core(\chi, \psi, \lambda^P z. equal(z, x) \vee equal(z, y), a) for a: x
                     pad equal(y, y) conclude equal(y, x) \vee equal(y, y)
                     connect \chi(y) \wedge (equal(y, x) \vee equal(y, y)) \wedge neq(y, x)
-                    apply invoke minimum_core(\chi, \psi, lambda z. equal(z, x) \vee equal(z, y), x) for y
+                    apply invoke minimum_core(\chi, \psi, \lambda^P z. equal(z, x) \vee equal(z, y), x) for y
                     pad \psi(x, y) conclude \psi(x, y) \vee equal(x, y) \vee \psi(y, x)
                   }
                   case equal(a, y) {
-                    substitute minimum_core(\chi, \psi, lambda z. equal(z, x)\vee equal(z, y), a) for a: y
+                    substitute minimum_core(\chi, \psi, \lambda^P z. equal(z, x)\vee equal(z, y), a) for a: y
                     pad equal(x, x) conclude equal(x, x) \vee equal(x, y)
                     connect \chi(x) \wedge (equal(x, x) \vee equal(x, y)) \wedge neq(x, y)
-                    apply invoke minimum_core(\chi, \psi, lambda z. equal(z, x) \vee equal(z, y), y) for x
+                    apply invoke minimum_core(\chi, \psi, \lambda^P z. equal(z, x) \vee equal(z, y), y) for x
                     pad \psi(y, x) conclude \psi(x, y) \vee equal(x, y) \vee \psi(y, x)
                   }
               }
@@ -290,15 +290,15 @@ theorem wellorder_subset \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (
             connect \phi(x) \wedge \chi(x) \wedge \rho(x)
             lift for x conclude \exists x (\phi(x) \wedge \chi(x) \wedge \rho(x))
           }
-          apply invoke wellorder_core(\phi, \psi) for lambda x. \chi(x) \wedge \rho(x)
-          some a such \exists a (minimum(\phi, \psi, lambda x. \chi(x) \wedge \rho(x), a)) {
-            split minimum(\phi, \psi, lambda x. \chi(x) \wedge \rho(x), a)
+          apply invoke wellorder_core(\phi, \psi) for \lambda^P x. \chi(x) \wedge \rho(x)
+          some a such \exists a (minimum(\phi, \psi, \lambda^P x. \chi(x) \wedge \rho(x), a)) {
+            split minimum(\phi, \psi, \lambda^P x. \chi(x) \wedge \rho(x), a)
             any x {
               assume \chi(x) \wedge \rho(x) \wedge neq(x, a) {
                 split \chi(x) \wedge \rho(x) \wedge neq(x, a)
                 apply invoke subset(\chi, \phi) for x
                 connect \phi(x) \wedge \chi(x) \wedge \rho(x) \wedge neq(x, a)
-                apply invoke minimum_core(\phi, \psi, lambda x. \chi(x) \wedge \rho(x), a) for x
+                apply invoke minimum_core(\phi, \psi, \lambda^P x. \chi(x) \wedge \rho(x), a) for x
               }
             }
             fold for minimum_core conclude minimum_core(\chi, \psi, \rho, a)

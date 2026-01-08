@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, PredTemplate, Lambda, MembershipLambda, VarTerm, PredTerm, CompoundPredTerm, FunTemplate, FunTerm
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, PredTemplate, PredLambda, MembershipLambda, VarTerm, PredTerm, CompoundPredTerm, FunTemplate, FunTerm
 from itertools import permutations
 from copy import deepcopy
 from typing import Mapping
@@ -52,7 +52,7 @@ class AlphaEquiv:
                 return False
         return True
 
-    def alpha_equiv_lambda(self, e1: Lambda, e2: Lambda, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
+    def alpha_equiv_lambda(self, e1: PredLambda, e2: PredLambda, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
         if len(e1.args) != len(e2.args):
             return False
         newenv = env.copy()
@@ -79,7 +79,7 @@ class AlphaEquiv:
             result = self.alpha_equiv_con(e1, e2, depth)
         elif isinstance(e1, Compound) and isinstance(e2, Compound):
             result = self.alpha_equiv_compound(e1, e2, env, depth)
-        elif isinstance(e1, Lambda) and isinstance(e2, Lambda):
+        elif isinstance(e1, PredLambda) and isinstance(e2, PredLambda):
             result = self.alpha_equiv_lambda(e1, e2, env, depth)
         elif isinstance(e1, MembershipLambda) and isinstance(e2, MembershipLambda):
             result = self.alpha_equiv_membership_lambda(e1, e2, env, depth)
@@ -294,7 +294,7 @@ def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bpt
         else:
             raise Exception(f"Unexpected type: {type(expr.var)}")
         return found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft
-    elif isinstance(expr, Lambda):
+    elif isinstance(expr, PredLambda):
         found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft = collect_vars(expr.body, used_bv | set(expr.args), used_bpt, used_bft)
         return found_fv, found_bv | set(expr.args), found_fpt, found_bpt, found_fft, found_bft
     elif isinstance(expr, MembershipLambda):
@@ -356,8 +356,8 @@ class DefExpander:
                     raise Exception(f"{expr.fun} in {context.ctrl.fun_tmpls}") # or {expr.fun} in {bound_pred_tmpls}")
             else:
                 raise Exception(f"Unexpected type: {type(expr.fun)}")
-        elif isinstance(expr, Lambda):
-            return Lambda(expr.args, self.expand_defs_formula(expr.body, context.copy_form()))
+        elif isinstance(expr, PredLambda):
+            return PredLambda(expr.args, self.expand_defs_formula(expr.body, context.copy_form()))
         elif isinstance(expr, MembershipLambda):
             expanded = self.expand_defs_term(expr.varterm, context.copy_form())
             if not isinstance(expanded, VarTerm):
@@ -417,7 +417,7 @@ class DefExpander:
                         new_pred = self.expand_defs_term(expanded, context.copy_form())
                         if not isinstance(new_pred, PredTerm):
                             raise Exception(f"Unexpected type: {type(new_pred)}")
-                        if isinstance(new_pred, Lambda):
+                        if isinstance(new_pred, PredLambda):
                             renamed_body, final_mapping = alpha_safe_formula(new_pred.body, dict(zip(new_pred.args, expr.args)), context)
                             final_formula = Substitutor(final_mapping, context).substitute_formula(renamed_body)
                             return self.expand_defs_formula(final_formula, context.copy_form())
@@ -520,8 +520,8 @@ class Substitutor:
                 raise Exception(f"Unexpected type: {type(fun)}")
             return Compound(fun, tuple(self.substitute_term(arg) for arg in expr.args))
 
-        elif isinstance(expr, Lambda):
-            return Lambda(expr.args, self.substitute_formula(expr.body))
+        elif isinstance(expr, PredLambda):
+            return PredLambda(expr.args, self.substitute_formula(expr.body))
 
         elif isinstance(expr, MembershipLambda):
             substituted = self.substitute_term(expr.varterm)
@@ -568,7 +568,7 @@ class Substitutor:
                 new_pred_tmpl = self.substitute_term(expr.pred)
                 if isinstance(new_pred_tmpl, PredTemplate):
                     return AtomicFormula(new_pred_tmpl, tuple(self.substitute_term(arg) for arg in expr.args))
-                elif isinstance(new_pred_tmpl, Lambda):
+                elif isinstance(new_pred_tmpl, PredLambda):
                     lambda_mapping: dict[Term, Term] = {}
                     for a, b in zip(new_pred_tmpl.args, expr.args):
                         lambda_mapping[a] = b
@@ -635,8 +635,8 @@ class AlphaRename:
             return expr
         elif isinstance(expr, Compound):
             return Compound(expr.fun, tuple(self.alpha_rename_term(a) for a in expr.args))
-        elif isinstance(expr, Lambda):
-            return Lambda(tuple(self.alpha_rename_var(a) for a in expr.args), self.alpha_rename_formula(expr.body))
+        elif isinstance(expr, PredLambda):
+            return PredLambda(tuple(self.alpha_rename_var(a) for a in expr.args), self.alpha_rename_formula(expr.body))
         elif isinstance(expr, MembershipLambda):
             renamed = self.alpha_rename_term(expr.varterm)
             if not isinstance(renamed, VarTerm):
@@ -816,8 +816,8 @@ def pretty_term(expr: Term, context: Context, parent_prec: int = TERM_PRECEDENCE
             return text if TERM_PRECEDENCE["CompoundFunction"] > parent_prec else f"({text})"
         else:
             raise Exception(f"Unexpected type: {type(expr.fun)}")
-    elif isinstance(expr, Lambda):
-        return f"\\lambda {",".join([var.name for var in expr.args])}. {pretty_formula(expr.body, context)}"
+    elif isinstance(expr, PredLambda):
+        return f"\\lambda^P {",".join([var.name for var in expr.args])}. {pretty_formula(expr.body, context)}"
     elif isinstance(expr, MembershipLambda):
         return pretty_term(expr.varterm, context)
     else:

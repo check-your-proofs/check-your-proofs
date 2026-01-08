@@ -9,7 +9,7 @@ theorem adj_is_unique \forall x\forall y\forall z\forall z'(adj(x,y,z)\wedge adj
       expand adj(x,y,z) for adj
       expand adj(x,y,z') for adj
       connect \forall w(in(w,z)\leftrightarrow in(w,x)\vee equal(w,y))\wedge\forall w(in(w,z')\leftrightarrow in(w,x)\vee equal(w,y))
-      apply invoke set_is_unique_for_each_predicate for lambda w.in(w,x)\vee equal(w,y),z,z'
+      apply invoke set_is_unique_for_each_predicate for \lambda^P w.in(w,x)\vee equal(w,y),z,z'
     }
   }
 }
@@ -23,7 +23,7 @@ theorem pair_is_unique \forall x\forall y\forall z\forall z'(pair(x,y,z)\wedge p
       expand pair(x,y,z) for pair
       expand pair(x,y,z') for pair
       connect \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))
-      apply invoke set_is_unique_for_each_predicate for lambda w.equal(w,x)\vee equal(w,y),z,z'
+      apply invoke set_is_unique_for_each_predicate for \lambda^P w.equal(w,x)\vee equal(w,y),z,z'
     }
   }
 }
@@ -164,7 +164,7 @@ theorem singleton_is_unique \forall x\forall y\forall y'(singleton(x,y)\wedge si
       expand singleton(x,y) for singleton
       expand singleton(x,y') for singleton
       connect \forall z(in(z,y)\leftrightarrow equal(z,x))\wedge\forall z(in(z,y')\leftrightarrow equal(z,x))
-      apply invoke set_is_unique_for_each_predicate for lambda z.equal(z,x),y,y'
+      apply invoke set_is_unique_for_each_predicate for \lambda^P z.equal(z,x),y,y'
     }
   }
 }
@@ -277,7 +277,7 @@ theorem op_is_unique \forall x\forall y\forall z\forall z'(op(x,y,z)\wedge op(x,
       expand op(x,y,z) for op
       expand op(x,y,z') for op
       connect \forall w(in(w,z)\leftrightarrow singleton(x,w)\vee pair(x,y,w))\wedge\forall w(in(w,z')\leftrightarrow singleton(x,w)\vee pair(x,y,w))
-      apply invoke set_is_unique_for_each_predicate for lambda w.singleton(x,w)\vee pair(x,y,w),z,z'
+      apply invoke set_is_unique_for_each_predicate for \lambda^P w.singleton(x,w)\vee pair(x,y,w),z,z'
     }
   }
 }
