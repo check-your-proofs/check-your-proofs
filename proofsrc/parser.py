@@ -101,10 +101,10 @@ class Parser:
             autoexpand =False
         name = self.stream.consume("IDENT").value
         self.stream.consume("LPAREN")
-        args, local_vars, local_pred_tmpls = self.parse_vars_or_pred_tmpls()
+        args, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        formula = self.parse_formula(context.add_form(local_vars, local_pred_tmpls, []))
+        formula = self.parse_formula(context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls))
         tex = self.parse_or_create_tex(name, len(args))
         if len(tex) != len(args) + 1:
             raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
@@ -651,13 +651,13 @@ class Parser:
             name = self.stream.consume("IDENT").value
             if any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
                 pred = next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
-                defargs: list[Var | PredTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
+                defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
             elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
                 pred = next(pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name)
-                defargs: list[Var | PredTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
+                defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
             elif name in context.decl.primpreds:
                 pred = Pred(name)
-                defargs: list[Var | PredTemplate] = [Var(f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
+                defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
             elif name in context.decl.defpreds:
                 pred = Pred(name)
                 defargs = context.decl.defpreds[name].args
@@ -667,7 +667,7 @@ class Parser:
                 terms = self.parse_terms(context)
                 self.stream.consume("RPAREN")
                 pred = CompoundPredTerm(Fun(name), tuple(terms))
-                defargs: list[Var | PredTemplate] = [Var(f"x_{i}") for i in range(deffuntemplateterm.arity)]
+                defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(deffuntemplateterm.arity)]
             else:
                 raise Exception(f"{tok.info()} Unexpected name: {name}")
             if self.stream.peek().type == "LPAREN":

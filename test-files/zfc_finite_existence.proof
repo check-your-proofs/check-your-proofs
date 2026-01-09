@@ -1,0 +1,51 @@
+include "zfc_finite_operation.proof"
+
+definition predicate image_pred(X, predicate \psi[2], Y) as \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))
+
+theorem replacement_is_unique_pred \forall X \forall^P \psi[2] \forall Y \forall Y' (image_pred(X, \psi, Y) \wedge image_pred(X, \psi, Y') \to equal(Y, Y')) {
+  any X, predicate \psi[2], Y, Y' {
+    assume image_pred(X, \psi, Y) \wedge image_pred(X, \psi, Y') {
+      split image_pred(X, \psi, Y) \wedge image_pred(X, \psi, Y')
+      expand image_pred(X, \psi, Y) for image_pred
+      expand image_pred(X, \psi, Y') for image_pred
+      connect \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))
+      apply invoke set_is_unique_for_each_predicate for \lambda^P y. \exists x (in(x, X) \wedge \psi(x, y)), Y, Y'
+    }
+  }
+}
+
+definition predicate image_fun(X, function f[1], Y) as image_pred(X, \lambda^P x, y. equal(y, f(x)), Y)
+
+theorem replacement_is_unique_fun \forall X \forall^F f[1] \forall Y \forall Y' (image_fun(X, f, Y) \wedge image_fun(X, f, Y') \to equal(Y, Y')) {
+  any X, function f[1], Y, Y' {
+    assume image_fun(X, f, Y) \wedge image_fun(X, f, Y') {
+      split image_fun(X, f, Y) \wedge image_fun(X, f, Y')
+      expand image_fun(X, f, Y) for image_fun
+      expand image_fun(X, f, Y') for image_fun
+      connect image_pred(X, \lambda^P x, y. equal(y, f(x)), Y) \wedge image_pred(X, \lambda^P x, y. equal(y, f(x)), Y')
+      apply invoke replacement_is_unique_pred for X, \lambda^P x, y. equal(y, f(x)), Y, Y'
+    }
+  }
+}
+
+/* theorem finite_adj_replacement \forall X \forall t (finite(X) \to \exists! Y (image_fun(X, \lambda^F x. adj(x, t), Y))) {
+  any t {
+    any y {
+      assume in(y, emptyset) {
+        apply emptyset_existence for y
+        contradict in(y, emptyset)
+        explode \exists x (in(x, emptyset) \wedge equal(y, adj(x, t)))
+      }
+      assume \exists x (in(x, emptyset) \wedge equal(y, adj(x, t))) {
+        some x such \exists x (in(x, emptyset) \wedge equal(y, adj(x, t))) {
+          split 1 in(x, emptyset) \wedge equal(y, adj(x, t))
+          apply emptyset_existence for x
+          contradict in(x, emptyset)
+          explode in(y, emptyset)
+        }
+      }
+      connect in(y, emptyset) \leftrightarrow \exists x (in(x, emptyset) \wedge equal(y, adj(x, t)))
+    }
+    fold for image_pred, image_fun conclude image_fun(emptyset, \lambda^F x. adj(x, t), emptyset)
+  }
+} */

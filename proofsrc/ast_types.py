@@ -311,7 +311,7 @@ class Theorem(Declaration):
 
 @dataclass
 class DefPred(Declaration):
-    args: list[Var | PredTemplate]
+    args: list[Var | PredTemplate | FunTemplate]
     formula: Formula
     autoexpand: bool
     tex: list[str]
