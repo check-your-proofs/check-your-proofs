@@ -22,7 +22,7 @@ class Var(VarTerm):
     name: str
 
 @dataclass(frozen=True)
-class Con(VarTerm):
+class RefDefCon(VarTerm):
     name: str
 
 @dataclass(frozen=True)
@@ -30,7 +30,15 @@ class FunTerm(Term):
     pass
 
 @dataclass(frozen=True)
-class Fun(FunTerm):
+class RefDefFun(FunTerm):
+    name: str
+
+@dataclass(frozen=True)
+class RefDefFunTerm(FunTerm):
+    name: str
+
+@dataclass(frozen=True)
+class RefDefFunTemplateTerm(FunTerm):
     name: str
 
 @dataclass(frozen=True)
@@ -53,12 +61,16 @@ class PredTerm(Term):
     pass
 
 @dataclass(frozen=True)
-class Pred(PredTerm):
+class RefPrimPred(PredTerm):
+    name: str
+
+@dataclass(frozen=True)
+class RefDefPred(PredTerm):
     name: str
 
 @dataclass(frozen=True)
 class CompoundPredTerm(PredTerm):
-    fun: Fun
+    fun: RefDefFunTemplateTerm
     args: tuple[Term, ...]
 
 @dataclass(frozen=True)
@@ -363,23 +375,23 @@ class DefFunTemplateTerm(Declaration):
 
 @dataclass
 class EqualityReflection(DeclarationSupport):
-    equal: PrimPred | DefPred
+    equal: RefPrimPred | RefDefPred
     evidence: Axiom | Theorem
 
 @dataclass
 class EqualityReplacement(DeclarationSupport):
-    equal: PrimPred | DefPred
+    equal: RefPrimPred | RefDefPred
     evidence: dict[str, Axiom | Theorem]
 
 @dataclass
 class Equality(Declaration):
-    equal: PrimPred | DefPred
+    equal: RefPrimPred | RefDefPred
     reflection: EqualityReflection
     replacement: EqualityReplacement
 
 @dataclass
 class Membership(Declaration):
-    membership: PrimPred | DefPred
+    membership: RefPrimPred | RefDefPred
 
 @dataclass
 class DeclarationContext:

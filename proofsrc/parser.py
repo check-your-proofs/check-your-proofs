@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate, FunTerm, FunLambda
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefDefFunTemplateTerm
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import strip_forall_vars
@@ -238,13 +238,13 @@ class Parser:
         start_token = self.stream.consume("EQUALITY")
         name = self.stream.consume("IDENT").value
         if name in context.decl.primpreds:
-            equal = context.decl.primpreds[name]
-            if equal.arity != 2:
-                raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {equal.arity}")
+            equal = RefPrimPred(name)
+            if context.decl.primpreds[name].arity != 2:
+                raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}")
         elif name in context.decl.defpreds:
-            equal = context.decl.defpreds[name]
-            if len(equal.args) != 2:
-                raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {len(equal.args)}")
+            equal = RefDefPred(name)
+            if len(context.decl.defpreds[name].args) != 2:
+                raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}")
         else:
             raise Exception(f"{start_token.info()} primpred or defpred is required, but {name} is unknown")
         reflection = self.parse_equality_reflection(equal, context)
@@ -254,7 +254,7 @@ class Parser:
         logger.debug(f"[equality] {type(equal)}: {equal.name}")
         return equality
 
-    def parse_equality_reflection(self, equal: PrimPred | DefPred, context: Context) -> EqualityReflection:
+    def parse_equality_reflection(self, equal: RefPrimPred | RefDefPred, context: Context) -> EqualityReflection:
         start_token = self.stream.consume("REFLECTION")
         name = self.stream.consume("IDENT").value
         if name in context.decl.axioms:
@@ -265,7 +265,7 @@ class Parser:
             raise Exception(f"{start_token.info()} axiom or theorem is required, but {name} is unknown")
         return EqualityReflection(token=start_token, equal=equal, evidence=reflection_evidence)
 
-    def parse_equality_replacement(self, equal: PrimPred | DefPred, context: Context) -> EqualityReplacement:
+    def parse_equality_replacement(self, equal: RefPrimPred | RefDefPred, context: Context) -> EqualityReplacement:
         start_token = self.stream.consume("REPLACEMENT")
         replacement_evidence: dict[str, Axiom | Theorem] = {}
         while True:
@@ -291,13 +291,13 @@ class Parser:
         start_token = self.stream.consume("MEMBERSHIP")
         name = self.stream.consume("IDENT").value
         if name in context.decl.primpreds:
-            membership = context.decl.primpreds[name]
-            if membership.arity != 2:
-                raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {membership.arity}")
+            membership = RefPrimPred(name)
+            if context.decl.primpreds[name].arity != 2:
+                raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}")
         elif name in context.decl.defpreds:
-            membership = context.decl.defpreds[name]
-            if len(membership.args) != 2:
-                raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {len(membership.args)}")
+            membership = RefDefPred(name)
+            if len(context.decl.defpreds[name].args) != 2:
+                raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}")
         else:
             raise Exception(f"{start_token.info()} primpred or defpred is required, but {name} is unknown")
         membership = Membership(name=name, token=start_token, membership=membership)
@@ -656,17 +656,17 @@ class Parser:
                 pred = next(pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name)
                 defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
             elif name in context.decl.primpreds:
-                pred = Pred(name)
+                pred = RefPrimPred(name)
                 defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
             elif name in context.decl.defpreds:
-                pred = Pred(name)
+                pred = RefDefPred(name)
                 defargs = context.decl.defpreds[name].args
             elif name in context.decl.deffuntemplateterms:
                 deffuntemplateterm = context.decl.deffuntemplateterms[name]
                 self.stream.consume("LPAREN")
                 terms = self.parse_terms(context)
                 self.stream.consume("RPAREN")
-                pred = CompoundPredTerm(Fun(name), tuple(terms))
+                pred = CompoundPredTerm(RefDefFunTemplateTerm(name), tuple(terms))
                 defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(deffuntemplateterm.arity)]
             else:
                 raise Exception(f"{tok.info()} Unexpected name: {name}")
@@ -768,13 +768,13 @@ class Parser:
             elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
                 return next((pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name))
             elif name in context.decl.defcons:
-                return Con(name)
+                return RefDefCon(name)
             elif name in context.decl.deffuns or name in context.decl.deffunterms or any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.fun_tmpls):
                 if name in context.decl.deffuns:
-                    fun = Fun(name)
+                    fun = RefDefFun(name)
                     defargs = context.decl.deffuns[name].args
                 elif name in context.decl.deffunterms:
-                    fun = Fun(name)
+                    fun = RefDefFunTerm(name)
                     defargs = context.decl.deffunterms[name].args
                 elif any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls):
                     fun = next(fun_tmpl for fun_tmpl in context.form.fun_tmpls if fun_tmpl.name == name)
@@ -794,7 +794,7 @@ class Parser:
                 if name in context.decl.primpreds:
                     arity = context.decl.primpreds[name].arity
                     args = [Var(f"x_{i}") for i in range(arity)]
-                    return PredLambda(tuple(args), AtomicFormula(Pred(name), tuple(args)))
+                    return PredLambda(tuple(args), AtomicFormula(RefPrimPred(name), tuple(args)))
                 else:
                     vars: list[Var] = []
                     items: list[Var | MembershipLambda] = []
@@ -807,14 +807,14 @@ class Parser:
                             items.append(MembershipLambda(var))
                         else:
                             raise Exception(f"Unexpected type: {type(arg)}")
-                    return PredLambda(tuple(vars), AtomicFormula(Pred(name), tuple(items)))
+                    return PredLambda(tuple(vars), AtomicFormula(RefDefPred(name), tuple(items)))
             elif name in context.decl.deffuntemplateterms:
                 defargs = context.decl.deffuntemplateterms[name].args
                 self.stream.consume("LPAREN")
                 subargs = self.parse_terms(context)
                 self.stream.consume("RPAREN")
                 resolved_args = self.match_args(defargs, subargs, context, tok)
-                return CompoundPredTerm(Fun(name), tuple(resolved_args))
+                return CompoundPredTerm(RefDefFunTemplateTerm(name), tuple(resolved_args))
             else:
                 raise SyntaxError(f"{tok.info()} Term object is required, but {name} is unknown")
         elif tok.type == "LAMBDA_PRED":

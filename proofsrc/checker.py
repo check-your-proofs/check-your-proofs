@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate, RefPrimPred, RefDefPred, RefDefFun
 from logic_utils import Substitutor, DefExpander, expr_in_context, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr, alpha_safe_formula, type_safe
 from copy import deepcopy
 
@@ -8,7 +8,7 @@ logger = logging.getLogger("proof")
 def goal_in_context(goal: str | Bottom | Formula, context: Context) -> bool:
     if isinstance(goal, str):
         return context.decl.has_reference(goal)
-    elif isinstance(goal, AtomicFormula) and context.decl.equality is not None and isinstance(goal.pred, Pred) and goal.pred.name == context.decl.equality.equal.name and goal.args[0] == goal.args[1]:
+    elif isinstance(goal, AtomicFormula) and context.decl.equality is not None and isinstance(goal.pred, (RefPrimPred, RefDefPred)) and goal.pred == context.decl.equality.equal and goal.args[0] == goal.args[1]:
         return True
     else:
         return expr_in_context(goal, context)
@@ -18,13 +18,9 @@ def get_fact(fact: str | Formula, context: Context, expand_symbol: bool = False)
         fact = context.decl.get_reference(fact)
     elif not isinstance(fact, Formula):
         raise Exception(f"Unexpected type {type(fact)}")
-    if expand_symbol and isinstance(fact, AtomicFormula) and isinstance(fact.pred, Pred):
-        if not fact.pred.name in context.decl.defpreds:
-            raise Exception(f"Unexpected {fact.pred.name}")
+    if expand_symbol and isinstance(fact, AtomicFormula) and isinstance(fact.pred, RefDefPred):
         fact = DefExpander([fact.pred.name]).expand_defs_formula(fact, context)
     if expand_symbol and isinstance(fact, AtomicFormula) and isinstance(fact.pred, CompoundPredTerm):
-        if not fact.pred.fun.name in context.decl.deffuntemplateterms:
-            raise Exception(f"Unexpected {fact.pred.fun.name}")
         fact = DefExpander([fact.pred.fun.name]).expand_defs_formula(fact, context)
     return fact
 
@@ -143,7 +139,7 @@ def check_defconexist(node: DefConExist, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}ExistsUniq object: {pretty_expr(existsuniq, context)}")
-    existence_formula = Substitutor({existsuniq.var: Con(node.con_name)}, context).substitute_formula(existsuniq.body)
+    existence_formula = Substitutor({existsuniq.var: RefDefCon(node.con_name)}, context).substitute_formula(existsuniq.body)
     if not alpha_equiv_with_defs(node.formula, existence_formula, context):
         logger.error(f"{error_prefix}existence_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
         node.proofinfo.status = "ERROR"
@@ -174,7 +170,7 @@ def check_defconuniq(node: DefConUniq, context: Context, indent: int):
         logger.error(f"{error_prefix}equality has not been declared yet")
         node.proofinfo.status = "ERROR"
         return False
-    uniqueness_formula = Forall(var, Implies(body, AtomicFormula(Pred(context.decl.equality.equal.name), (MembershipLambda(var), MembershipLambda(Con(node.con_name))))))
+    uniqueness_formula = Forall(var, Implies(body, AtomicFormula(context.decl.equality.equal, (MembershipLambda(var), MembershipLambda(RefDefCon(node.con_name))))))
     if not alpha_equiv_with_defs(node.formula, uniqueness_formula, context):
         logger.error(f"{error_prefix}uniqueness_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
         node.proofinfo.status = "ERROR"
@@ -197,9 +193,9 @@ def check_deffunexist(node: DefFunExist, context: Context, indent: int):
     logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.fun_name}")
     args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion)
     if isinstance(body, ExistsUniq):
-        existence_formula = Substitutor({body.var: Compound(Fun(node.fun_name), tuple(args))}, context).substitute_formula(body.body)
+        existence_formula = Substitutor({body.var: Compound(RefDefFun(node.fun_name), tuple(args))}, context).substitute_formula(body.body)
     elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
-        existence_formula = Implies(body.left, Substitutor({body.right.var: Compound(Fun(node.fun_name), tuple(args))}, context).substitute_formula(body.right.body))
+        existence_formula = Implies(body.left, Substitutor({body.right.var: Compound(RefDefFun(node.fun_name), tuple(args))}, context).substitute_formula(body.right.body))
     else:
         logger.error(f"{error_prefix}Unexpected formula: {pretty_expr(body, context)}")
         node.proofinfo.status = "ERROR"
@@ -224,9 +220,9 @@ def check_deffununiq(node: DefFunUniq, context: Context, indent: int):
         return False
     args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion)
     if isinstance(body, ExistsUniq):
-        uniqueness_formula = Forall(body.var, Implies(body.body, AtomicFormula(Pred(context.decl.equality.equal.name), (MembershipLambda(Var(body.var.name)), MembershipLambda(Compound(Fun(node.fun_name), tuple(args)))))))
+        uniqueness_formula = Forall(body.var, Implies(body.body, AtomicFormula(context.decl.equality.equal, (MembershipLambda(Var(body.var.name)), MembershipLambda(Compound(RefDefFun(node.fun_name), tuple(args)))))))
     elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
-        uniqueness_formula = Implies(body.left, Forall(body.right.var, Implies(body.right.body, AtomicFormula(Pred(context.decl.equality.equal.name), (MembershipLambda(Var(body.right.var.name)), MembershipLambda(Compound(Fun(node.fun_name), tuple(args))))))))
+        uniqueness_formula = Implies(body.left, Forall(body.right.var, Implies(body.right.body, AtomicFormula(context.decl.equality.equal, (MembershipLambda(Var(body.right.var.name)), MembershipLambda(Compound(RefDefFun(node.fun_name), tuple(args))))))))
     else:
         logger.error(f"{error_prefix}Unexpected formula: {pretty_expr(body, context)}")
         node.proofinfo.status = "ERROR"
@@ -287,7 +283,7 @@ def check_equality_reflection(node: EqualityReflection, context: Context, indent
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}Checking {node.equal.name} reflection theorem: {pretty_expr(node.evidence.conclusion, context)}")
-    reflection = Forall(Var("x"), AtomicFormula(Pred(node.equal.name), (MembershipLambda(Var("x")), MembershipLambda(Var("x")))))
+    reflection = Forall(Var("x"), AtomicFormula(node.equal, (MembershipLambda(Var("x")), MembershipLambda(Var("x")))))
     if not alpha_equiv_with_defs(node.evidence.conclusion, reflection, context):
         logger.error(f"{error_prefix}Not matched with expected formula: {pretty_expr(reflection, context)}")
         node.proofinfo.status = "ERROR"
@@ -584,7 +580,7 @@ def check_some(node: Some, context: Context, indent: int):
             logger.error(f"{error_prefix}equality has not been declared yet")
             node.proofinfo.status = "ERROR"
             return False
-        uniqueness = Forall(var, Implies(body, AtomicFormula(Pred(context.decl.equality.equal.name), (MembershipLambda(var), MembershipLambda(vars[0])))))
+        uniqueness = Forall(var, Implies(body, AtomicFormula(context.decl.equality.equal, (MembershipLambda(var), MembershipLambda(vars[0])))))
         premises: list[Bottom | Formula] = [existence, uniqueness]
     logger.debug(f"{debug_prefix}Taking {node.items}, premise={pretty_expr(existence, context)}")
     local_vars = [item for item in node.items if isinstance(item, Var)]
@@ -819,7 +815,7 @@ def check_characterize(node: Characterize, context: Context, indent: int):
         logger.error(f"{error_prefix}Unexpected type: {type(node.term)}")
         node.proofinfo.status = "ERROR"
         return False
-    fact = And(existence, Forall(vardash, Implies(existence_dash, AtomicFormula(Pred(context.decl.equality.equal.name), (MembershipLambda(vardash), MembershipLambda(node.term))))))
+    fact = And(existence, Forall(vardash, Implies(existence_dash, AtomicFormula(context.decl.equality.equal, (MembershipLambda(vardash), MembershipLambda(node.term))))))
     if not goal_in_context(fact, context):
         logger.error(f"{error_prefix}Not fact: {pretty_expr(fact, context)}")
         node.proofinfo.status = "ERROR"
@@ -1001,10 +997,8 @@ def check_connect(node: Connect, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     if isinstance(node.conclusion, AtomicFormula):
-        if not isinstance(node.conclusion.pred, Pred):
+        if not isinstance(node.conclusion.pred, RefDefPred):
             raise Exception(f"Unexpected type: {type(node.conclusion.pred)}")
-        if not node.conclusion.pred.name in context.decl.defpreds:
-            raise Exception(f"Unexpected {node.conclusion.pred.name}")
         conclusion = DefExpander([node.conclusion.pred.name]).expand_defs_formula(node.conclusion, context)
     else:
         conclusion = node.conclusion
@@ -1064,7 +1058,7 @@ def check_substitute(node: Substitute, context: Context, indent: int):
             raise Exception(f"Unexpected type: {type(k)}")
         if not isinstance(v, VarTerm):
             raise Exception(f"Unexpected type: {type(v)}")
-        equation = AtomicFormula(Pred(context.decl.equality.equal.name), (MembershipLambda(k), MembershipLambda(v)))
+        equation = AtomicFormula(context.decl.equality.equal, (MembershipLambda(k), MembershipLambda(v)))
         if not goal_in_context(equation, context):
             logger.error(f"{error_prefix}Not fact: {pretty_expr(equation, context)}")
             node.proofinfo.status = "ERROR"

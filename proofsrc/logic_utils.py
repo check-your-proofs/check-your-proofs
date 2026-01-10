@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, PredTemplate, PredLambda, MembershipLambda, VarTerm, PredTerm, CompoundPredTerm, FunTemplate, FunTerm, FunLambda
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Context, Compound, RefDefCon, Var, Bottom, Term, Formula, PredTemplate, PredLambda, MembershipLambda, VarTerm, PredTerm, CompoundPredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefDefFunTemplateTerm
 from itertools import permutations
 from copy import deepcopy
 from typing import Mapping
@@ -29,11 +29,15 @@ class AlphaEquiv:
     def alpha_equiv_var(self, e1: Var | PredTemplate | FunTemplate, e2: Var | PredTemplate | FunTemplate, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
         return env.get(e1, e1) == e2
 
-    def alpha_equiv_con(self, e1: Con | Fun | Pred, e2: Con | Fun | Pred, depth: int) -> bool:
+    def alpha_equiv_con(self, e1: RefDefCon | RefPrimPred | RefDefPred | RefDefFun | RefDefFunTerm | RefDefFunTemplateTerm, e2: RefDefCon | RefPrimPred | RefDefPred | RefDefFun | RefDefFunTerm | RefDefFunTemplateTerm, depth: int) -> bool:
         return e1.name == e2.name
 
     def alpha_equiv_fun_term(self, e1: FunTerm, e2: FunTerm, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
-        if isinstance(e1, Fun) and isinstance(e2, Fun):
+        if isinstance(e1, RefDefFun) and isinstance(e2, RefDefFun):
+            return self.alpha_equiv_con(e1, e2, depth)
+        elif isinstance(e1, RefDefFunTerm) and isinstance(e2, RefDefFunTerm):
+            return self.alpha_equiv_con(e1, e2, depth)
+        elif isinstance(e1, RefDefFunTemplateTerm) and isinstance(e2, RefDefFunTemplateTerm):
             return self.alpha_equiv_con(e1, e2, depth)
         elif isinstance(e1, FunTemplate) and isinstance(e2, FunTemplate):
             return self.alpha_equiv_var(e1, e2, env, depth)
@@ -79,12 +83,18 @@ class AlphaEquiv:
             result = self.alpha_equiv_var(e1, e2, env, depth)
         elif isinstance(e1, FunTemplate) and isinstance(e2, FunTemplate):
             result = self.alpha_equiv_var(e1, e2, env, depth)
-        elif isinstance(e1, Con) and isinstance(e2, Con):
+        elif isinstance(e1, RefDefCon) and isinstance(e2, RefDefCon):
             result = self.alpha_equiv_con(e1, e2, depth)
-        elif isinstance(e1, Fun) and isinstance(e2, Fun):
-            result = self.alpha_equiv_con(e1, e2, depth)
-        elif isinstance(e1, Pred) and isinstance(e2, Pred):
-            result = self.alpha_equiv_con(e1, e2, depth)
+        elif isinstance(e1, RefDefFun) and isinstance(e2, RefDefFun):
+            return self.alpha_equiv_con(e1, e2, depth)
+        elif isinstance(e1, RefDefFunTerm) and isinstance(e2, RefDefFunTerm):
+            return self.alpha_equiv_con(e1, e2, depth)
+        elif isinstance(e1, RefDefFunTemplateTerm) and isinstance(e2, RefDefFunTemplateTerm):
+            return self.alpha_equiv_con(e1, e2, depth)
+        elif isinstance(e1, RefPrimPred) and isinstance(e2, RefPrimPred):
+            return self.alpha_equiv_con(e1, e2, depth)
+        elif isinstance(e1, RefDefPred) and isinstance(e2, RefDefPred):
+            return self.alpha_equiv_con(e1, e2, depth)
         elif isinstance(e1, Compound) and isinstance(e2, Compound):
             result = self.alpha_equiv_compound(e1, e2, env, depth)
         elif isinstance(e1, PredLambda) and isinstance(e2, PredLambda):
@@ -99,7 +109,9 @@ class AlphaEquiv:
         return result
 
     def alpha_equiv_pred_term(self, e1: PredTerm, e2: PredTerm, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
-        if isinstance(e1, Pred) and isinstance(e2, Pred):
+        if isinstance(e1, RefPrimPred) and isinstance(e2, RefPrimPred):
+            return self.alpha_equiv_con(e1, e2, depth)
+        elif isinstance(e1, RefDefPred) and isinstance(e2, RefDefPred):
             return self.alpha_equiv_con(e1, e2, depth)
         elif isinstance(e1, PredTemplate) and isinstance(e2, PredTemplate):
             return self.alpha_equiv_var(e1, e2, env, depth)
@@ -113,7 +125,7 @@ class AlphaEquiv:
             return False
         if len(e1.args) != len(e2.args):
             return False
-        if self.context.decl.equality is not None and isinstance(e1.pred, Pred) and e1.pred.name == self.context.decl.equality.equal.name:
+        if self.context.decl.equality is not None and isinstance(e1.pred, (RefPrimPred, RefDefPred)) and e1.pred == self.context.decl.equality.equal:
             a1, b1 = e1.args
             a2, b2 = e2.args
             return (self.alpha_equiv_term(a1, a2, env, depth+1) and self.alpha_equiv_term(b1, b2, env, depth+1)) or (self.alpha_equiv_term(a1, b2, env, depth+1) and self.alpha_equiv_term(b1, a2, env, depth+1))
@@ -262,7 +274,7 @@ def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bpt
             return set(), set(), set(), set(), set(), set()
         else:
             return set(), set(), set(), set(), {expr}, set()
-    elif isinstance(expr, (Con, Pred, Fun)):
+    elif isinstance(expr, (RefDefCon, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefDefFunTemplateTerm)):
         return set(), set(), set(), set(), set(), set()
     elif isinstance(expr, (AtomicFormula, Compound, CompoundPredTerm)):
         if isinstance(expr, AtomicFormula):
@@ -333,32 +345,29 @@ class DefExpander:
     counter: dict[str, int] = field(init=False, default_factory=dict[str, int])
 
     def expand_defs_term(self, expr: Term, context: Context) -> Term:
-        if isinstance(expr, (Var, Con, PredTemplate, Fun, FunTemplate)):
+        if isinstance(expr, (Var, RefDefCon, PredTemplate, RefDefFun, RefDefFunTerm, RefDefFunTemplateTerm, FunTemplate)):
             return expr
         elif isinstance(expr, Compound):
-            if isinstance(expr.fun, Fun):
-                if expr.fun.name in context.decl.deffuns:
-                    return Compound(expr.fun, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
-                elif expr.fun.name in context.decl.deffunterms:
-                    deffunterm = context.decl.deffunterms[expr.fun.name]
-                    should_expand = False
-                    if expr.fun.name in self.defs:
-                        target_indexes = self.indexes.get(expr.fun.name, [])
-                        self.counter[expr.fun.name] = self.counter.get(expr.fun.name, 0) + 1
-                        if not target_indexes:
-                            should_expand = True
-                        elif self.counter[expr.fun.name] in target_indexes:
-                            should_expand = True
-                    if should_expand:
-                        renamed_term, renamed_mapping = alpha_safe_term(deffunterm.term, dict(zip(deffunterm.args, expr.args)), context)
-                        if not type_safe(renamed_mapping, context):
-                            raise Exception("type_safe() failed")
-                        expanded = Substitutor(renamed_mapping, context).substitute_term(renamed_term)
-                        return self.expand_defs_term(expanded, context.copy_form())
-                    else:
-                        return Compound(expr.fun, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
+            if isinstance(expr.fun, RefDefFun):
+                return Compound(expr.fun, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
+            elif isinstance(expr.fun, RefDefFunTerm):
+                deffunterm = context.decl.deffunterms[expr.fun.name]
+                should_expand = False
+                if expr.fun.name in self.defs:
+                    target_indexes = self.indexes.get(expr.fun.name, [])
+                    self.counter[expr.fun.name] = self.counter.get(expr.fun.name, 0) + 1
+                    if not target_indexes:
+                        should_expand = True
+                    elif self.counter[expr.fun.name] in target_indexes:
+                        should_expand = True
+                if should_expand:
+                    renamed_term, renamed_mapping = alpha_safe_term(deffunterm.term, dict(zip(deffunterm.args, expr.args)), context)
+                    if not type_safe(renamed_mapping, context):
+                        raise Exception("type_safe() failed")
+                    expanded = Substitutor(renamed_mapping, context).substitute_term(renamed_term)
+                    return self.expand_defs_term(expanded, context.copy_form())
                 else:
-                    raise Exception(f"Unexpected function name: {expr.fun.name}")
+                    return Compound(expr.fun, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
             elif isinstance(expr.fun, FunTemplate):
                 if expr.fun in context.ctrl.fun_tmpls or expr.fun in context.form.fun_tmpls:
                     return Compound(expr.fun, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
@@ -384,38 +393,35 @@ class DefExpander:
 
     def expand_defs_formula(self, expr: Formula, context: Context) -> Formula:
         if isinstance(expr, AtomicFormula):
-            if isinstance(expr.pred, Pred):
-                if expr.pred.name in context.decl.primpreds:
-                    return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
-                elif expr.pred.name in context.decl.defpreds:
-                    defpred = context.decl.defpreds[expr.pred.name]
-                    should_expand = False
-                    if len(self.defs) == 0 and defpred.autoexpand:
+            if isinstance(expr.pred, RefPrimPred):
+                return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
+            elif isinstance(expr.pred, RefDefPred):
+                defpred = context.decl.defpreds[expr.pred.name]
+                should_expand = False
+                if len(self.defs) == 0 and defpred.autoexpand:
+                    should_expand = True
+                elif expr.pred.name in self.defs:
+                    target_indexes = self.indexes.get(expr.pred.name, [])
+                    self.counter[expr.pred.name] = self.counter.get(expr.pred.name, 0) + 1
+                    if not target_indexes:
                         should_expand = True
-                    elif expr.pred.name in self.defs:
-                        target_indexes = self.indexes.get(expr.pred.name, [])
-                        self.counter[expr.pred.name] = self.counter.get(expr.pred.name, 0) + 1
-                        if not target_indexes:
-                            should_expand = True
-                        elif self.counter[expr.pred.name] in target_indexes:
-                            should_expand = True
-                    if should_expand:
-                        renamed_formula, renamed_mapping = alpha_safe_formula(defpred.formula, dict(zip(defpred.args, expr.args)), context)
-                        if not type_safe(renamed_mapping, context):
-                            raise Exception("type_safe() failed")
-                        expanded = Substitutor(renamed_mapping, context).substitute_formula(renamed_formula)
-                        return self.expand_defs_formula(expanded, context.copy_form())
-                    else:
-                        return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
+                    elif self.counter[expr.pred.name] in target_indexes:
+                        should_expand = True
+                if should_expand:
+                    renamed_formula, renamed_mapping = alpha_safe_formula(defpred.formula, dict(zip(defpred.args, expr.args)), context)
+                    if not type_safe(renamed_mapping, context):
+                        raise Exception("type_safe() failed")
+                    expanded = Substitutor(renamed_mapping, context).substitute_formula(renamed_formula)
+                    return self.expand_defs_formula(expanded, context.copy_form())
                 else:
-                    raise Exception(f"Unexpected predicate name: {expr.pred.name}")
+                    return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
             elif isinstance(expr.pred, PredTemplate):
                 if expr.pred in context.ctrl.pred_tmpls or expr.pred in context.form.pred_tmpls:
                     return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
                 else:
                     raise Exception(f"{expr.pred} in {context.ctrl.pred_tmpls} or {expr.pred} in {context.form.pred_tmpls}")
             elif isinstance(expr.pred, CompoundPredTerm):
-                if expr.pred.fun.name in context.decl.deffuntemplateterms:
+                if isinstance(expr.pred.fun, RefDefFunTemplateTerm):
                     should_expand = False
                     if expr.pred.fun.name in self.defs:
                         target_indexes = self.indexes.get(expr.pred.fun.name, [])
@@ -442,7 +448,7 @@ class DefExpander:
                     else:
                         return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
                 else:
-                    raise Exception(f"Unexpected name: {expr.pred.fun.name}")
+                    raise Exception(f"Unexpected type: {type(expr.pred.fun)}")
             else:
                 raise Exception(f"Unexpected type: {type(expr.pred)}")
         elif isinstance(expr, Not):
@@ -527,7 +533,7 @@ class Substitutor:
                     else:
                         return expr
 
-        if isinstance(expr, (Var, Con, PredTemplate, Fun, FunTemplate)):
+        if isinstance(expr, (Var, RefDefCon, PredTemplate, RefDefFun, RefDefFunTerm, RefDefFunTemplateTerm, FunTemplate)):
             return expr
 
         elif isinstance(expr, Compound):
@@ -553,36 +559,33 @@ class Substitutor:
 
     def substitute_formula(self, expr: Formula) -> Formula:
         if isinstance(expr, AtomicFormula):
-            if isinstance(expr.pred, Pred):
-                if expr.pred.name in self.context.decl.primpreds:
-                    return AtomicFormula(expr.pred, tuple(self.substitute_term(arg) for arg in expr.args))
-                elif expr.pred.name in self.context.decl.defpreds:
-                    defpred = self.context.decl.defpreds[expr.pred.name]
-                    resolved_args: list[Term] = []
-                    for defarg, subarg in zip(defpred.args, expr.args):
-                        if isinstance(defarg, VarTerm):
-                            if isinstance(subarg, VarTerm):
-                                resolved_args.append(subarg)
-                            else:
-                                raise Exception(f"VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
-                        elif isinstance(defarg, PredTerm):
-                            if isinstance(subarg, PredTerm):
-                                resolved_args.append(subarg)
-                            elif isinstance(subarg, VarTerm):
-                                if defarg.arity == 1:
-                                    if self.context.decl.membership is None:
-                                        raise Exception(f"VarTerm is substituted into PredTerm with arity 1, but membership has not been declared")
-                                    else:
-                                        resolved_args.append(MembershipLambda(subarg))
-                                else:
-                                    raise Exception(f"VarTerm cannot be substituted into PredTerm with arity {defarg.arity}")
-                            else:
-                                raise Exception(f"Unexpected type: {type(subarg)}")
+            if isinstance(expr.pred, RefPrimPred):
+                return AtomicFormula(expr.pred, tuple(self.substitute_term(arg) for arg in expr.args))
+            elif isinstance(expr.pred, RefDefPred):
+                defpred = self.context.decl.defpreds[expr.pred.name]
+                resolved_args: list[Term] = []
+                for defarg, subarg in zip(defpred.args, expr.args):
+                    if isinstance(defarg, VarTerm):
+                        if isinstance(subarg, VarTerm):
+                            resolved_args.append(subarg)
                         else:
-                            raise Exception(f"Unexpected type: {type(defarg)}")
-                    return AtomicFormula(expr.pred, tuple(self.substitute_term(arg) for arg in resolved_args))
-                else:
-                    raise Exception(f"{expr.pred.name} not found in primpreds or defpreds")
+                            raise Exception(f"VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
+                    elif isinstance(defarg, PredTerm):
+                        if isinstance(subarg, PredTerm):
+                            resolved_args.append(subarg)
+                        elif isinstance(subarg, VarTerm):
+                            if defarg.arity == 1:
+                                if self.context.decl.membership is None:
+                                    raise Exception(f"VarTerm is substituted into PredTerm with arity 1, but membership has not been declared")
+                                else:
+                                    resolved_args.append(MembershipLambda(subarg))
+                            else:
+                                raise Exception(f"VarTerm cannot be substituted into PredTerm with arity {defarg.arity}")
+                        else:
+                            raise Exception(f"Unexpected type: {type(subarg)}")
+                    else:
+                        raise Exception(f"Unexpected type: {type(defarg)}")
+                return AtomicFormula(expr.pred, tuple(self.substitute_term(arg) for arg in resolved_args))
             elif isinstance(expr.pred, PredTemplate):
                 new_pred_tmpl = self.substitute_term(expr.pred)
                 if isinstance(new_pred_tmpl, PredTemplate):
@@ -599,7 +602,7 @@ class Substitutor:
                         raise Exception(f"{type(new_pred_tmpl)} cannot be substituted into TemplateCall since membership has not been declared.")
                     if len(expr.args) != 1:
                         raise Exception(f"{type(new_pred_tmpl)} cannot be substituted into TemplateCall with {len(expr.args)} args")
-                    return AtomicFormula(Pred(self.context.decl.membership.name), (self.substitute_term(expr.args[0]), new_pred_tmpl.varterm))
+                    return AtomicFormula(self.context.decl.membership.membership, (self.substitute_term(expr.args[0]), new_pred_tmpl.varterm))
                 else:
                     raise Exception(f"Unexpected type: {type(new_pred_tmpl)}")
             elif isinstance(expr.pred, CompoundPredTerm):
@@ -650,7 +653,7 @@ class AlphaRename:
     def alpha_rename_term(self, expr: Term) -> Term:
         if isinstance(expr, (Var, PredTemplate, FunTemplate)):
             return self.alpha_rename_var_or_pred_tmpl_or_fun_tmpl(expr)
-        elif isinstance(expr, (Con, Fun)):
+        elif isinstance(expr, (RefDefCon, RefDefFun, RefDefFunTerm, RefDefFunTemplateTerm)):
             return expr
         elif isinstance(expr, Compound):
             return Compound(expr.fun, tuple(self.alpha_rename_term(a) for a in expr.args))
@@ -668,7 +671,7 @@ class AlphaRename:
 
     def alpha_rename_formula(self, expr: Formula) -> Formula:
         if isinstance(expr, AtomicFormula):
-            if isinstance(expr.pred, Pred):
+            if isinstance(expr.pred, (RefPrimPred, RefDefPred)):
                 new_pred = expr.pred
             elif isinstance(expr.pred, PredTemplate):
                 new_pred = self.alpha_rename_pred_tmpl(expr.pred)
@@ -777,46 +780,45 @@ FORMULA_PRECEDENCE = {
 }
 
 def pretty_expr_fragments(expr: AtomicFormula | Compound | CompoundPredTerm, context: Context) -> list[str]:
-    if isinstance(expr, AtomicFormula) and isinstance(expr.pred, Pred):
-        if expr.pred.name in context.decl.primpreds:
+    if isinstance(expr, AtomicFormula):
+        if isinstance(expr.pred, RefPrimPred):
+            if expr.pred.name == "ordinal":
+                print(expr.pred)
             tex = context.decl.primpreds[expr.pred.name].tex
-        elif expr.pred.name in context.decl.defpreds:
+        elif isinstance(expr.pred, RefDefPred):
             tex = context.decl.defpreds[expr.pred.name].tex
         else:
-            raise Exception(f"{expr.pred.name} is not in primpreds or defpreds")
+            raise Exception(f"Unexpected type: {type(expr.pred)}")
         return tex
-    elif isinstance(expr, Compound) and isinstance(expr.fun, Fun):
-        if expr.fun.name in context.decl.deffuns:
+    elif isinstance(expr, Compound):
+        if isinstance(expr.fun, RefDefFun):
             tex = context.decl.deffuns[expr.fun.name].tex
-        elif expr.fun.name in context.decl.deffunterms:
+        elif isinstance(expr.fun, RefDefFunTerm):
             tex = context.decl.deffunterms[expr.fun.name].tex
         else:
-            raise Exception(f"{expr.fun.name} is not in deffuns or deffunterms")
+            raise Exception(f"Unexpected type: {type(expr.fun)}")
         return tex
     elif isinstance(expr, CompoundPredTerm):
-        if expr.fun.name in context.decl.deffuntemplateterms:
+        if isinstance(expr.fun, RefDefFunTemplateTerm):
             tex = context.decl.deffuntemplateterms[expr.fun.name].tex
         else:
-            raise Exception(f"{expr.fun.name} is not in deffuntemplateterms")
+            raise Exception(f"Unexpected type: {type(expr.fun)}")
         return tex
     else:
         raise TypeError(f"Unsupported node type: {type(expr)}")
 
 def pretty_term(expr: Term, context: Context, parent_prec: int = TERM_PRECEDENCE["Lowest"]) -> str:
-    if isinstance(expr, (Var, Fun)):
+    if isinstance(expr, (Var, RefDefFun, RefDefFunTerm, RefDefFunTemplateTerm)):
         return expr.name
     elif isinstance(expr, (PredTemplate, FunTemplate)):
         return f"{expr.name}[{str(expr.arity)}]"
-    elif isinstance(expr, Con):
-        if expr.name in context.decl.defcons:
-            tex = context.decl.defcons[expr.name].tex
-        else:
-            raise Exception(f"{expr.name} is not in context.defcons")
+    elif isinstance(expr, RefDefCon):
+        tex = context.decl.defcons[expr.name].tex
         if len(tex) != 1:
             raise Exception("arity is different")
         return tex[0]
     elif isinstance(expr, (Compound, CompoundPredTerm)):
-        if isinstance(expr.fun, Fun):
+        if isinstance(expr.fun, (RefDefFun, RefDefFunTerm, RefDefFunTemplateTerm)):
             tex = pretty_expr_fragments(expr, context)
             if len(tex) != len(expr.args) + 1:
                 raise Exception("arity is different")
@@ -854,7 +856,7 @@ def pretty_term(expr: Term, context: Context, parent_prec: int = TERM_PRECEDENCE
 
 def pretty_formula(expr: Formula, context: Context, parent_prec: int = FORMULA_PRECEDENCE["Lowest"]) -> str:
     if isinstance(expr, AtomicFormula):
-        if isinstance(expr.pred, Pred):
+        if isinstance(expr.pred, (RefPrimPred, RefDefPred)):
             tex = pretty_expr_fragments(expr, context)
             if len(tex) != len(expr.args) + 1:
                 raise Exception("arity is different")
@@ -923,7 +925,7 @@ def pretty_formula(expr: Formula, context: Context, parent_prec: int = FORMULA_P
     else:
         raise TypeError(f"Unsupported node type: {type(expr)}")
 
-def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Context) -> str:
+def pretty_expr(expr: str | Bottom | Formula | Term, context: Context) -> str:
     if isinstance(expr, str):
         return expr
     elif isinstance(expr, Bottom):
@@ -932,7 +934,5 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
         return pretty_formula(expr, context)
     elif isinstance(expr, Term):
         return pretty_term(expr, context)
-    elif isinstance(expr, (Pred, Fun)):
-        return expr.name
     else:
         raise TypeError(f"Unsupported node type: {type(expr)}")
