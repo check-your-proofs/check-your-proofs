@@ -27,24 +27,16 @@ class AlphaEquiv:
             print(f"{'  ' * depth}{mark}")
 
     def alpha_equiv_var(self, e1: Var | PredTemplate | FunTemplate, e2: Var | PredTemplate | FunTemplate, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
+        if type(e1) is not type(e2):
+            return False
         return env.get(e1, e1) == e2
 
     def alpha_equiv_con(self, e1: RefDefCon | RefPrimPred | RefDefPred | RefDefFun | RefDefFunTerm, e2: RefDefCon | RefPrimPred | RefDefPred | RefDefFun | RefDefFunTerm, depth: int) -> bool:
+        if type(e1) is not type(e2):
+            return False
         return e1.name == e2.name
 
-    def alpha_equiv_fun_term(self, e1: FunTerm, e2: FunTerm, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
-        if isinstance(e1, RefDefFun) and isinstance(e2, RefDefFun):
-            return self.alpha_equiv_con(e1, e2, depth)
-        elif isinstance(e1, RefDefFunTerm) and isinstance(e2, RefDefFunTerm):
-            return self.alpha_equiv_con(e1, e2, depth)
-        elif isinstance(e1, FunTemplate) and isinstance(e2, FunTemplate):
-            return self.alpha_equiv_var(e1, e2, env, depth)
-        else:
-            return False
-
     def alpha_equiv_compound(self, e1: Compound, e2: Compound, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
-        if type(e1) != type(e2):
-            return False
         if not self.alpha_equiv_fun_term(e1.fun, e2.fun, env, depth+1):
             return False
         if len(e1.args) != len(e2.args):
@@ -55,12 +47,13 @@ class AlphaEquiv:
         return True
 
     def alpha_equiv_pred_lambda(self, e1: PredLambda, e2: PredLambda, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
-        if len(e1.args) != len(e2.args):
-            return False
         newenv = env.copy()
         for a, b in zip(e1.args, e2.args):
             newenv[a] = b
         return self.alpha_equiv_formula(e1.body, e2.body, newenv, depth+1)
+
+    def alpha_equiv_membership_lambda(self, e1: MembershipLambda, e2: MembershipLambda, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
+        return self.alpha_equiv_var_term(e1.varterm, e2.varterm, env, depth+1)
 
     def alpha_equiv_fun_lambda(self, e1: FunLambda, e2: FunLambda, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
         if len(e1.args) != len(e2.args):
@@ -68,35 +61,31 @@ class AlphaEquiv:
         newenv = env.copy()
         for a, b in zip(e1.args, e2.args):
             newenv[a] = b
-        return self.alpha_equiv_term(e1.body, e2.body, newenv, depth+1)
+        return self.alpha_equiv_var_term(e1.body, e2.body, newenv, depth+1)
 
-    def alpha_equiv_membership_lambda(self, e1: MembershipLambda, e2: MembershipLambda, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
-        return self.alpha_equiv_term(e1.varterm, e2.varterm, env, depth+1)
-
-    def alpha_equiv_term(self, e1: Term, e2: Term, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
+    def alpha_equiv_var_term(self, e1: VarTerm, e2: VarTerm, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
         self.begin_log(depth, e1, e2, env)
         if isinstance(e1, Var) and isinstance(e2, Var):
             result = self.alpha_equiv_var(e1, e2, env, depth)
-        elif isinstance(e1, PredTemplate) and isinstance(e2, PredTemplate):
-            result = self.alpha_equiv_var(e1, e2, env, depth)
-        elif isinstance(e1, FunTemplate) and isinstance(e2, FunTemplate):
-            result = self.alpha_equiv_var(e1, e2, env, depth)
         elif isinstance(e1, RefDefCon) and isinstance(e2, RefDefCon):
             result = self.alpha_equiv_con(e1, e2, depth)
-        elif isinstance(e1, RefDefFun) and isinstance(e2, RefDefFun):
-            return self.alpha_equiv_con(e1, e2, depth)
-        elif isinstance(e1, RefDefFunTerm) and isinstance(e2, RefDefFunTerm):
-            return self.alpha_equiv_con(e1, e2, depth)
-        elif isinstance(e1, RefPrimPred) and isinstance(e2, RefPrimPred):
-            return self.alpha_equiv_con(e1, e2, depth)
-        elif isinstance(e1, RefDefPred) and isinstance(e2, RefDefPred):
-            return self.alpha_equiv_con(e1, e2, depth)
         elif isinstance(e1, Compound) and isinstance(e2, Compound):
             result = self.alpha_equiv_compound(e1, e2, env, depth)
+        else:
+            result = False
+        self.end_log(depth, result)
+        return result
+
+    def alpha_equiv_pred_term(self, e1: PredTerm, e2: PredTerm, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
+        self.begin_log(depth, e1, e2, env)
+        if isinstance(e1, PredTemplate) and isinstance(e2, PredTemplate):
+            result =  self.alpha_equiv_var(e1, e2, env, depth)
+        elif isinstance(e1, RefPrimPred) and isinstance(e2, RefPrimPred):
+            result = self.alpha_equiv_con(e1, e2, depth)
+        elif isinstance(e1, RefDefPred) and isinstance(e2, RefDefPred):
+            result = self.alpha_equiv_con(e1, e2, depth)
         elif isinstance(e1, PredLambda) and isinstance(e2, PredLambda):
             result = self.alpha_equiv_pred_lambda(e1, e2, env, depth)
-        elif isinstance(e1, FunLambda) and isinstance(e2, FunLambda):
-            result = self.alpha_equiv_fun_lambda(e1, e2, env, depth)
         elif isinstance(e1, MembershipLambda) and isinstance(e2, MembershipLambda):
             result = self.alpha_equiv_membership_lambda(e1, e2, env, depth)
         else:
@@ -104,15 +93,31 @@ class AlphaEquiv:
         self.end_log(depth, result)
         return result
 
-    def alpha_equiv_pred_term(self, e1: PredTerm, e2: PredTerm, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
-        if isinstance(e1, RefPrimPred) and isinstance(e2, RefPrimPred):
-            return self.alpha_equiv_con(e1, e2, depth)
-        elif isinstance(e1, RefDefPred) and isinstance(e2, RefDefPred):
-            return self.alpha_equiv_con(e1, e2, depth)
-        elif isinstance(e1, PredTemplate) and isinstance(e2, PredTemplate):
-            return self.alpha_equiv_var(e1, e2, env, depth)
+    def alpha_equiv_fun_term(self, e1: FunTerm, e2: FunTerm, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
+        self.begin_log(depth, e1, e2, env)
+        if isinstance(e1, RefDefFun) and isinstance(e2, RefDefFun):
+            result = self.alpha_equiv_con(e1, e2, depth)
+        elif isinstance(e1, RefDefFunTerm) and isinstance(e2, RefDefFunTerm):
+            result = self.alpha_equiv_con(e1, e2, depth)
+        elif isinstance(e1, FunTemplate) and isinstance(e2, FunTemplate):
+            result = self.alpha_equiv_var(e1, e2, env, depth)
+        elif isinstance(e1, FunLambda) and isinstance(e2, FunLambda):
+            result = self.alpha_equiv_fun_lambda(e1, e2, env, depth)
         else:
-            return False
+            result = False
+        self.end_log(depth, result)
+        return result
+
+    def alpha_equiv_term(self, e1: Term, e2: Term, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
+        if isinstance(e1, VarTerm) and isinstance(e2, VarTerm):
+            result = self.alpha_equiv_var_term(e1, e2, env, depth)
+        elif isinstance(e1, PredTerm) and isinstance(e2, PredTerm):
+            result = self.alpha_equiv_pred_term(e1, e2, env, depth)
+        elif isinstance(e1, FunTerm) and isinstance(e2, FunTerm):
+            result = self.alpha_equiv_fun_term(e1, e2, env, depth)
+        else:
+            result = False
+        return result
 
     def alpha_equiv_symbol(self, e1: AtomicFormula, e2: AtomicFormula, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
         if not self.alpha_equiv_pred_term(e1.pred, e2.pred, env, depth+1):
@@ -765,7 +770,7 @@ def pretty_expr_fragments(expr: AtomicFormula | Compound, context: Context) -> l
         raise TypeError(f"Unsupported node type: {type(expr)}")
 
 def pretty_term(expr: Term, context: Context, parent_prec: int = TERM_PRECEDENCE["Lowest"]) -> str:
-    if isinstance(expr, (Var, RefDefFun, RefDefFunTerm)):
+    if isinstance(expr, (Var, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm)):
         return expr.name
     elif isinstance(expr, (PredTemplate, FunTemplate)):
         return f"{expr.name}[{str(expr.arity)}]"
