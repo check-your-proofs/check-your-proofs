@@ -155,10 +155,6 @@ def check_defconuniq(node: DefConUniq, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}ExistsUniq object: {pretty_expr(existsuniq, context)}")
-    if not isinstance(existsuniq.var, Var):
-        logger.error(f"{error_prefix}Unexpected type: {type(existsuniq.var)}")
-        node.proofinfo.status = "ERROR"
-        return False
     fv, bv, fpt, bpt, fft, bft = collect_vars(existsuniq.body)
     var = fresh_var(existsuniq.var, fv | bv | fpt | bpt | fft | bft, context)
     body = Substitutor({existsuniq.var: var}, context).substitute_formula(existsuniq.body)
@@ -552,10 +548,6 @@ def check_some(node: Some, context: Context, indent: int):
         premises: list[Bottom | Formula] = [existence]
     else:
         fv, bv, fpt, bpt, fft, bft = collect_vars(existence)
-        if not isinstance(vars[0], Var):
-            logger.error(f"{error_prefix}Unexpected type: {type(vars[0])}")
-            node.proofinfo.status = "ERROR"
-            return False
         var = fresh_var(vars[0], fv | bv | fpt | bpt | fft | bft, context)
         body = Substitutor({vars[0]: var}, context).substitute_formula(existence)
         if context.decl.equality is None:
@@ -751,8 +743,8 @@ def check_lift(node: Lift, context: Context, indent: int):
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}Target conclusion: {pretty_expr(node.conclusion, context)}")
     items, body = strip_exists_vars(node.conclusion, Exists)
-    body = make_exists_vars(body, Exists, [item for item, term in zip(items, node.terms) if term is None])
-    mapping: dict[Term, Term] = {item: term for item, term in zip(items, node.terms) if term is not None}
+    body = make_exists_vars(body, Exists, [item for item, term in zip(items, node.varterms) if term is None])
+    mapping: dict[Term, Term] = {item: term for item, term in zip(items, node.varterms) if term is not None}
     renamed_body, renamed_mapping = alpha_safe_formula(body, mapping, context)
     if not type_safe(renamed_mapping, context):
         logger.error(f"{error_prefix}type_safe() failed")
@@ -774,30 +766,21 @@ def check_lift(node: Lift, context: Context, indent: int):
 def check_characterize(node: Characterize, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
-    if not isinstance(node.conclusion, ExistsUniq):
-        logger.error(f"{error_prefix}Target conclusion is not ExistsUniq object: {pretty_expr(node.conclusion, context)}")
-        node.proofinfo.status = "ERROR"
-        return False
-    logger.debug(f"{debug_prefix}Target conclusion is ExistsUniq object: {pretty_expr(node.conclusion, context)}")
     _, used_bound_vars, _, used_bound_pred_tmpls, _, used_bound_fun_tmpls = collect_vars(node.conclusion.body)
-    fv, bv, fpt, bpt, fft, bft = collect_vars(node.term)
+    fv, bv, fpt, bpt, fft, bft = collect_vars(node.varterm)
     vardash = fresh_var(Var(node.conclusion.var.name + "'"), used_bound_vars | used_bound_pred_tmpls | used_bound_fun_tmpls | fv | bv | fpt | bpt | fft | bft, context)
-    renamed_conclusion, _ = alpha_safe_formula(node.conclusion, {node.conclusion.var: node.term}, context)
+    renamed_conclusion, _ = alpha_safe_formula(node.conclusion, {node.conclusion.var: node.varterm}, context)
     if not isinstance(renamed_conclusion, ExistsUniq):
         logger.error(f"{error_prefix}renamed_conclusion is not ExistsUniq object: {pretty_expr(renamed_conclusion, context)}")
         node.proofinfo.status = "ERROR"
         return False
-    existence = Substitutor({renamed_conclusion.var: node.term}, context).substitute_formula(renamed_conclusion.body)
+    existence = Substitutor({renamed_conclusion.var: node.varterm}, context).substitute_formula(renamed_conclusion.body)
     existence_dash = Substitutor({renamed_conclusion.var: vardash}, context).substitute_formula(renamed_conclusion.body)
     if context.decl.equality is None:
         logger.error(f"{error_prefix}equality has not been declared yet")
         node.proofinfo.status = "ERROR"
         return False
-    if not isinstance(node.term, VarTerm):
-        logger.error(f"{error_prefix}Unexpected type: {type(node.term)}")
-        node.proofinfo.status = "ERROR"
-        return False
-    fact = And(existence, Forall(vardash, Implies(existence_dash, AtomicFormula(context.decl.equality.equal, (MembershipLambda(vardash), MembershipLambda(node.term))))))
+    fact = And(existence, Forall(vardash, Implies(existence_dash, AtomicFormula(context.decl.equality.equal, (MembershipLambda(vardash), MembershipLambda(node.varterm))))))
     if not goal_in_context(fact, context):
         logger.error(f"{error_prefix}Not fact: {pretty_expr(fact, context)}")
         node.proofinfo.status = "ERROR"
@@ -911,11 +894,6 @@ def check_pad(node: Pad, context: Context, indent: int):
         return False
     logger.debug(f"{debug_prefix}Derivable: {pretty_expr(node.fact, context)}")
     fact = get_fact(node.fact, context)
-    if not isinstance(node.conclusion, Or):
-        logger.error(f"{error_prefix}Not Or object: {pretty_expr(node.conclusion, context)}")
-        node.proofinfo.status = "ERROR"
-        return False
-    logger.debug(f"{debug_prefix}Or object: {pretty_expr(node.conclusion, context)}")
     fact_parts = flatten_op(fact, Or)
     conclusion_parts = flatten_op(node.conclusion, Or)
     if not all(any(alpha_equiv_with_defs(c, f, context) for c in conclusion_parts) for f in fact_parts):

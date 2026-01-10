@@ -534,7 +534,7 @@ class Renderer:
 
     def render_lift(self, node: Lift):
         terms_str: list[str] = []
-        for term in node.terms:
+        for term in node.varterms:
             if isinstance(term, Term):
                 terms_str.append(self.render_expr(term))
             elif term is None:
@@ -601,11 +601,11 @@ class Renderer:
         header_parts = [self.bullet,
                         self.render_keyword("characterize"),
                         self.render_keyword("for"),
-                        self.render_expr(node.term),
+                        self.render_expr(node.varterm),
                         self.render_keyword("conclude"),
                         self.render_expr(node.conclusion)]
         header_parts_jp = [self.bullet,
-                           self.render_expr(node.term),
+                           self.render_expr(node.varterm),
                            "を置き換えて",
                            self.render_expr(node.conclusion),
                            "を得る。"]

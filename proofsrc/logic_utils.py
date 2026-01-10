@@ -273,15 +273,8 @@ def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bpt
     elif isinstance(expr, (AtomicFormula, Compound)):
         if isinstance(expr, AtomicFormula):
             found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft = collect_vars(expr.pred, used_bv, used_bpt, used_bft)
-        elif isinstance(expr, Compound):
-            found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft = collect_vars(expr.fun, used_bv, used_bpt, used_bft)
         else:
-            found_fv: set[Var] = set()
-            found_bv: set[Var] = set()
-            found_fpt: set[PredTemplate] = set()
-            found_bpt: set[PredTemplate] = set()
-            found_fft: set[FunTemplate] = set()
-            found_bft: set[FunTemplate] = set()
+            found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft = collect_vars(expr.fun, used_bv, used_bpt, used_bft)
         for arg in expr.args:
             fv, bv, fpt, bpt, fft, bft = collect_vars(arg, used_bv, used_bpt, used_bft)
             found_fv.update(fv)

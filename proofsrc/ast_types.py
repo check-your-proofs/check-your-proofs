@@ -233,12 +233,12 @@ class Apply(Control):
 
 @dataclass
 class Lift(Control):
-    terms: list[Term | None]
+    varterms: list[VarTerm | None]
     conclusion: Exists
 
 @dataclass
 class Characterize(Control):
-    term: Term
+    varterm: VarTerm
     conclusion: ExistsUniq
 
 @dataclass
