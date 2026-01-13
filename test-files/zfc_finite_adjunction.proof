@@ -1,0 +1,47 @@
+include "zfc_finite_emptyset.proof"
+
+axiom axiom_of_adjunction \forall x \forall y \exists z \forall w (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y))
+
+theorem adjunction_exists_uniquely \forall x \forall y \exists! z \forall w (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y)) {
+  any x, y {
+    apply axiom_of_adjunction for x, y
+    some z such \exists z \forall w (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y)) {
+      any z' {
+        assume \forall w (in(w, z') \leftrightarrow in(w, x) \vee equal(w, y)) {
+          connect \forall w (in(w, z') \leftrightarrow in(w, x) \vee equal(w, y)) \wedge \forall w (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y))
+          apply invoke set_is_unique_for_each_predicate for \lambda^P w. in(w, x) \vee equal(w, y), z', z
+        }
+      }
+      connect \forall w (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y)) \wedge \forall z' (\forall w (in(w, z') \leftrightarrow in(w, x) \vee equal(w, y)) \to equal(z', z))
+      characterize for z conclude \exists! z \forall w (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y))
+    }
+  }
+}
+
+definition function adj by adjunction_exists_uniquely
+existence adj_existence \forall x \forall y \forall w (in(w, adj(x, y)) \leftrightarrow in(w, x) \vee equal(w, y)) by adj
+uniqueness adj_uniqueness \forall x \forall y \forall z (\forall w (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y)) \to equal(z, adj(x, y))) by adj
+
+theorem adj_cor1 \forall x \forall y \forall z (in(z, x) \to in(z, adj(x, y))) {
+  any x, y, z {
+    assume in(z, x) {
+      pad in(z, x) conclude in(z, x) \vee equal(z, y)
+      apply invoke leftward adj_existence for x, y, z
+    }
+  }
+}
+
+theorem adj_cor2 \forall x \forall y \forall z (equal(z, y) \to in(z, adj(x, y))) {
+  any x, y, z {
+    assume equal(z, y) {
+      pad equal(z, y) conclude in(z, x) \vee equal(z, y)
+      apply invoke leftward adj_existence for x, y, z
+    }
+  }
+}
+
+theorem adj_cor3 \forall x \forall y (in(y, adj(x, y))) {
+  any x, y {
+    apply invoke adj_cor2 for x, y, y
+  }
+}

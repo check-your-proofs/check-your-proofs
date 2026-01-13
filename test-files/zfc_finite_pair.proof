@@ -16,8 +16,7 @@ theorem singleton_characterization \forall x \forall y (in(y, singleton(x)) \lef
         case equal(y, x) {}
     }
     assume equal(y, x) {
-      pad equal(y, x) conclude in(y, emptyset) \vee equal(y,x)
-      apply invoke leftward adj_existence for emptyset, x, y
+      apply invoke adj_cor2 for emptyset, x, y
       fold for singleton conclude in(y, singleton(x))
     }
     connect in(y, singleton(x)) \leftrightarrow equal(y, x)
@@ -97,12 +96,11 @@ theorem pair_characterization \forall x \forall y \forall z (in(z, pair(x, y)) \
       divide equal(z, x) \vee equal(z, y)
         case equal(z, x) {
           apply invoke leftward singleton_characterization for x, z
-          pad in(z, singleton(x)) conclude in(z, singleton(x)) \vee equal(z, y)
+          apply invoke adj_cor1 for singleton(x), y, z
         }
         case equal(z, y) {
-          pad equal(z, y) conclude in(z, singleton(x)) \vee equal(z, y)
+          apply invoke adj_cor2 for singleton(x), y, z
         }
-      apply invoke leftward adj_existence for singleton(x), y, z
       fold for pair conclude in(z, pair(x, y))
     }
     connect in(z, pair(x, y)) \leftrightarrow equal(z, x) \vee equal(z, y)

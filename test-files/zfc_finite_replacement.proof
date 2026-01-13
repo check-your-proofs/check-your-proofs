@@ -1,80 +1,14 @@
-include "zfc_finite_operation.proof"
+include "zfc_finite_union.proof"
 
-definition predicate image_pred(X, predicate \psi[2], Y) as \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))
-
-/* theorem finite_replacement_pred \forall X \forall^P \psi[2] (finite(X) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) */
-
-theorem equal_adj_rem \forall X \forall x (in(x, X) \to equal(adj(rem(X, x), x), X)) {
-  any X, x {
-    assume in(x, X) {
-      any y {
-        assume in(y, adj(rem(X, x), x)) {
-          apply invoke rightward adj_existence for rem(X, x), x, y
-          divide in(y, rem(X, x)) \vee equal(y, x)
-            case in(y, rem(X, x)) {
-              apply invoke rightward rem_existence for X, x, y
-              split 1 in(y, X) \wedge neq(y, x)
-            }
-            case equal(y, x) {
-              substitute in(x, X) for x: y
-            }
-        }
-        assume in(y, X) {
-          apply law_of_excluded_middle for \lambda^P. equal(y, x)
-          divide equal(y, x) \vee neq(y, x)
-            case equal(y, x) {
-              pad equal(y, x) conclude in(y, rem(X, x)) \vee equal(y, x)
-            }
-            case neq(y, x) {
-              connect in(y, X) \wedge neq(y, x)
-              apply invoke leftward rem_existence for X, x, y
-              pad in(y, rem(X, x)) conclude in(y, rem(X, x)) \vee equal(y, x)
-            }
-          apply invoke leftward adj_existence for rem(X, x), x, y
-        }
-        connect in(y, adj(rem(X, x), x)) \leftrightarrow in(y, X)
-      }
-      fold for equal conclude equal(adj(rem(X, x), x), X)
+theorem replacement_is_unique \forall X \forall^P \psi[2] \forall Y \forall Y' (\forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \to equal(Y, Y')) {
+  any X, predicate \psi[2], Y, Y' {
+    assume \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) {
+      apply invoke set_is_unique_for_each_predicate for \lambda^P y. \exists x (in(x, X) \wedge \psi(x, y)), Y, Y'
     }
   }
 }
 
-theorem size_suc_decomposition \forall X \forall n (size(X, suc(n)) \to \exists X' \exists x (size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x)))) {
-  any X, n {
-    assume size(X, suc(n)) {
-      split size(X, suc(n))
-      apply invoke leftward suc_of_natural_is_natural_and_vice_versa for n
-      some f such equipotent(suc(n), X) {
-        split bij(f, suc(n), X)
-        split surj(f, suc(n), X)
-        apply suc_implies_in for n
-        apply invoke rightward dom(f, suc(n)) for n
-        some x such \exists x (in(op(n, x), f)) {
-          connect bij(f, suc(n), X) \wedge in(op(n, x), f)
-          apply invoke removing_op_bij for f, suc(n), X, n, x
-          apply invoke natural_is_irrefrelon for n
-          apply invoke rem_suc for n
-          substitute bij(rem(f, op(n, x)), rem(suc(n), n), rem(X, x)) for rem(suc(n), n): n
-          lift for rem(f, op(n, x)) conclude \exists f' (bij(f', n, rem(X, x)))
-          fold for equipotent conclude equipotent(n, rem(X, x))
-          connect size(rem(X, x), n)
-          lift for n conclude \exists n (in(op(n, x), f))
-          apply invoke leftward ran(f, X) for x
-          apply invoke equal_adj_rem for X, x
-          deny in(x, rem(X, x)) {
-            apply invoke rightward rem_existence for X, x, x
-            split 2 in(x, X) \wedge neq(x, x)
-            contradict equal(x, x)
-          }
-          connect size(rem(X, x), n) \wedge notin(x, rem(X, x)) \wedge equal(X, adj(rem(X, x), x))
-          lift for rem(X, x), x conclude \exists X' \exists x (size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x)))
-        }
-      }
-    }
-  }
-}
-
-theorem finite_replacement_pred \forall X \forall n \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) {
+theorem finite_replacement \forall X \forall^P \psi[2] (finite(X) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to \exists! Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) {
   any X, predicate \psi[2] {
     assume size(X, emptyset) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) {
       split size(X, emptyset) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y)))
@@ -111,8 +45,7 @@ theorem finite_replacement_pred \forall X \forall n \forall^P \psi[2] (size(X, n
             split size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x))
             any x' {
               assume in(x', X') {
-                pad in(x', X') conclude in(x', X') \vee equal(x', x)
-                apply invoke leftward adj_existence for X', x, x'
+                apply invoke adj_cor1 for X', x, x'
                 substitute in(x', adj(X', x)) for adj(X', x): X
                 apply invoke \forall x (in(x, X) \to \exists! y (\psi(x, y))) for x'
               }
@@ -121,8 +54,7 @@ theorem finite_replacement_pred \forall X \forall n \forall^P \psi[2] (size(X, n
             apply invoke \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) for X', \psi
             some Y such \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y)))) {
               split finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y)))
-              pad equal(x, x) conclude in(x, X') \vee equal(x, x)
-              apply invoke leftward adj_existence for X', x, x
+              apply adj_cor3 for X', x
               substitute in(x, adj(X', x)) for adj(X', x): X
               apply invoke \forall x (in(x, X) \to \exists! y (\psi(x, y))) for x
               some y such \exists! y (\psi(x, y)) {
@@ -135,8 +67,7 @@ theorem finite_replacement_pred \forall X \forall n \forall^P \psi[2] (size(X, n
                         apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y))) for y'
                         some x' such \exists x' (in(x', X') \wedge \psi(x', y')) {
                           split in(x', X') \wedge \psi(x', y')
-                          pad in(x', X') conclude in(x', X') \vee equal(x', x)
-                          apply invoke leftward adj_existence for X', x, x'
+                          apply invoke adj_cor1 for X', x, x'
                           substitute in(x', adj(X', x)) for adj(X', x): X
                           connect in(x', X) \wedge \psi(x', y')
                           lift for x' conclude \exists x' (in(x', X) \wedge \psi(x', y'))
@@ -158,14 +89,12 @@ theorem finite_replacement_pred \forall X \forall n \forall^P \psi[2] (size(X, n
                           connect in(x', X') \wedge \psi(x', y')
                           lift for x' conclude \exists x' (in(x', X') \wedge \psi(x', y'))
                           apply invoke leftward \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y))) for y'
-                          pad in(y', Y) conclude in(y', Y) \vee equal(y', y)
-                          apply invoke leftward adj_existence for Y, y, y'
+                          apply invoke adj_cor1 for Y, y, y'
                         }
                         case equal(x', x) {
                           substitute \psi(x', y') for x': x
                           apply invoke \forall y' (\psi(x, y') \to equal(y', y)) for y'
-                          pad equal(y, y) conclude in(y, Y) \vee equal(y, y)
-                          apply invoke leftward adj_existence for Y, y, y
+                          apply adj_cor3 for Y, y
                           substitute in(y, adj(Y, y)) for y[1]: y'
                         }
                     }
@@ -191,52 +120,25 @@ theorem finite_replacement_pred \forall X \forall n \forall^P \psi[2] (size(X, n
       apply invoke \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) for X, \psi
     }
   }
-}
-
-theorem replacement_is_unique_pred \forall X \forall^P \psi[2] \forall Y \forall Y' (image_pred(X, \psi, Y) \wedge image_pred(X, \psi, Y') \to equal(Y, Y')) {
-  any X, predicate \psi[2], Y, Y' {
-    assume image_pred(X, \psi, Y) \wedge image_pred(X, \psi, Y') {
-      split image_pred(X, \psi, Y) \wedge image_pred(X, \psi, Y')
-      expand image_pred(X, \psi, Y) for image_pred
-      expand image_pred(X, \psi, Y') for image_pred
-      connect \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))
-      apply invoke set_is_unique_for_each_predicate for \lambda^P y. \exists x (in(x, X) \wedge \psi(x, y)), Y, Y'
-    }
-  }
-}
-
-definition predicate image_fun(X, function f[1], Y) as image_pred(X, \lambda^P x, y. equal(y, f(x)), Y)
-
-theorem replacement_is_unique_fun \forall X \forall^F f[1] \forall Y \forall Y' (image_fun(X, f, Y) \wedge image_fun(X, f, Y') \to equal(Y, Y')) {
-  any X, function f[1], Y, Y' {
-    assume image_fun(X, f, Y) \wedge image_fun(X, f, Y') {
-      split image_fun(X, f, Y) \wedge image_fun(X, f, Y')
-      expand image_fun(X, f, Y) for image_fun
-      expand image_fun(X, f, Y') for image_fun
-      connect image_pred(X, \lambda^P x, y. equal(y, f(x)), Y) \wedge image_pred(X, \lambda^P x, y. equal(y, f(x)), Y')
-      apply invoke replacement_is_unique_pred for X, \lambda^P x, y. equal(y, f(x)), Y, Y'
-    }
-  }
-}
-
-/* theorem finite_adj_replacement \forall X \forall t (finite(X) \to \exists! Y (image_fun(X, \lambda^F x. adj(x, t), Y))) {
-  any t {
-    any y {
-      assume in(y, emptyset) {
-        apply emptyset_existence for y
-        contradict in(y, emptyset)
-        explode \exists x (in(x, emptyset) \wedge equal(y, adj(x, t)))
-      }
-      assume \exists x (in(x, emptyset) \wedge equal(y, adj(x, t))) {
-        some x such \exists x (in(x, emptyset) \wedge equal(y, adj(x, t))) {
-          split 1 in(x, emptyset) \wedge equal(y, adj(x, t))
-          apply emptyset_existence for x
-          contradict in(x, emptyset)
-          explode in(y, emptyset)
+  any X, predicate \psi[2] {
+    assume finite(X) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) {
+      split finite(X) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y)))
+      some n such finite(X) {
+        connect size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y)))
+        apply invoke \forall X \forall n \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) for X, n, \psi
+        some Y such \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))) {
+          split finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))
+          any Y' {
+            assume finite(Y') \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) {
+              split finite(Y') \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))
+              connect \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))
+              apply invoke replacement_is_unique for X, \psi, Y, Y'
+            }
+          }
+          connect finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \wedge \forall Y' (finite(Y') \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \to equal(Y', Y))
+          characterize for Y conclude \exists! Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))
         }
       }
-      connect in(y, emptyset) \leftrightarrow \exists x (in(x, emptyset) \wedge equal(y, adj(x, t)))
     }
-    fold for image_pred, image_fun conclude image_fun(emptyset, \lambda^F x. adj(x, t), emptyset)
   }
-} */
+}

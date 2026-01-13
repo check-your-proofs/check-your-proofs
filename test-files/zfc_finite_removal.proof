@@ -22,6 +22,40 @@ definition function rem by removal_exists_uniquely
 existence rem_existence \forall x \forall y \forall w (in(w, rem(x, y)) \leftrightarrow in(w, x) \wedge neq(w, y)) by rem
 uniqueness rem_uniqueness \forall x \forall y \forall z (\forall w (in(w, z) \leftrightarrow in(w, x) \wedge neq(w, y)) \to equal(z, rem(x, y))) by rem
 
+theorem equal_adj_rem \forall X \forall x (in(x, X) \to equal(adj(rem(X, x), x), X)) {
+  any X, x {
+    assume in(x, X) {
+      any y {
+        assume in(y, adj(rem(X, x), x)) {
+          apply invoke rightward adj_existence for rem(X, x), x, y
+          divide in(y, rem(X, x)) \vee equal(y, x)
+            case in(y, rem(X, x)) {
+              apply invoke rightward rem_existence for X, x, y
+              split 1 in(y, X) \wedge neq(y, x)
+            }
+            case equal(y, x) {
+              substitute in(x, X) for x: y
+            }
+        }
+        assume in(y, X) {
+          apply law_of_excluded_middle for \lambda^P. equal(y, x)
+          divide equal(y, x) \vee neq(y, x)
+            case equal(y, x) {
+              apply invoke adj_cor2 for rem(X, x), x, y
+            }
+            case neq(y, x) {
+              connect in(y, X) \wedge neq(y, x)
+              apply invoke leftward rem_existence for X, x, y
+              apply invoke adj_cor1 for rem(X, x), x, y
+            }
+        }
+        connect in(y, adj(rem(X, x), x)) \leftrightarrow in(y, X)
+      }
+      fold for equal conclude equal(adj(rem(X, x), x), X)
+    }
+  }
+}
+
 theorem rem_suc \forall x (notin(x, x) \to equal(rem(suc(x), x), x)) {
   any x {
     assume notin(x, x) {
