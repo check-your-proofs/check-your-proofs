@@ -8,10 +8,10 @@ theorem replacement_is_unique \forall X \forall^P \psi[2] \forall Y \forall Y' (
   }
 }
 
-theorem finite_replacement \forall X \forall^P \psi[2] (finite(X) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to \exists! Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) {
+theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) \to \exists! Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) {
   any X, predicate \psi[2] {
-    assume size(X, emptyset) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) {
-      split size(X, emptyset) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y)))
+    assume size(X, emptyset) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) {
+      split size(X, emptyset) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y'))
       apply invoke size_emptyset_implies_set_emptyset for X
       assert emptyset_is_finite
       any y {
@@ -36,96 +36,130 @@ theorem finite_replacement \forall X \forall^P \psi[2] (finite(X) \wedge \forall
     }
   }
   any n {
-    assume \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) {
+    assume \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) {
       any X, predicate \psi[2] {
-        assume size(X, suc(n)) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) {
-          split size(X, suc(n)) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y)))
+        assume size(X, suc(n)) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) {
+          split size(X, suc(n)) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y'))
           apply invoke size_suc_decomposition for X, n
           some X', x such \exists X' \exists x (size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x))) {
             split size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x))
-            any x' {
-              assume in(x', X') {
-                apply invoke adj_cor1 for X', x, x'
-                substitute in(x', adj(X', x)) for adj(X', x): X
-                apply invoke \forall x (in(x, X) \to \exists! y (\psi(x, y))) for x'
-              }
-            }
-            connect size(X', n) \wedge \forall x' (in(x', X') \to \exists! y (\psi(x', y)))
-            apply invoke \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) for X', \psi
+            connect size(X', n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y'))
+            apply invoke \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) for X', \psi
             some Y such \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y)))) {
               split finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y)))
               apply adj_cor3 for X', x
               substitute in(x, adj(X', x)) for adj(X', x): X
-              apply invoke \forall x (in(x, X) \to \exists! y (\psi(x, y))) for x
-              some y such \exists! y (\psi(x, y)) {
-                apply invoke finite_adj for Y, y
-                any y' {
-                  assume in(y', adj(Y, y)) {
-                    apply invoke rightward adj_existence for Y, y, y'
-                    divide in(y', Y) \vee equal(y', y)
-                      case in(y', Y) {
-                        apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y))) for y'
-                        some x' such \exists x' (in(x', X') \wedge \psi(x', y')) {
-                          split in(x', X') \wedge \psi(x', y')
-                          apply invoke adj_cor1 for X', x, x'
-                          substitute in(x', adj(X', x)) for adj(X', x): X
-                          connect in(x', X) \wedge \psi(x', y')
-                          lift for x' conclude \exists x' (in(x', X) \wedge \psi(x', y'))
+              apply law_of_excluded_middle for \lambda^P. \exists y (\psi(x, y))
+              divide \exists y (\psi(x, y)) \vee \neg(\exists y (\psi(x, y)))
+                case \exists y (\psi(x, y)) {
+                  some y such \exists y (\psi(x, y)) {
+                    apply invoke finite_adj for Y, y
+                    any y' {
+                      assume in(y', adj(Y, y)) {
+                        apply invoke rightward adj_existence for Y, y, y'
+                        divide in(y', Y) \vee equal(y', y)
+                          case in(y', Y) {
+                            apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y))) for y'
+                            some x' such \exists x' (in(x', X') \wedge \psi(x', y')) {
+                              split in(x', X') \wedge \psi(x', y')
+                              apply invoke adj_cor1 for X', x, x'
+                              substitute in(x', adj(X', x)) for adj(X', x): X
+                              connect in(x', X) \wedge \psi(x', y')
+                              lift for x' conclude \exists x' (in(x', X) \wedge \psi(x', y'))
+                            }
+                          }
+                          case equal(y', y) {
+                            substitute \psi(x, y) for y: y'
+                            connect in(x, X) \wedge \psi(x, y')
+                            lift for x conclude \exists x (in(x, X) \wedge \psi(x, y'))
+                          }
+                      }
+                      assume \exists x' (in(x', X) \wedge \psi(x', y')) {
+                        some x' such \exists x' (in(x', X) \wedge \psi(x', y')) {
+                          split in(x', X) \wedge \psi(x', y')
+                          substitute in(x', X) for X: adj(X', x)
+                          apply invoke rightward adj_existence for X', x, x'
+                          divide in(x', X') \vee equal(x', x)
+                            case in(x', X') {
+                              connect in(x', X') \wedge \psi(x', y')
+                              lift for x' conclude \exists x' (in(x', X') \wedge \psi(x', y'))
+                              apply invoke leftward \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y))) for y'
+                              apply invoke adj_cor1 for Y, y, y'
+                            }
+                            case equal(x', x) {
+                              substitute \psi(x', y') for x': x
+                              connect \psi(x, y) \wedge \psi(x, y')
+                              apply invoke \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) for x, y, y'
+                              apply adj_cor3 for Y, y
+                              substitute in(y, adj(Y, y)) for y[1]: y'
+                            }
                         }
                       }
-                      case equal(y', y) {
-                        substitute \psi(x, y) for y: y'
-                        connect in(x, X) \wedge \psi(x, y')
-                        lift for x conclude \exists x (in(x, X) \wedge \psi(x, y'))
-                      }
-                  }
-                  assume \exists x' (in(x', X) \wedge \psi(x', y')) {
-                    some x' such \exists x' (in(x', X) \wedge \psi(x', y')) {
-                      split in(x', X) \wedge \psi(x', y')
-                      substitute in(x', X) for X: adj(X', x)
-                      apply invoke rightward adj_existence for X', x, x'
-                      divide in(x', X') \vee equal(x', x)
-                        case in(x', X') {
-                          connect in(x', X') \wedge \psi(x', y')
-                          lift for x' conclude \exists x' (in(x', X') \wedge \psi(x', y'))
-                          apply invoke leftward \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y))) for y'
-                          apply invoke adj_cor1 for Y, y, y'
-                        }
-                        case equal(x', x) {
-                          substitute \psi(x', y') for x': x
-                          apply invoke \forall y' (\psi(x, y') \to equal(y', y)) for y'
-                          apply adj_cor3 for Y, y
-                          substitute in(y, adj(Y, y)) for y[1]: y'
-                        }
+                      connect in(y', adj(Y, y)) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y'))
                     }
+                    connect finite(adj(Y, y)) \wedge \forall y' (in(y', adj(Y, y)) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y')))
+                    lift for adj(Y, y) conclude \exists Y' (finite(Y') \wedge \forall y' (in(y', Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y'))))
                   }
-                  connect in(y', adj(Y, y)) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y'))
                 }
-                connect finite(adj(Y, y)) \wedge \forall y' (in(y', adj(Y, y)) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y')))
-                lift for adj(Y, y) conclude \exists Y' (finite(Y') \wedge \forall y' (in(y', Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y'))))
-              }
+                case \neg(\exists y (\psi(x, y))) {
+                  apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P y. \psi(x, y)
+                  any y {
+                    assume in(y, Y) {
+                      apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y))) for y
+                      some x' such \exists x' (in(x', X') \wedge \psi(x', y)) {
+                        split in(x', X') \wedge \psi(x', y)
+                        apply invoke adj_cor1 for X', x, x'
+                        substitute in(x', adj(X', x)) for adj(X', x): X
+                        connect in(x', X) \wedge \psi(x', y)
+                        lift for x' conclude \exists x' (in(x', X) \wedge \psi(x', y))
+                      }
+                    }
+                    assume \exists x' (in(x', X) \wedge \psi(x', y)) {
+                      some x' such \exists x' (in(x', X) \wedge \psi(x', y)) {
+                        split in(x', X) \wedge \psi(x', y)
+                        substitute in(x', X) for X: adj(X', x)
+                        apply invoke rightward adj_existence for X', x, x'
+                        divide in(x', X') \vee equal(x', x)
+                          case in(x', X') {
+                            connect in(x', X') \wedge \psi(x', y)
+                            lift for x' conclude \exists x' (in(x', X') \wedge \psi(x', y))
+                            apply invoke leftward \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y))) for y
+                          }
+                          case equal(x', x) {
+                            substitute \psi(x', y) for x': x
+                            apply \forall y (\neg(\psi(x, y))) for y
+                            contradict \psi(x, y)
+                            explode in(y, Y)
+                          }
+                      }
+                    }
+                    connect in(y, Y) \leftrightarrow \exists x' (in(x', X) \wedge \psi(x', y))
+                  }
+                  connect finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X) \wedge \psi(x', y)))
+                  lift for Y conclude \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X) \wedge \psi(x', y))))
+                }
             }
           }
         }
       }
     }
   }
-  connect inductive(\lambda^P n. \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))))
-  apply invoke natural_induction for \lambda^P n. \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))))
+  connect inductive(\lambda^P n. \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))))
+  apply invoke natural_induction for \lambda^P n. \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))))
   any X, n, predicate \psi[2] {
-    assume size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) {
-      split 1 size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y)))
+    assume size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) {
+      split 1 size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y'))
       split 1 size(X, n)
-      apply invoke subset(natural, \lambda^P n. \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))))) for n
-      apply invoke \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) for X, \psi
+      apply invoke subset(natural, \lambda^P n. \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))))) for n
+      apply invoke \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) for X, \psi
     }
   }
   any X, predicate \psi[2] {
-    assume finite(X) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) {
-      split finite(X) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y)))
+    assume finite(X) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) {
+      split finite(X) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y'))
       some n such finite(X) {
-        connect size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y)))
-        apply invoke \forall X \forall n \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) for X, n, \psi
+        connect size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y'))
+        apply invoke \forall X \forall n \forall^P \psi[2] (size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) for X, n, \psi
         some Y such \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))) {
           split finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))
           any Y' {
@@ -143,23 +177,75 @@ theorem finite_replacement \forall X \forall^P \psi[2] (finite(X) \wedge \forall
   }
 }
 
-definition function image by finite_replacement
-existence image_existence \forall X \forall^P \psi[2] (finite(X) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to finite(image(X, \psi)) \wedge \forall y (in(y, image(X, \psi)) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))) by image
-uniqueness image_uniqueness \forall X \forall^P \psi[2] (finite(X) \wedge \forall x (in(x, X) \to \exists! y(\psi(x, y))) \to \forall Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \to equal(Y, image(X, \psi)))) by image
+definition function image by finite_replacement_exists_uniquely
+existence image_existence \forall X \forall^P \psi[2] (finite(X) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) \to finite(image(X, \psi)) \wedge \forall y (in(y, image(X, \psi)) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))) by image
+uniqueness image_uniqueness \forall X \forall^P \psi[2] (finite(X) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) \to \forall Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \to equal(Y, image(X, \psi)))) by image
 
 definition function image_fun(X, function f[1]) as image(X, \lambda^P x, y. equal(y, f(x)))
 
 theorem image_fun_existence \forall X \forall^F f[1] (finite(X) \to finite(image_fun(X, f)) \wedge \forall y (in(y, image_fun(X, f)) \leftrightarrow \exists x ((in(x, X) \wedge equal(y, f(x)))))) {
   any X, function f[1] {
     assume finite(X) {
-      any x {
-        assume in(x, X) {
-          apply set_is_unique for f(x)
+      any x, y, y' {
+        assume equal(y, f(x)) \wedge equal(y', f(x)) {
+          split equal(y, f(x)) \wedge equal(y', f(x))
+          substitute equal(y, f(x)) for f(x): y'
         }
       }
-      connect finite(X) \wedge \forall x (in(x, X) \to \exists! y (equal(y, f(x))))
+      connect finite(X) \wedge \forall x \forall y \forall y' (equal(y, f(x)) \wedge equal(y', f(x)) \to equal(y, y'))
       apply invoke image_existence for X, \lambda^P x, y. equal(y, f(x))
       fold for image_fun conclude finite(image_fun(X, f)) \wedge \forall y (in(y, image_fun(X, f)) \leftrightarrow \exists x ((in(x, X) \wedge equal(y, f(x)))))
+    }
+  }
+}
+
+theorem separation_is_unique \forall X \forall^P \phi[1] \forall Y \forall Y' (\forall y (in(y, Y) \leftrightarrow in(y, X) \wedge \phi(y)) \wedge \forall y (in(y, Y') \leftrightarrow in(y, X) \wedge \phi(y)) \to equal(Y, Y')) {
+  any X, predicate \phi[1], Y, Y' {
+    assume \forall y (in(y, Y) \leftrightarrow in(y, X) \wedge \phi(y)) \wedge \forall y (in(y, Y') \leftrightarrow in(y, X) \wedge \phi(y)) {
+      apply invoke set_is_unique_for_each_predicate for \lambda^P y. in(y, X) \wedge \phi(y), Y, Y'
+    }
+  }
+}
+
+theorem finite_separation_exists_uniquely \forall X \forall^P \phi[1] (finite(X) \to \exists! Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow in(y, X) \wedge \phi(y)))) {
+  any X, predicate \phi[1] {
+    assume finite(X) {
+      any x, y, y' {
+        assume \phi(x) \wedge equal(y, x) \wedge \phi(x) \wedge equal(y', x) {
+          split \phi(x) \wedge equal(y, x) \wedge \phi(x) \wedge equal(y', x)
+          substitute equal(y, x) for x: y'
+        }
+      }
+      connect finite(X) \wedge \forall x \forall y \forall y' (\phi(x) \wedge equal(y, x) \wedge \phi(x) \wedge equal(y', x) \to equal(y, y'))
+      apply invoke image_existence for X, \lambda^P x, y. \phi(x) \wedge equal(y, x)
+      split finite(image(X, \lambda^P x, y. \phi(x) \wedge equal(y, x))) \wedge \forall y' (in(y', image(X, \lambda^P x, y. \phi(x) \wedge equal(y, x))) \leftrightarrow \exists x (in(x, X) \wedge \phi(x) \wedge equal(y', x)))
+      any y {
+        assume in(y, image(X, \lambda^P x, y. \phi(x) \wedge equal(y, x))) {
+          apply invoke rightward \forall y' (in(y', image(X, \lambda^P x, y. \phi(x) \wedge equal(y, x))) \leftrightarrow \exists x (in(x, X) \wedge \phi(x) \wedge equal(y', x))) for y
+          some x such \exists x (in(x, X) \wedge \phi(x) \wedge equal(y, x)) {
+            split in(x, X) \wedge \phi(x) \wedge equal(y, x)
+            connect in(x, X) \wedge \phi(x)
+            substitute in(x, X) \wedge \phi(x) for x: y
+          }
+        }
+        assume in(y, X) \wedge \phi(y) {
+          split in(y, X) \wedge \phi(y)
+          connect in(y, X) \wedge \phi(y) \wedge equal(y, y)
+          lift for y conclude \exists x (in(x, X) \wedge \phi(x) \wedge equal(y, x))
+          apply invoke leftward \forall y' (in(y', image(X, \lambda^P x, y. \phi(x) \wedge equal(y, x))) \leftrightarrow \exists x (in(x, X) \wedge \phi(x) \wedge equal(y', x))) for y
+        }
+        connect in(y, image(X, \lambda^P x, y'. \phi(x) \wedge equal(y', x))) \leftrightarrow in(y, X) \wedge \phi(y)
+      }
+      connect finite(image(X, \lambda^P x, y. \phi(x) \wedge equal(y, x))) \wedge \forall y' (in(y', image(X, \lambda^P x, y. \phi(x) \wedge equal(y, x))) \leftrightarrow in(y', X) \wedge \phi(y'))
+      any Y {
+        assume finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow in(y, X) \wedge \phi(y)) {
+          split 2 finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow in(y, X) \wedge \phi(y))
+          connect \forall y' (in(y', image(X, \lambda^P x, y. \phi(x) \wedge equal(y, x))) \leftrightarrow in(y', X) \wedge \phi(y')) \wedge \forall y (in(y, Y) \leftrightarrow in(y, X) \wedge \phi(y))
+          apply invoke separation_is_unique for X, \phi, image(X, \lambda^P x, y. \phi(x) \wedge equal(y, x)), Y
+        }
+      }
+      connect finite(image(X, \lambda^P x, y. \phi(x) \wedge equal(y, x))) \wedge \forall y' (in(y', image(X, \lambda^P x, y. \phi(x) \wedge equal(y, x))) \leftrightarrow in(y', X) \wedge \phi(y')) \wedge \forall Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow in(y, X) \wedge \phi(y)) \to equal(Y, image(X, \lambda^P x, y. \phi(x) \wedge equal(y, x))))
+      characterize for image(X, \lambda^P x, y. \phi(x) \wedge equal(y, x)) conclude \exists! Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow in(y, X) \wedge \phi(y)))
     }
   }
 }
