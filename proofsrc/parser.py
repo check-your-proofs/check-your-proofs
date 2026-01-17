@@ -1,8 +1,9 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import strip_forall_vars
 
+from lsprotocol import types as lsp
 from typing import Sequence
 
 import logging
@@ -13,38 +14,70 @@ class Parser:
     def __init__(self, tokens: list[Token]):
         self.stream = TokenStream(tokens)
 
+    def add_lsp_error(self, tok: Token, message: str, context: Context):
+        line = tok.line - 1
+        col = tok.column - 1
+        length = len(tok.value)
+        diag = lsp.Diagnostic(
+            range=lsp.Range(
+                start=lsp.Position(line=line, character=col),
+                end=lsp.Position(line=line, character=col + length)
+            ),
+            message=message,
+            severity=lsp.DiagnosticSeverity.Error
+        )
+        context.diagnostics.append(diag)
+
+    def skip_until_next_inclide_or_declaration_or_EOF(self):
+        while True:
+            tok = self.stream.peek()
+            if tok.type in ("INCLUDE", "PRIMITIVE", "AXIOM", "THEOREM", "DEFINITION", "EXISTENCE", "UNIQUENESS", "EQUALITY", "MEMBERSHIP", "EOF"):
+                return
+            else:
+                self.stream.consume(tok.type)
+
     def parse_file(self, context: Context) -> tuple[list[Include | Declaration], Context]:
         ast: list[Include | Declaration] = []
         while True:
             tok = self.stream.peek()
-            if tok.type == "INCLUDE":
-                ast.append(self.parse_include())
-            elif tok.type == "PRIMITIVE":
-                ast.append(self.parse_primitive(context))
-            elif tok.type == "AXIOM":
-                ast.append(self.parse_axiom(context))
-            elif tok.type == "THEOREM":
-                ast.append(self.parse_theorem(context))
-            elif tok.type == "DEFINITION":
-                ast.append(self.parse_definition(context))
-            elif tok.type == "EXISTENCE":
-                ast.append(self.parse_existence(context))
-            elif tok.type == "UNIQUENESS":
-                ast.append(self.parse_uniqueness(context))
-            elif tok.type == "EQUALITY":
-                ast.append(self.parse_equality(context))
-            elif tok.type == "MEMBERSHIP":
-                ast.append(self.parse_membership(context))
-            elif tok.type == "EOF":
+            if tok.type == "EOF":
                 break
+            elif tok.type == "INCLUDE":
+                include = self.parse_include(context)
+                ast.append(include)
+                if isinstance(include, InvalidInclude):
+                    self.skip_until_next_inclide_or_declaration_or_EOF()
+            elif tok.type in ("PRIMITIVE", "AXIOM", "THEOREM", "DEFINITION", "EXISTENCE", "UNIQUENESS", "EQUALITY", "MEMBERSHIP"):
+                if tok.type == "PRIMITIVE":
+                    declaration = self.parse_primitive(context)
+                elif tok.type == "AXIOM":
+                    declaration = self.parse_axiom(context)
+                elif tok.type == "THEOREM":
+                    declaration = self.parse_theorem(context)
+                elif tok.type == "DEFINITION":
+                    declaration = self.parse_definition(context)
+                elif tok.type == "EXISTENCE":
+                    declaration = self.parse_existence(context)
+                elif tok.type == "UNIQUENESS":
+                    declaration = self.parse_uniqueness(context)
+                elif tok.type == "EQUALITY":
+                    declaration = self.parse_equality(context)
+                else:
+                    declaration = self.parse_membership(context)
+                ast.append(declaration)
+                if isinstance(declaration, InvalidDeclaration):
+                    self.skip_until_next_inclide_or_declaration_or_EOF()
             else:
-                raise SyntaxError(f"{tok.info()}Include, Declaration or EOF is required")
+                msg = "Include, Declaration or EOF is required"
+                self.add_lsp_error(tok, msg, context)
+                ast.append(InvalidDeclaration(name="<invalid>", token=tok))
+                self.skip_until_next_inclide_or_declaration_or_EOF()
         return ast, context
 
-    def parse_primitive(self, context: Context) -> PrimPred:
+    def parse_primitive(self, context: Context) -> PrimPred | InvalidDeclaration:
+        name = "<invalid>"
         start_token = self.stream.consume("PRIMITIVE")
-        tok = self.stream.peek()
-        if tok.type == "PREDICATE":
+        try:
             self.stream.consume("PREDICATE")
             name = self.stream.consume("IDENT").value
             self.stream.consume("ARITY")
@@ -56,170 +89,224 @@ class Parser:
             context.add_decl(primpred)
             logger.debug(f"[primpred] {name}")
             return primpred
-        else:
-            raise SyntaxError(f"{start_token.info()} predicate is required")
+        except Exception as e:
+            self.add_lsp_error(start_token, str(e), context)
+            return InvalidDeclaration(name=name, token=start_token)
 
-    def parse_axiom(self, context: Context) -> Axiom:
+    def parse_axiom(self, context: Context) -> Axiom | InvalidDeclaration:
+        name = "<invalid>"
         start_token = self.stream.consume("AXIOM")
-        name = self.stream.consume("IDENT").value
-        conclusion = self.parse_formula(context)
-        axiom = Axiom(name=name, token=start_token, conclusion=conclusion)
-        context.add_decl(axiom)
-        logger.debug(f"[axiom] {name}")
-        return axiom
+        try:
+            name = self.stream.consume("IDENT").value
+            conclusion = self.parse_formula(context)
+            axiom = Axiom(name=name, token=start_token, conclusion=conclusion)
+            context.add_decl(axiom)
+            logger.debug(f"[axiom] {name}")
+            return axiom
+        except Exception as e:
+            self.add_lsp_error(start_token, str(e), context)
+            return InvalidDeclaration(name=name, token=start_token)
 
-    def parse_theorem(self, context: Context) -> Theorem:
+    def parse_theorem(self, context: Context) -> Theorem | InvalidDeclaration:
+        name = "<invalid>"
         start_token = self.stream.consume("THEOREM")
-        name = self.stream.consume("IDENT").value
-        conclusion = self.parse_formula(context)
-        self.stream.consume("LBRACE")
-        proof = self.parse_block(context.copy_ctrl())
-        self.stream.consume("RBRACE")
-        theorem = Theorem(name=name, token=start_token, conclusion=conclusion, proof=proof)
-        context.add_decl(theorem)
-        logger.debug(f"[theorem] {name}")
-        return theorem
+        try:
+            name = self.stream.consume("IDENT").value
+            conclusion = self.parse_formula(context)
+            self.stream.consume("LBRACE")
+            proof = self.parse_block(context.copy_ctrl())
+            self.stream.consume("RBRACE")
+            theorem = Theorem(name=name, token=start_token, conclusion=conclusion, proof=proof)
+            context.add_decl(theorem)
+            logger.debug(f"[theorem] {name}")
+            return theorem
+        except Exception as e:
+            self.add_lsp_error(start_token, str(e), context)
+            return InvalidDeclaration(name=name, token=start_token)
 
-    def parse_definition(self, context: Context) -> DefPred | DefCon | DefFun | DefFunTerm:
+    def parse_definition(self, context: Context) -> DefPred | DefCon | DefFun | DefFunTerm | InvalidDeclaration:
+        name = "<invalid>"
         start_token = self.stream.consume("DEFINITION")
-        tok = self.stream.peek()
-        if tok.type == "PREDICATE":
-            return self.parse_defpred(context, start_token)
-        elif tok.type == "CONSTANT":
-            return self.parse_defcon(context, start_token)
-        elif tok.type == "FUNCTION":
-            return self.parse_deffun_or_deffunterm(context, start_token)
-        else:
-            raise SyntaxError(f"{start_token.info()} predicate, constant or function is required after definition")
+        try:
+            tok = self.stream.peek()
+            if tok.type == "PREDICATE":
+                return self.parse_defpred(context, start_token)
+            elif tok.type == "CONSTANT":
+                return self.parse_defcon(context, start_token)
+            elif tok.type == "FUNCTION":
+                return self.parse_deffun_or_deffunterm(context, start_token)
+            else:
+                raise SyntaxError(f"{start_token.info()} predicate, constant or function is required after definition")
+        except Exception as e:
+            self.add_lsp_error(start_token, str(e), context)
+            return InvalidDeclaration(name=name, token=start_token)
 
-    def parse_defpred(self, context: Context, start_token: Token) -> DefPred:
+    def parse_defpred(self, context: Context, start_token: Token) -> DefPred | InvalidDeclaration:
+        name = "<invalid>"
         self.stream.consume("PREDICATE")
-        if self.stream.peek().type == "AUTOEXPAND":
-            self.stream.consume("AUTOEXPAND")
-            autoexpand = True
-        else:
-            autoexpand =False
-        name = self.stream.consume("IDENT").value
-        self.stream.consume("LPAREN")
-        args, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
-        self.stream.consume("RPAREN")
-        self.stream.consume("AS")
-        formula = self.parse_formula(context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls))
-        tex = self.parse_or_create_tex(name, len(args))
-        if len(tex) != len(args) + 1:
-            raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
-        defpred = DefPred(name=name, token=start_token, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
-        context.add_decl(defpred)
-        logger.debug(f"[defpred] {name}")
-        return defpred
+        try:
+            if self.stream.peek().type == "AUTOEXPAND":
+                self.stream.consume("AUTOEXPAND")
+                autoexpand = True
+            else:
+                autoexpand =False
+            name = self.stream.consume("IDENT").value
+            self.stream.consume("LPAREN")
+            args, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
+            self.stream.consume("RPAREN")
+            self.stream.consume("AS")
+            formula = self.parse_formula(context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls))
+            tex = self.parse_or_create_tex(name, len(args))
+            if len(tex) != len(args) + 1:
+                raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
+            defpred = DefPred(name=name, token=start_token, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
+            context.add_decl(defpred)
+            logger.debug(f"[defpred] {name}")
+            return defpred
+        except Exception as e:
+            self.add_lsp_error(start_token, str(e), context)
+            return InvalidDeclaration(name=name, token=start_token)
 
-    def parse_defcon(self, context: Context, start_token: Token) -> DefCon:
+    def parse_defcon(self, context: Context, start_token: Token) -> DefCon | InvalidDeclaration:
+        name = "<invalid>"
         self.stream.consume("CONSTANT")
-        name = self.stream.consume("IDENT").value
-        self.stream.consume("BY")
-        theorem = self.stream.consume("IDENT").value
-        tex = self.parse_or_create_tex(name, 0)
-        if len(tex) != 1:
-            raise SyntaxError(f"{start_token.info()} {name} is constant, but length of tex is {len(tex)}")
-        defcon = DefCon(name=name, token=start_token, theorem=theorem, tex=tex)
-        context.add_decl(defcon)
-        logger.debug(f"[defcon] {name}")
-        return defcon
+        try:
+            name = self.stream.consume("IDENT").value
+            self.stream.consume("BY")
+            theorem = self.stream.consume("IDENT").value
+            tex = self.parse_or_create_tex(name, 0)
+            if len(tex) != 1:
+                raise SyntaxError(f"{start_token.info()} {name} is constant, but length of tex is {len(tex)}")
+            defcon = DefCon(name=name, token=start_token, theorem=theorem, tex=tex)
+            context.add_decl(defcon)
+            logger.debug(f"[defcon] {name}")
+            return defcon
+        except Exception as e:
+            self.add_lsp_error(start_token, str(e), context)
+            return InvalidDeclaration(name=name, token=start_token)
 
-    def parse_deffun_or_deffunterm(self, context: Context, start_token: Token) -> DefFun | DefFunTerm:
+    def parse_deffun_or_deffunterm(self, context: Context, start_token: Token) -> DefFun | DefFunTerm | InvalidDeclaration:
+        name = "<invalid>"
         self.stream.consume("FUNCTION")
-        name = self.stream.consume("IDENT").value
-        if self.stream.peek().type == "BY":
-            return self.parse_deffun(context, start_token, name)
-        else:
-            return self.parse_deffunterm(context, start_token, name)
+        try:
+            name = self.stream.consume("IDENT").value
+            if self.stream.peek().type == "BY":
+                return self.parse_deffun(context, start_token, name)
+            else:
+                return self.parse_deffunterm(context, start_token, name)
+        except Exception as e:
+            self.add_lsp_error(start_token, str(e), context)
+            return InvalidDeclaration(name=name, token=start_token)
 
-    def parse_deffun(self, context: Context, start_token: Token, name: str) -> DefFun:
+    def parse_deffun(self, context: Context, start_token: Token, name: str) -> DefFun | InvalidDeclaration:
         self.stream.consume("BY")
-        theorem = self.stream.consume("IDENT").value
-        vars_, body = strip_forall_vars(context.decl.theorems[theorem].conclusion)
-        if isinstance(body, ExistsUniq):
-            existsuniq = body
-        elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
-            existsuniq = body.right
-        else:
-            raise SyntaxError(f"{start_token.info()} conclusion of {theorem} cannot be used for function definition")
-        arity = len(vars_)
-        tex = self.parse_or_create_tex(name, arity)
-        if len(tex) != arity + 1:
-            raise SyntaxError(f"{start_token.info()} arity or {name} is {arity}, but length of tex is {len(tex)}")
-        deffun = DefFun(name=name, token=start_token, args=vars_, returned=existsuniq.var, theorem=theorem, tex=tex)
-        context.add_decl(deffun)
-        logger.debug(f"[deffun] {name}")
-        return deffun
+        try:
+            theorem = self.stream.consume("IDENT").value
+            vars_, body = strip_forall_vars(context.decl.theorems[theorem].conclusion)
+            if isinstance(body, ExistsUniq):
+                existsuniq = body
+            elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
+                existsuniq = body.right
+            else:
+                raise SyntaxError(f"{start_token.info()} conclusion of {theorem} cannot be used for function definition")
+            arity = len(vars_)
+            tex = self.parse_or_create_tex(name, arity)
+            if len(tex) != arity + 1:
+                raise SyntaxError(f"{start_token.info()} arity or {name} is {arity}, but length of tex is {len(tex)}")
+            deffun = DefFun(name=name, token=start_token, args=vars_, returned=existsuniq.var, theorem=theorem, tex=tex)
+            context.add_decl(deffun)
+            logger.debug(f"[deffun] {name}")
+            return deffun
+        except Exception as e:
+            self.add_lsp_error(start_token, str(e), context)
+            return InvalidDeclaration(name=name, token=start_token)
 
-    def parse_deffunterm(self, context: Context, start_token: Token, name: str) -> DefFunTerm:
-        self.stream.consume("LPAREN")
-        args, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
-        self.stream.consume("RPAREN")
-        self.stream.consume("AS")
-        term = self.parse_var_term(context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls))
-        tex = self.parse_or_create_tex(name, len(args))
-        if len(tex) != len(args) + 1:
-            raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
-        deffunterm = DefFunTerm(name=name, token=start_token, args=args, varterm=term, tex=tex)
-        context.add_decl(deffunterm)
-        logger.debug(f"[deffunterm] {name}")
-        return deffunterm
+    def parse_deffunterm(self, context: Context, start_token: Token, name: str) -> DefFunTerm | InvalidDeclaration:
+        try:
+            self.stream.consume("LPAREN")
+            args, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
+            self.stream.consume("RPAREN")
+            self.stream.consume("AS")
+            term = self.parse_var_term(context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls))
+            tex = self.parse_or_create_tex(name, len(args))
+            if len(tex) != len(args) + 1:
+                raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
+            deffunterm = DefFunTerm(name=name, token=start_token, args=args, varterm=term, tex=tex)
+            context.add_decl(deffunterm)
+            logger.debug(f"[deffunterm] {name}")
+            return deffunterm
+        except Exception as e:
+            self.add_lsp_error(start_token, str(e), context)
+            return InvalidDeclaration(name=name, token=start_token)
 
-    def parse_existence(self, context: Context) -> DefConExist | DefFunExist:
+    def parse_existence(self, context: Context) -> DefConExist | DefFunExist | InvalidDeclaration:
+        existence_name = "<invalid>"
         start_token = self.stream.consume("EXISTENCE")
-        existence_name = self.stream.consume("IDENT").value
-        existence_formula = self.parse_formula(context)
-        self.stream.consume("BY")
-        name = self.stream.consume("IDENT").value
-        if name in context.decl.defcons:
-            defconexist = DefConExist(name=existence_name, token=start_token, formula=existence_formula, con_name=name)
-            context.add_decl(defconexist)
-            return defconexist
-        elif name in context.decl.deffuns:
-            deffunexist = DefFunExist(name=existence_name, token=start_token, formula=existence_formula, fun_name=name)
-            context.add_decl(deffunexist)
-            return deffunexist
-        else:
-            raise Exception(f"{start_token.info()} defcon or deffun is required, but {name} is unknown")
+        try:
+            existence_name = self.stream.consume("IDENT").value
+            existence_formula = self.parse_formula(context)
+            self.stream.consume("BY")
+            name = self.stream.consume("IDENT").value
+            if name in context.decl.defcons:
+                defconexist = DefConExist(name=existence_name, token=start_token, formula=existence_formula, con_name=name)
+                context.add_decl(defconexist)
+                return defconexist
+            elif name in context.decl.deffuns:
+                deffunexist = DefFunExist(name=existence_name, token=start_token, formula=existence_formula, fun_name=name)
+                context.add_decl(deffunexist)
+                return deffunexist
+            else:
+                raise Exception(f"{start_token.info()} defcon or deffun is required, but {name} is unknown")
+        except Exception as e:
+            self.add_lsp_error(start_token, str(e), context)
+            return InvalidDeclaration(name=existence_name, token=start_token)
 
-    def parse_uniqueness(self, context: Context) -> DefConUniq | DefFunUniq:
+    def parse_uniqueness(self, context: Context) -> DefConUniq | DefFunUniq | InvalidDeclaration:
+        uniqueness_name = "<invalid>"
         start_token = self.stream.consume("UNIQUENESS")
-        uniqueness_name = self.stream.consume("IDENT").value
-        uniqueness_formula = self.parse_formula(context)
-        self.stream.consume("BY")
-        name = self.stream.consume("IDENT").value
-        if name in context.decl.defcons:
-            defconuniq = DefConUniq(name=uniqueness_name, token=start_token, formula=uniqueness_formula, con_name=name)
-            context.add_decl(defconuniq)
-            return defconuniq
-        elif name in context.decl.deffuns:
-            deffununiq = DefFunUniq(name=uniqueness_name, token=start_token, formula=uniqueness_formula, fun_name=name)
-            context.add_decl(deffununiq)
-            return deffununiq
-        else:
-            raise Exception(f"{start_token.info()} defcon or deffun is required, but {name} is unknown")
+        try:
+            uniqueness_name = self.stream.consume("IDENT").value
+            uniqueness_formula = self.parse_formula(context)
+            self.stream.consume("BY")
+            name = self.stream.consume("IDENT").value
+            if name in context.decl.defcons:
+                defconuniq = DefConUniq(name=uniqueness_name, token=start_token, formula=uniqueness_formula, con_name=name)
+                context.add_decl(defconuniq)
+                return defconuniq
+            elif name in context.decl.deffuns:
+                deffununiq = DefFunUniq(name=uniqueness_name, token=start_token, formula=uniqueness_formula, fun_name=name)
+                context.add_decl(deffununiq)
+                return deffununiq
+            else:
+                raise Exception(f"{start_token.info()} defcon or deffun is required, but {name} is unknown")
+        except Exception as e:
+            self.add_lsp_error(start_token, str(e), context)
+            return InvalidDeclaration(name=uniqueness_name, token=start_token)
 
-    def parse_equality(self, context: Context) -> Equality:
+    def parse_equality(self, context: Context) -> Equality | InvalidDeclaration:
+        name = "<invalid>"
         start_token = self.stream.consume("EQUALITY")
-        name = self.stream.consume("IDENT").value
-        if name in context.decl.primpreds:
-            equal = RefPrimPred(name)
-            if context.decl.primpreds[name].arity != 2:
-                raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}")
-        elif name in context.decl.defpreds:
-            equal = RefDefPred(name)
-            if len(context.decl.defpreds[name].args) != 2:
-                raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}")
-        else:
-            raise Exception(f"{start_token.info()} primpred or defpred is required, but {name} is unknown")
-        reflection = self.parse_equality_reflection(equal, context)
-        replacement = self.parse_equality_replacement(equal, context)
-        equality = Equality(name=name, token=start_token, equal=equal, reflection=reflection, replacement=replacement)
-        context.add_decl(equality)
-        logger.debug(f"[equality] {type(equal)}: {equal.name}")
-        return equality
+        try:
+            name = self.stream.consume("IDENT").value
+            if name in context.decl.primpreds:
+                equal = RefPrimPred(name)
+                if context.decl.primpreds[name].arity != 2:
+                    raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}")
+            elif name in context.decl.defpreds:
+                equal = RefDefPred(name)
+                if len(context.decl.defpreds[name].args) != 2:
+                    raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}")
+            else:
+                raise Exception(f"{start_token.info()} primpred or defpred is required, but {name} is unknown")
+            reflection = self.parse_equality_reflection(equal, context)
+            replacement = self.parse_equality_replacement(equal, context)
+            equality = Equality(name=name, token=start_token, equal=equal, reflection=reflection, replacement=replacement)
+            context.add_decl(equality)
+            logger.debug(f"[equality] {type(equal)}: {equal.name}")
+            return equality
+        except Exception as e:
+            self.add_lsp_error(start_token, str(e), context)
+            return InvalidDeclaration(name=name, token=start_token)
 
     def parse_equality_reflection(self, equal: RefPrimPred | RefDefPred, context: Context) -> EqualityReflection:
         start_token = self.stream.consume("REFLECTION")
@@ -272,10 +359,15 @@ class Parser:
         logger.debug(f"[membership] {type(membership)}: {membership.name}")
         return membership
 
-    def parse_include(self) -> Include:
-        self.stream.consume("INCLUDE")
-        file = self.stream.consume("STRING").value
-        return Include(file)
+    def parse_include(self, context: Context) -> Include | InvalidInclude:
+        file = "<invalid>"
+        start_token = self.stream.consume("INCLUDE")
+        try:
+            file = self.stream.consume("STRING").value
+            return Include(file, start_token)
+        except Exception as e:
+            self.add_lsp_error(start_token, str(e), context)
+            return InvalidInclude(file, start_token)
 
     def parse_block(self, context: Context) -> list[Control]:
         body: list[Control] = []

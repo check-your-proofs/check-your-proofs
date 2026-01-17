@@ -295,6 +295,10 @@ class Declaration:
     proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
 
 @dataclass
+class InvalidDeclaration(Declaration):
+    pass
+
+@dataclass
 class DeclarationSupport:
     token: Token
     proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
@@ -487,3 +491,8 @@ class Context:
 @dataclass
 class Include:
     file: str
+    token: Token
+
+@dataclass
+class InvalidInclude(Include):
+    pass

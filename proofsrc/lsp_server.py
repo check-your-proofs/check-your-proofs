@@ -30,8 +30,6 @@ def did_open(ls: LanguageServer, params: lsp.DidOpenTextDocumentParams) -> None:
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_SAVE)
 def did_save(ls: LanguageServer, params: lsp.DidSaveTextDocumentParams) -> None:
-    result = False
-
     path = to_fs_path(params.text_document.uri)
     if path is None:
         raise Exception(f"Cannot convert {params.text_document.uri} to path")
@@ -51,17 +49,17 @@ def did_save(ls: LanguageServer, params: lsp.DidSaveTextDocumentParams) -> None:
     for file in resolved_files:
         parser = Parser(tokens_cache[file])
         ast, parser_context = parser.parse_file(parser_context)
-        result, _, checker_context = check_ast(ast, checker_context)
+        _, _, checker_context = check_ast(ast, checker_context)
 
     ls.window_show_message(
         lsp.ShowMessageParams(
             type=lsp.MessageType.Info,
-            message=f"result: {result}"
+            message=f"{len(parser_context.diagnostics)} parser errors, {len(checker_context.diagnostics)} checker errors"
         )
     )
 
     ls.text_document_publish_diagnostics(
-        lsp.PublishDiagnosticsParams(uri=params.text_document.uri, diagnostics=checker_context.diagnostics)
+        lsp.PublishDiagnosticsParams(uri=params.text_document.uri, diagnostics=parser_context.diagnostics + checker_context.diagnostics)
     )
 
 if __name__ == "__main__":
