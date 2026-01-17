@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import strip_forall_vars
@@ -34,6 +34,19 @@ class Parser:
             if tok.type in ("INCLUDE", "PRIMITIVE", "AXIOM", "THEOREM", "DEFINITION", "EXISTENCE", "UNIQUENESS", "EQUALITY", "MEMBERSHIP", "EOF"):
                 return
             else:
+                self.stream.consume(tok.type)
+
+    def skip_until_next_RBRACE_or_control(self):
+        nest_level = 0
+        while True:
+            tok = self.stream.peek()
+            if nest_level == 0 and tok.type in ("RBRACE", "ANY", "ASSUME", "DIVIDE", "SOME", "DENY", "CONTRADICT", "EXPLODE", "APPLY", "LIFT", "CHARACTERIZE", "INVOKE", "EXPAND", "FOLD", "PAD", "SPLIT", "CONNECT", "SUBSTITUTE", "SHOW", "ASSERT"):
+                return
+            else:
+                if tok.type == "LBRACE":
+                    nest_level += 1
+                elif tok.type == "RBRACE":
+                    nest_level -= 1
                 self.stream.consume(tok.type)
 
     def parse_file(self, context: Context) -> tuple[list[Include | Declaration], Context]:
@@ -375,47 +388,58 @@ class Parser:
             tok = self.stream.peek()
             if not tok or tok.type == "RBRACE":
                 break
-            if tok.type == "ANY":
-                body.append(self.parse_any(context))
-            elif tok.type == "ASSUME":
-                body.append(self.parse_assume(context))
-            elif tok.type == "DIVIDE":
-                body.append(self.parse_divide(context))
-            elif tok.type == "SOME":
-                body.append(self.parse_some(context))
-            elif tok.type == "DENY":
-                body.append(self.parse_deny(context))
-            elif tok.type == "CONTRADICT":
-                body.append(self.parse_contradict(context))
-            elif tok.type == "EXPLODE":
-                body.append(self.parse_explode(context))
-            elif tok.type == "APPLY":
-                body.append(self.parse_apply(context))
-            elif tok.type == "LIFT":
-                body.append(self.parse_lift(context))
-            elif tok.type == "CHARACTERIZE":
-                body.append(self.parse_characterize(context))
-            elif tok.type == "INVOKE":
-                body.append(self.parse_invoke(context))
-            elif tok.type == "EXPAND":
-                body.append(self.parse_expand(context))
-            elif tok.type == "FOLD":
-                body.append(self.parse_fold(context))
-            elif tok.type == "PAD":
-                body.append(self.parse_pad(context))
-            elif tok.type == "SPLIT":
-                body.append(self.parse_split(context))
-            elif tok.type == "CONNECT":
-                body.append(self.parse_connect(context))
-            elif tok.type == "SUBSTITUTE":
-                body.append(self.parse_substitute(context))
-            elif tok.type == "SHOW":
-                body.append(self.parse_show(context))
-            elif tok.type == "ASSERT":
-                body.append(self.parse_assert(context))
             else:
-                raise SyntaxError(f"{tok.info()} Control is reqiured")
+                control = self.parse_control(context, tok)
+                body.append(control)
+                if isinstance(control, InvalidControl):
+                    self.skip_until_next_RBRACE_or_control()
         return body
+
+    def parse_control(self, context: Context, tok: Token) -> Control:
+        try:
+            if tok.type == "ANY":
+                return self.parse_any(context)
+            elif tok.type == "ASSUME":
+                return self.parse_assume(context)
+            elif tok.type == "DIVIDE":
+                return self.parse_divide(context)
+            elif tok.type == "SOME":
+                return self.parse_some(context)
+            elif tok.type == "DENY":
+                return self.parse_deny(context)
+            elif tok.type == "CONTRADICT":
+                return self.parse_contradict(context)
+            elif tok.type == "EXPLODE":
+                return self.parse_explode(context)
+            elif tok.type == "APPLY":
+                return self.parse_apply(context)
+            elif tok.type == "LIFT":
+                return self.parse_lift(context)
+            elif tok.type == "CHARACTERIZE":
+                return self.parse_characterize(context)
+            elif tok.type == "INVOKE":
+                return self.parse_invoke(context)
+            elif tok.type == "EXPAND":
+                return self.parse_expand(context)
+            elif tok.type == "FOLD":
+                return self.parse_fold(context)
+            elif tok.type == "PAD":
+                return self.parse_pad(context)
+            elif tok.type == "SPLIT":
+                return self.parse_split(context)
+            elif tok.type == "CONNECT":
+                return self.parse_connect(context)
+            elif tok.type == "SUBSTITUTE":
+                return self.parse_substitute(context)
+            elif tok.type == "SHOW":
+                return self.parse_show(context)
+            elif tok.type == "ASSERT":
+                return self.parse_assert(context)
+            else:
+                raise Exception("Control is required")
+        except Exception as e:
+            self.add_lsp_error(tok, str(e), context)
+            return InvalidControl(token=tok)
 
     def parse_any(self, context: Context) -> Any:
         start_token = self.stream.consume("ANY")

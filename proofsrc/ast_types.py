@@ -188,6 +188,10 @@ class Control:
     proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
 
 @dataclass
+class InvalidControl(Control):
+    pass
+
+@dataclass
 class Assume(Control):
     premise: Formula
     body: list[Control]
