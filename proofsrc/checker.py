@@ -1,6 +1,7 @@
 from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, RefPrimPred, RefDefPred, RefDefFun
 from logic_utils import Substitutor, DefExpander, expr_in_context, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr, alpha_safe_formula
 from copy import deepcopy
+from lsprotocol import types as lsp
 
 import logging
 logger = logging.getLogger("proof")
@@ -24,6 +25,28 @@ def get_fact(fact: str | Formula, context: Context, expand_symbol: bool = False)
 
 def add_conclusion(context: Context, conclusion: Bottom | Formula) -> None:
     context.ctrl.formulas.append(conclusion)
+
+collected_diagnostics: list[lsp.Diagnostic] = []
+
+def check_for_lsp(ast: list[Include | Declaration], context: Context) -> tuple[list[lsp.Diagnostic], bool, list[Include | Declaration], Context]:
+    global collected_diagnostics
+    collected_diagnostics = []
+    result, ast, context = check_ast(ast, context)
+    return collected_diagnostics, result, ast, context
+
+def add_lsp_error(node: Declaration | DeclarationSupport | Control, message: str):
+    line = node.token.line - 1
+    col = node.token.column - 1
+    length = len(node.token.value)
+    diag = lsp.Diagnostic(
+        range=lsp.Range(
+            start=lsp.Position(line=line, character=col),
+            end=lsp.Position(line=line, character=col + length)
+        ),
+        message=message,
+        severity=lsp.DiagnosticSeverity.Error
+    )
+    collected_diagnostics.append(diag)
 
 def make_debug_prefix(node: Declaration | DeclarationSupport | Control, indent: int) -> str:
     return "  " * indent + f"[{node.__class__.__name__}] "
@@ -91,7 +114,9 @@ def check_theorem(node: Theorem, context: Context, indent: int):
     local_ctx = context.copy_ctrl()
     for stmt in node.proof:
         if not check_control(stmt, local_ctx, indent+1):
-            logger.error(f"{error_prefix}{node.name} not proved: {pretty_expr(node.conclusion, context)}")
+            msg = f"{node.name} not proved: {pretty_expr(node.conclusion, context)}"
+            add_lsp_error(node, msg)
+            logger.error(f"{error_prefix}{msg}")
             node.proofinfo.status = "ERROR"
             return False
     if goal_in_context(node.conclusion, local_ctx):
@@ -100,7 +125,9 @@ def check_theorem(node: Theorem, context: Context, indent: int):
         node.proofinfo.status = "OK"
         return True
     else:
-        logger.error(f"{error_prefix}{node.name} not proved: {pretty_expr(node.conclusion, context)}")
+        msg = f"{node.name} not proved: {pretty_expr(node.conclusion, context)}"
+        add_lsp_error(node, msg)
+        logger.error(f"{error_prefix}{msg}")
         node.proofinfo.status = "ERROR"
         return False    
 

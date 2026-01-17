@@ -1,6 +1,12 @@
 from pygls.lsp.server import LanguageServer
+from pygls.uris import to_fs_path
 from lsprotocol import types as lsp
 import os
+
+from dependency import DependencyResolver
+from ast_types import Context
+from parser import Parser
+from checker import check_for_lsp
 
 server = LanguageServer("proof-server", "v0.1")
 
@@ -23,12 +29,33 @@ def did_open(ls: LanguageServer, params: lsp.DidOpenTextDocumentParams) -> None:
     )
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_SAVE)
-def did_save(ls: LanguageServer, params: lsp.DidSaveTextDocumentParams):
+def did_save(ls: LanguageServer, params: lsp.DidSaveTextDocumentParams) -> None:
+    diagnostics: list[lsp.Diagnostic] = []
+    result = False
+
+    path = to_fs_path(params.text_document.uri)
+    if path is None:
+        raise Exception(f"Cannot convert {params.text_document.uri} to path")
+
+    resolver = DependencyResolver()
+    resolver.resolve(path)
+    resolved_files, tokens_cache = resolver.get_result()
+    parser_context = Context.init()
+    checker_context = Context.init()
+    for file in resolved_files:
+        parser = Parser(tokens_cache[file])
+        ast, parser_context = parser.parse_file(parser_context)
+        diagnostics, result, _, checker_context = check_for_lsp(ast, checker_context)
+
     ls.window_show_message(
         lsp.ShowMessageParams(
             type=lsp.MessageType.Info,
-            message=f"Save file: {os.path.basename(params.text_document.uri)}"
+            message=f"result: {result}"
         )
+    )
+
+    ls.text_document_publish_diagnostics(
+        lsp.PublishDiagnosticsParams(uri=params.text_document.uri, diagnostics=diagnostics)
     )
 
 if __name__ == "__main__":
