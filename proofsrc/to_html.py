@@ -743,14 +743,15 @@ def to_html(ast: list[Include | Declaration], context: Context, title: str, mode
     error_found = False
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     parts: list[str] = []
-    for i, node in enumerate(ast):
-        print(f"\rRendering node {i + 1} / {len(ast)} finished", end="")
+    # for i, node in enumerate(ast):
+    for node in ast:
+        # print(f"\rRendering node {i + 1} / {len(ast)} finished", end="")
         parts.append(Renderer(context, mode).render_node(node))
         if isinstance(node, Declaration) and node.proofinfo.status == "ERROR":
             error_found = True
-            print(f"\n❌ Rendering stopped", end="")
+            # print(f"\n❌ Rendering stopped", end="")
             break
-    print()
+    # print()
     body_html = "\n".join(parts)
     if mode == "mathjax":
         extra_head = MATHJAX_HEAD.format()

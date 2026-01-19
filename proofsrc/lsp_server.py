@@ -8,13 +8,14 @@ from ast_types import Context, DeclarationUnit, Workspace
 from parser import Parser
 from checker import Checker
 from splitter import split
+from to_html import to_html
 
 class ProofLanguageServer(LanguageServer):
     def __init__(self):
         super().__init__("proof-server", "v0.1") # type: ignore[reportUnknownMemberType]
         self.old_workspace: Workspace | None = None
 
-    def analyze(self, path: str) -> dict[str, list[lsp.Diagnostic]]:
+    def analyze(self, path: str) -> tuple[dict[str, list[lsp.Diagnostic]], set[str]]:
         resolver = DependencyResolver()
         resolver.resolve(path)
         resolved_files, tokens_cache = resolver.get_result()
@@ -64,7 +65,28 @@ class ProofLanguageServer(LanguageServer):
                 continue
             final_diagnostics[uri].extend(diags)
 
-        return final_diagnostics
+        updated_files: set[str] = set()
+        for i in range(start_index, len(all_units)):
+            updated_files.add(all_units[i].file)
+        for i in range(start_index, len(old_all_units)):
+            updated_files.add(old_all_units[i].file)
+
+        return final_diagnostics, updated_files
+
+    def to_html(self, updated_files: set[str]) -> None:
+        if self.old_workspace is None:
+            return
+        for file in self.old_workspace.resolved_files:
+            if file not in updated_files:
+                continue
+            units = self.old_workspace.file_units[file]
+            asts = [unit.ast for unit in units if unit.ast is not None]
+            last_context = Context.init() if len(units) == 0 else units[-1].context
+            title = os.path.splitext(os.path.basename(file))[0]
+            checker_html, _ = to_html(asts, last_context, title, "mathjax")
+            f = open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "html", f"{title}.html"), 'w', encoding='utf-8')
+            f.write(checker_html)
+            f.close()
 
 server = ProofLanguageServer()
 
@@ -99,7 +121,7 @@ def did_save(ls: ProofLanguageServer, params: lsp.DidSaveTextDocumentParams) -> 
         )
     )
 
-    final_diagnostics = ls.analyze(path)
+    final_diagnostics, updated_files = ls.analyze(path)
 
     ls.window_show_message(
         lsp.ShowMessageParams(
@@ -112,6 +134,15 @@ def did_save(ls: ProofLanguageServer, params: lsp.DidSaveTextDocumentParams) -> 
         ls.text_document_publish_diagnostics(
             lsp.PublishDiagnosticsParams(uri=uri, diagnostics=diags)
         )
+
+    ls.to_html(updated_files)
+
+    ls.window_show_message(
+        lsp.ShowMessageParams(
+            type=lsp.MessageType.Info,
+            message=f"{len(updated_files)} HTML files are updated"
+        )
+    )
 
 if __name__ == "__main__":
     server.start_io()
