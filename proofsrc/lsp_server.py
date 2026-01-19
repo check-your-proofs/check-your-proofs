@@ -9,12 +9,67 @@ from parser import Parser
 from checker import Checker
 from splitter import split
 
-server = LanguageServer("proof-server", "v0.1")
+class ProofLanguageServer(LanguageServer):
+    def __init__(self):
+        super().__init__("proof-server", "v0.1") # type: ignore[reportUnknownMemberType]
+        self.old_workspace: Workspace | None = None
 
-old_workspace: Workspace | None = None
+    def analyze(self, path: str) -> dict[str, list[lsp.Diagnostic]]:
+        resolver = DependencyResolver()
+        resolver.resolve(path)
+        resolved_files, tokens_cache = resolver.get_result()
+        workspace = split(resolved_files, tokens_cache, resolver.source_cache)
+
+        all_units: list[DeclarationUnit] = []
+        for file in workspace.resolved_files:
+            all_units.extend(workspace.file_units[file])
+
+        old_all_units: list[DeclarationUnit] = []
+        if self.old_workspace is not None:
+            for file in self.old_workspace.resolved_files:
+                old_all_units.extend(self.old_workspace.file_units[file])
+
+        context = Context.init()
+        start_index = 0
+        for i in range(min(len(all_units), len(old_all_units))):
+            if all_units[i].hash == old_all_units[i].hash:
+                all_units[i].ast = old_all_units[i].ast
+                all_units[i].context = old_all_units[i].context
+                all_units[i].diagnostics = old_all_units[i].diagnostics
+                context = all_units[i].context
+                start_index = i + 1
+            else:
+                break
+
+        for i in range(start_index, len(all_units)):
+            unit = all_units[i]
+            working_context = context.copy()
+            Parser(unit).parse_unit(working_context)
+            if Checker(unit).check_unit(working_context):
+                context = working_context
+            unit.context = context.copy()
+
+        self.old_workspace = workspace
+
+        final_diagnostics: dict[str, list[lsp.Diagnostic]] = {}
+        for file in workspace.resolved_files:
+            uri = uris.from_fs_path(file)
+            if uri is None:
+                continue
+            final_diagnostics[uri] = []
+            for unit in workspace.file_units[file]:
+                final_diagnostics[uri].extend(unit.diagnostics)
+        for uri, diags in resolver.diagnostics.items():
+            if uri not in final_diagnostics:
+                continue
+            final_diagnostics[uri].extend(diags)
+
+        return final_diagnostics
+
+server = ProofLanguageServer()
 
 @server.feature(lsp.INITIALIZE)
-def lsp_initialize(ls: LanguageServer, params: lsp.InitializeParams) -> None:
+def lsp_initialize(ls: ProofLanguageServer, params: lsp.InitializeParams) -> None:
     ls.window_show_message(
         lsp.ShowMessageParams(
             type=lsp.MessageType.Info,
@@ -23,7 +78,7 @@ def lsp_initialize(ls: LanguageServer, params: lsp.InitializeParams) -> None:
     )
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_OPEN)
-def did_open(ls: LanguageServer, params: lsp.DidOpenTextDocumentParams) -> None:
+def did_open(ls: ProofLanguageServer, params: lsp.DidOpenTextDocumentParams) -> None:
     ls.window_show_message(
         lsp.ShowMessageParams(
             type=lsp.MessageType.Info,
@@ -32,9 +87,7 @@ def did_open(ls: LanguageServer, params: lsp.DidOpenTextDocumentParams) -> None:
     )
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_SAVE)
-def did_save(ls: LanguageServer, params: lsp.DidSaveTextDocumentParams) -> None:
-    global old_workspace
-
+def did_save(ls: ProofLanguageServer, params: lsp.DidSaveTextDocumentParams) -> None:
     path = uris.to_fs_path(params.text_document.uri)
     if path is None:
         raise Exception(f"Cannot convert {params.text_document.uri} to path")
@@ -46,54 +99,7 @@ def did_save(ls: LanguageServer, params: lsp.DidSaveTextDocumentParams) -> None:
         )
     )
 
-    resolver = DependencyResolver()
-    resolver.resolve(path)
-    resolved_files, tokens_cache = resolver.get_result()
-    workspace = split(resolved_files, tokens_cache, resolver.source_cache)
-
-    all_units: list[DeclarationUnit] = []
-    for file in workspace.resolved_files:
-        all_units.extend(workspace.file_units[file])
-
-    old_all_units: list[DeclarationUnit] = []
-    if old_workspace is not None:
-        for file in old_workspace.resolved_files:
-            old_all_units.extend(old_workspace.file_units[file])
-
-    context = Context.init()
-    start_index = 0
-    for i in range(min(len(all_units), len(old_all_units))):
-        if all_units[i].hash == old_all_units[i].hash:
-            all_units[i].ast = old_all_units[i].ast
-            all_units[i].context = old_all_units[i].context
-            all_units[i].diagnostics = old_all_units[i].diagnostics
-            context = all_units[i].context
-            start_index = i + 1
-        else:
-            break
-
-    for i in range(start_index, len(all_units)):
-        unit = all_units[i]
-        working_context = context.copy()
-        Parser(unit).parse_unit(working_context)
-        if Checker(unit).check_unit(working_context):
-            context = working_context
-        unit.context = context.copy()
-
-    old_workspace = workspace
-
-    final_diagnostics: dict[str, list[lsp.Diagnostic]] = {}
-    for file in workspace.resolved_files:
-        uri = uris.from_fs_path(file)
-        if uri is None:
-            continue
-        final_diagnostics[uri] = []
-        for unit in workspace.file_units[file]:
-            final_diagnostics[uri].extend(unit.diagnostics)
-    for uri, diags in resolver.diagnostics.items():
-        if uri not in final_diagnostics:
-            continue
-        final_diagnostics[uri].extend(diags)
+    final_diagnostics = ls.analyze(path)
 
     ls.window_show_message(
         lsp.ShowMessageParams(
