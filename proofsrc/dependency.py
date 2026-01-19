@@ -34,10 +34,10 @@ class DependencyResolver:
 
     def resolve(self, path: str):
         if path in self.resolved_files:
-            print(f"Skipping {path}")
+            # print(f"Skipping {path}")
             return
         self.visiting_files.add(path)
-        print(f"Visiting {path}")
+        # print(f"Visiting {path}")
         tokens, src = lex(path)
         self.tokens_cache[path] = tokens
         self.source_cache[path] = src
@@ -62,7 +62,7 @@ class DependencyResolver:
                 stream.consume(token.type)
         self.visiting_files.remove(path)
         self.resolved_files.append(path)
-        print(f"Resolved {path}")
+        # print(f"Resolved {path}")
 
     def get_result(self) -> tuple[list[str], dict[str, list[Token]]]:
         return self.resolved_files, self.tokens_cache

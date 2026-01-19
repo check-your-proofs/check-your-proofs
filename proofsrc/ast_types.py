@@ -527,7 +527,6 @@ class DeclarationUnit:
     ast: Include | Declaration | None = None
     context: Context = field(default_factory=Context.init)
     diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])
-    is_dirty: bool = True
 
 class Workspace:
     def __init__(self, resolved_files: list[str], file_units: dict[str, list[DeclarationUnit]]):

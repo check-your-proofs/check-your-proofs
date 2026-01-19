@@ -4,12 +4,14 @@ from lsprotocol import types as lsp
 import os
 
 from dependency import DependencyResolver
-from ast_types import Context
+from ast_types import Context, DeclarationUnit, Workspace
 from parser import Parser
 from checker import Checker
 from splitter import split
 
 server = LanguageServer("proof-server", "v0.1")
+
+old_workspace: Workspace | None = None
 
 @server.feature(lsp.INITIALIZE)
 def lsp_initialize(ls: LanguageServer, params: lsp.InitializeParams) -> None:
@@ -31,6 +33,8 @@ def did_open(ls: LanguageServer, params: lsp.DidOpenTextDocumentParams) -> None:
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_SAVE)
 def did_save(ls: LanguageServer, params: lsp.DidSaveTextDocumentParams) -> None:
+    global old_workspace
+
     path = uris.to_fs_path(params.text_document.uri)
     if path is None:
         raise Exception(f"Cannot convert {params.text_document.uri} to path")
@@ -46,14 +50,37 @@ def did_save(ls: LanguageServer, params: lsp.DidSaveTextDocumentParams) -> None:
     resolver.resolve(path)
     resolved_files, tokens_cache = resolver.get_result()
     workspace = split(resolved_files, tokens_cache, resolver.source_cache)
-    context = Context.init()
+
+    all_units: list[DeclarationUnit] = []
     for file in workspace.resolved_files:
-        for unit in workspace.file_units[file]:
-            working_context = context.copy()
-            Parser(unit).parse_unit(working_context)
-            if Checker(unit).check_unit(working_context):
-                context = working_context
-            unit.context = context.copy()
+        all_units.extend(workspace.file_units[file])
+
+    old_all_units: list[DeclarationUnit] = []
+    if old_workspace is not None:
+        for file in old_workspace.resolved_files:
+            old_all_units.extend(old_workspace.file_units[file])
+
+    context = Context.init()
+    start_index = 0
+    for i in range(min(len(all_units), len(old_all_units))):
+        if all_units[i].hash == old_all_units[i].hash:
+            all_units[i].ast = old_all_units[i].ast
+            all_units[i].context = old_all_units[i].context
+            all_units[i].diagnostics = old_all_units[i].diagnostics
+            context = all_units[i].context
+            start_index = i + 1
+        else:
+            break
+
+    for i in range(start_index, len(all_units)):
+        unit = all_units[i]
+        working_context = context.copy()
+        Parser(unit).parse_unit(working_context)
+        if Checker(unit).check_unit(working_context):
+            context = working_context
+        unit.context = context.copy()
+
+    old_workspace = workspace
 
     final_diagnostics: dict[str, list[lsp.Diagnostic]] = {}
     for file in workspace.resolved_files:
