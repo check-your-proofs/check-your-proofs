@@ -9,6 +9,8 @@ class Token:
     pos: int
     line: int
     column: int
+    end_line: int
+    end_column: int
 
     def info(self):
         return f"[{self.file}:{self.line}:{self.column}]"
@@ -49,88 +51,108 @@ def lex(path: str) -> tuple[list[Token], str]:
             i += 1
             continue
         if src[i:i+2] == "/*":
+            start_i = i
+            start_line = line
+            start_column = column
             i += 2
             while i < len(src) and src[i:i+2] != "*/":
                 if src[i] == "\n":
                     line += 1
-                    line_start_pos = i
+                    line_start_pos = i + 1
                 i += 1
             if i >= len(src):
-                raise SyntaxError("Unterminated comment")
+                tokens.append(Token("UNTERMINATED_COMMENT", src[start_i:], path, start_i, start_line, start_column, line, i - line_start_pos + 1))
+                break
             i += 2
             continue
         if c in SYMBOLS:
-            tokens.append(Token(SYMBOLS[c], c, path, i, line, column))
+            tokens.append(Token(SYMBOLS[c], c, path, i, line, column, line, column + 1))
             i += 1
         elif src[i:].startswith("\\lambda^P"):
-            tokens.append(Token("LAMBDA_PRED", "\\lambda^P", path, i, line, column))
-            i += len("\\lambda^P")
+            length = len("\\lambda^P")
+            tokens.append(Token("LAMBDA_PRED", "\\lambda^P", path, i, line, column, line, column + length))
+            i += length
         elif src[i:].startswith("\\lambda^F"):
-            tokens.append(Token("LAMBDA_FUN", "\\lambda^F", path, i, line, column))
-            i += len("\\lambda^F")
+            length = len("\\lambda^F")
+            tokens.append(Token("LAMBDA_FUN", "\\lambda^F", path, i, line, column, line, column + length))
+            i += length
         elif src[i:].startswith("\\forall^P"):
-            tokens.append(Token("FORALL_PRED_TMPL", "\\forall^P", path, i, line, column))
-            i += len("\\forall^P")
+            length = len("\\forall^P")
+            tokens.append(Token("FORALL_PRED_TMPL", "\\forall^P", path, i, line, column, line, column + length))
+            i += length
         elif src[i:].startswith("\\forall^F"):
-            tokens.append(Token("FORALL_FUN_TMPL", "\\forall^T", path, i, line, column))
-            i += len("\\forall^T")
+            length = len("\\forall^F")
+            tokens.append(Token("FORALL_FUN_TMPL", "\\forall^F", path, i, line, column, line, column + length))
+            i += length
         elif src[i:].startswith("\\forall"):
-            tokens.append(Token("FORALL", "\\forall", path, i, line, column))
-            i += len("\\forall")
+            length = len("\\forall")
+            tokens.append(Token("FORALL", "\\forall", path, i, line, column, line, column + length))
+            i += length
         elif src[i:].startswith("\\exists!"):
-            tokens.append(Token("EXISTS_UNIQ", "\\exists!", path, i, line, column))
-            i += len("\\exists!")
+            length = len("\\exists!")
+            tokens.append(Token("EXISTS_UNIQ", "\\exists!", path, i, line, column, line, column + length))
+            i += length
         elif src[i:].startswith("\\exists"):
-            tokens.append(Token("EXISTS", "\\exists", path, i, line, column))
-            i += len("\\exists")
+            length = len("\\exists")
+            tokens.append(Token("EXISTS", "\\exists", path, i, line, column, line, column + length))
+            i += length
         elif src[i:].startswith("\\wedge"):
-            tokens.append(Token("AND", "\\wedge", path, i, line, column))
-            i += len("\\wedge")
+            length = len("\\wedge")
+            tokens.append(Token("AND", "\\wedge", path, i, line, column, line, column + length))
+            i += length
         elif src[i:].startswith("\\vee"):
-            tokens.append(Token("OR", "\\vee", path, i, line, column))
-            i += len("\\vee")
+            length = len("\\vee")
+            tokens.append(Token("OR", "\\vee", path, i, line, column, line, column + length))
+            i += length
         elif src[i:].startswith("\\neg"):
-            tokens.append(Token("NOT", "\\neg", path, i, line, column))
-            i += len("\\neg")
+            length = len("\\neg")
+            tokens.append(Token("NOT", "\\neg", path, i, line, column, line, column + length))
+            i += length
         elif src[i:].startswith("\\to"):
-            tokens.append(Token("IMPLIES", "\\to", path, i, line, column))
-            i += len("\\to")
+            length = len("\\to")
+            tokens.append(Token("IMPLIES", "\\to", path, i, line, column, line, column + length))
+            i += length
         elif src[i:].startswith("\\leftrightarrow"):
-            tokens.append(Token("IFF", "\\leftrightarrow", path, i, line, column))
-            i += len("\\leftrightarrow")
+            length = len("\\leftrightarrow")
+            tokens.append(Token("IFF", "\\leftrightarrow", path, i, line, column, line, column + length))
+            i += length
         elif src[i:].startswith("\\bot"):
-            tokens.append(Token("BOT", "\\bot", path, i, line, column))
-            i += len("\\bot")
+            length = len("\\bot")
+            tokens.append(Token("BOT", "\\bot", path, i, line, column, line, column + length))
+            i += length
         elif src[i] == '"':
+            start_i = i
             i += 1
-            start = i
-            while i < len(src) and src[i] != '"':
+            content_start_i = i
+            while i < len(src) and src[i] != "\n" and src[i] != '"':
                 i += 1
-            if i >= len(src):
-                raise SyntaxError(f"Unterminated string starting at pos {start}")
-            text = src[start:i]
-            tokens.append(Token("STRING", text, path, start, line, column))
-            i += 1
+            content_end_i = i
+            if i >= len(src) or src[i] == "\n":
+                tokens.append(Token("UNTERMINATED_STRING", src[content_start_i:content_end_i], path, start_i, line, column, line, column + (i - start_i)))
+            else:
+                i += 1
+                tokens.append(Token("STRING", src[content_start_i:content_end_i], path, start_i, line, column, line, column + (i - start_i)))
         else:
             m = re.match(r"(\\[A-Za-z][A-Za-z0-9_]*)|([A-Za-z_][A-Za-z0-9_]*'*)", src[i:])
             if m:
                 text = m.group(0)
                 if text in KEYWORDS:
-                    tokens.append(Token(text.upper(), text, path, i, line, column))
+                    tokens.append(Token(text.upper(), text, path, i, line, column, line, column + len(text)))
                 else:
-                    tokens.append(Token("IDENT", text, path, i, line, column))
+                    tokens.append(Token("IDENT", text, path, i, line, column, line, column + len(text)))
                 i += len(text)
             else:
                 m = re.match(r"\d+", src[i:])
                 if m:
                     text = m.group(0)
-                    tokens.append(Token("NUMBER", text, path, i, line, column))
+                    tokens.append(Token("NUMBER", text, path, i, line, column, line, column + len(text)))
                     i += len(text)
                 else:
-                    error_token = Token("INVALID", src[i], path, i, line, column)
+                    error_token = Token("INVALID_CHARACTER", src[i], path, i, line, column, line, column + 1)
                     tokens.append(error_token)
                     i += 1
-    tokens.append(Token("EOF", "", path, i, line, len(src) - line_start_pos + 1))
+    column = len(src) - line_start_pos + 1
+    tokens.append(Token("EOF", "", path, i, line, column, line, column))
     return tokens, src
 
 if __name__ == "__main__":

@@ -23,13 +23,10 @@ class Parser:
         uri = uris.from_fs_path(tok.file)
         if uri is None:
             return
-        line = tok.line - 1
-        col = tok.column - 1
-        length = len(tok.value)
         diag = lsp.Diagnostic(
             range=lsp.Range(
-                start=lsp.Position(line=line, character=col),
-                end=lsp.Position(line=line, character=col + length)
+                start=lsp.Position(line=tok.line - 1, character=tok.column - 1),
+                end=lsp.Position(line=tok.end_line - 1, character=tok.end_column - 1)
             ),
             message=message,
             source="Parser",

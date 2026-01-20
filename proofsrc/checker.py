@@ -42,13 +42,10 @@ class Checker:
         uri = uris.from_fs_path(node.token.file)
         if uri is None:
             return
-        line = node.token.line - 1
-        col = node.token.column - 1
-        length = len(node.token.value)
         diag = lsp.Diagnostic(
             range=lsp.Range(
-                start=lsp.Position(line=line, character=col),
-                end=lsp.Position(line=line, character=col + length)
+                start=lsp.Position(line=node.token.line - 1, character=node.token.column - 1),
+                end=lsp.Position(line=node.token.end_line - 1, character=node.token.end_column - 1)
             ),
             message=message,
             source="Checker",
