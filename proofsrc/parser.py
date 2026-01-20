@@ -63,7 +63,7 @@ class Parser:
                 raise ParseError(tok, msg)
         except (ParseError, TokenStreamError, ContextError) as e:
             self.add_lsp_error(e.token, e.msg, context)
-            self.unit.ast = InvalidDeclaration("<invalid>", tok)
+            self.unit.ast = InvalidDeclaration("<invalid>", tok, tok)
 
     def parse_declaration(self, context: Context, tok: Token) -> Declaration:
         try:
@@ -88,40 +88,43 @@ class Parser:
                 raise ParseError(tok, msg)
         except (ParseError, TokenStreamError, ContextError) as e:
             self.add_lsp_error(e.token, e.msg, context)
-            return InvalidDeclaration(name="<invalid>", token=tok)
+            return InvalidDeclaration(name="<invalid>", token=tok, name_token=tok)
 
     def parse_primitive(self, context: Context) -> PrimPred:
         start_token = self.stream.consume("PRIMITIVE")
         self.stream.consume("PREDICATE")
-        name = self.stream.consume("IDENT").value
+        name_token = self.stream.consume("IDENT")
+        name = name_token.value
         self.stream.consume("ARITY")
         arity = int(self.stream.consume("NUMBER").value)
         tex = self.parse_or_create_tex(name, arity)
         if len(tex) != arity + 1:
             msg = f"arity of {name} is {arity}, but length of tex is {len(tex)}"
             raise ParseError(start_token, msg)
-        primpred = PrimPred(name=name, token=start_token, arity=arity, tex=tex)
+        primpred = PrimPred(name=name, token=start_token, name_token=name_token, arity=arity, tex=tex)
         # context.add_decl(primpred)
         logger.debug(f"[primpred] {name}")
         return primpred
 
     def parse_axiom(self, context: Context) -> Axiom:
         start_token = self.stream.consume("AXIOM")
-        name = self.stream.consume("IDENT").value
+        name_token = self.stream.consume("IDENT")
+        name = name_token.value
         conclusion = self.parse_formula(context)
-        axiom = Axiom(name=name, token=start_token, conclusion=conclusion)
+        axiom = Axiom(name=name, token=start_token, name_token=name_token, conclusion=conclusion)
         # context.add_decl(axiom)
         logger.debug(f"[axiom] {name}")
         return axiom
 
     def parse_theorem(self, context: Context) -> Theorem:
         start_token = self.stream.consume("THEOREM")
-        name = self.stream.consume("IDENT").value
+        name_token = self.stream.consume("IDENT")
+        name = name_token.value
         conclusion = self.parse_formula(context)
         self.stream.consume("LBRACE")
         proof = self.parse_block(context.copy_ctrl())
         self.stream.consume("RBRACE")
-        theorem = Theorem(name=name, token=start_token, conclusion=conclusion, proof=proof)
+        theorem = Theorem(name=name, token=start_token, name_token=name_token, conclusion=conclusion, proof=proof)
         # context.add_decl(theorem)
         logger.debug(f"[theorem] {name}")
         return theorem
@@ -146,7 +149,8 @@ class Parser:
             autoexpand = True
         else:
             autoexpand =False
-        name = self.stream.consume("IDENT").value
+        name_token = self.stream.consume("IDENT")
+        name = name_token.value
         self.stream.consume("LPAREN")
         args, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("RPAREN")
@@ -156,34 +160,36 @@ class Parser:
         if len(tex) != len(args) + 1:
             msg = f"arity of {name} is {len(args)}, but length of tex is {len(tex)}"
             raise ParseError(start_token, msg)
-        defpred = DefPred(name=name, token=start_token, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
+        defpred = DefPred(name=name, token=start_token, name_token=name_token,args=args, formula=formula, autoexpand=autoexpand, tex=tex)
         # context.add_decl(defpred)
         logger.debug(f"[defpred] {name}")
         return defpred
 
     def parse_defcon(self, context: Context, start_token: Token) -> DefCon:
         self.stream.consume("CONSTANT")
-        name = self.stream.consume("IDENT").value
+        name_token = self.stream.consume("IDENT")
+        name = name_token.value
         self.stream.consume("BY")
         theorem = self.stream.consume("IDENT").value
         tex = self.parse_or_create_tex(name, 0)
         if len(tex) != 1:
             msg = f"{name} is constant, but length of tex is {len(tex)}"
             raise ParseError(start_token, msg)
-        defcon = DefCon(name=name, token=start_token, theorem=theorem, tex=tex)
+        defcon = DefCon(name=name, token=start_token, name_token=name_token, theorem=theorem, tex=tex)
         # context.add_decl(defcon)
         logger.debug(f"[defcon] {name}")
         return defcon
 
     def parse_deffun_or_deffunterm(self, context: Context, start_token: Token) -> DefFun | DefFunTerm:
         self.stream.consume("FUNCTION")
-        name = self.stream.consume("IDENT").value
+        name_token = self.stream.consume("IDENT")
         if self.stream.peek().type == "BY":
-            return self.parse_deffun(context, start_token, name)
+            return self.parse_deffun(context, start_token, name_token)
         else:
-            return self.parse_deffunterm(context, start_token, name)
+            return self.parse_deffunterm(context, start_token, name_token)
 
-    def parse_deffun(self, context: Context, start_token: Token, name: str) -> DefFun:
+    def parse_deffun(self, context: Context, start_token: Token, name_token: Token) -> DefFun:
+        name = name_token.value
         self.stream.consume("BY")
         theorem = self.stream.consume("IDENT").value
         vars_, body = strip_forall_vars(context.decl.theorems[theorem].conclusion)
@@ -199,12 +205,13 @@ class Parser:
         if len(tex) != arity + 1:
             msg = f"arity or {name} is {arity}, but length of tex is {len(tex)}"
             raise ParseError(start_token, msg)
-        deffun = DefFun(name=name, token=start_token, args=vars_, returned=existsuniq.var, theorem=theorem, tex=tex)
+        deffun = DefFun(name=name, token=start_token, name_token=name_token, args=vars_, returned=existsuniq.var, theorem=theorem, tex=tex)
         # context.add_decl(deffun)
         logger.debug(f"[deffun] {name}")
         return deffun
 
-    def parse_deffunterm(self, context: Context, start_token: Token, name: str) -> DefFunTerm:
+    def parse_deffunterm(self, context: Context, start_token: Token, name_token: Token) -> DefFunTerm:
+        name = name_token.value
         self.stream.consume("LPAREN")
         args, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("RPAREN")
@@ -214,23 +221,24 @@ class Parser:
         if len(tex) != len(args) + 1:
             msg = f"arity of {name} is {len(args)}, but length of tex is {len(tex)}"
             raise ParseError(start_token, msg)
-        deffunterm = DefFunTerm(name=name, token=start_token, args=args, varterm=term, tex=tex)
+        deffunterm = DefFunTerm(name=name, token=start_token, name_token=name_token, args=args, varterm=term, tex=tex)
         # context.add_decl(deffunterm)
         logger.debug(f"[deffunterm] {name}")
         return deffunterm
 
     def parse_existence(self, context: Context) -> DefConExist | DefFunExist:
         start_token = self.stream.consume("EXISTENCE")
-        existence_name = self.stream.consume("IDENT").value
+        existence_name_token = self.stream.consume("IDENT")
+        existence_name = existence_name_token.value
         existence_formula = self.parse_formula(context)
         self.stream.consume("BY")
         name = self.stream.consume("IDENT").value
         if name in context.decl.defcons:
-            defconexist = DefConExist(name=existence_name, token=start_token, formula=existence_formula, con_name=name)
+            defconexist = DefConExist(name=existence_name, token=start_token, name_token=existence_name_token, formula=existence_formula, con_name=name)
             # context.add_decl(defconexist)
             return defconexist
         elif name in context.decl.deffuns:
-            deffunexist = DefFunExist(name=existence_name, token=start_token, formula=existence_formula, fun_name=name)
+            deffunexist = DefFunExist(name=existence_name, token=start_token, name_token=existence_name_token, formula=existence_formula, fun_name=name)
             # context.add_decl(deffunexist)
             return deffunexist
         else:
@@ -239,16 +247,17 @@ class Parser:
 
     def parse_uniqueness(self, context: Context) -> DefConUniq | DefFunUniq:
         start_token = self.stream.consume("UNIQUENESS")
-        uniqueness_name = self.stream.consume("IDENT").value
+        uniqueness_name_token = self.stream.consume("IDENT")
+        uniqueness_name = uniqueness_name_token.value
         uniqueness_formula = self.parse_formula(context)
         self.stream.consume("BY")
         name = self.stream.consume("IDENT").value
         if name in context.decl.defcons:
-            defconuniq = DefConUniq(name=uniqueness_name, token=start_token, formula=uniqueness_formula, con_name=name)
+            defconuniq = DefConUniq(name=uniqueness_name, token=start_token, name_token=uniqueness_name_token, formula=uniqueness_formula, con_name=name)
             # context.add_decl(defconuniq)
             return defconuniq
         elif name in context.decl.deffuns:
-            deffununiq = DefFunUniq(name=uniqueness_name, token=start_token, formula=uniqueness_formula, fun_name=name)
+            deffununiq = DefFunUniq(name=uniqueness_name, token=start_token, name_token=uniqueness_name_token, formula=uniqueness_formula, fun_name=name)
             # context.add_decl(deffununiq)
             return deffununiq
         else:
@@ -274,7 +283,7 @@ class Parser:
             raise ParseError(start_token, msg)
         reflection = self.parse_equality_reflection(equal, context)
         replacement = self.parse_equality_replacement(equal, context)
-        equality = Equality(name=name, token=start_token, equal=equal, reflection=reflection, replacement=replacement)
+        equality = Equality(name=name, token=start_token, name_token=tok, equal=equal, reflection=reflection, replacement=replacement)
         # context.add_decl(equality)
         logger.debug(f"[equality] {type(equal)}: {equal.name}")
         return equality
@@ -332,7 +341,7 @@ class Parser:
         else:
             msg = f"primpred or defpred is required, but {name} is unknown"
             raise ParseError(start_token, msg)
-        membership = Membership(name=name, token=start_token, membership=membership)
+        membership = Membership(name=name, token=start_token, name_token=tok, membership=membership)
         # context.add_decl(membership)
         logger.debug(f"[membership] {type(membership)}: {membership.name}")
         return membership

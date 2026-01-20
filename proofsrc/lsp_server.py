@@ -2,9 +2,11 @@ from pygls.lsp.server import LanguageServer
 from pygls import uris
 from lsprotocol import types as lsp
 import os
+import re
 
 from dependency import DependencyResolver
-from ast_types import Context, DeclarationUnit, Workspace
+from lexer import Token
+from ast_types import Context, DeclarationUnit, Workspace, Declaration
 from parser import Parser
 from checker import Checker
 from splitter import split
@@ -88,6 +90,26 @@ class ProofLanguageServer(LanguageServer):
             f.write(checker_html)
             f.close()
 
+    @staticmethod
+    def get_word_at_position(line: str, character: int) -> str | None:
+        word_re = re.compile(r"(\\[A-Za-z][A-Za-z0-9_]*)|([A-Za-z_][A-Za-z0-9_]*'*)")
+        for match in word_re.finditer(line):
+            if match.start() <= character <= match.end():
+                return match.group()
+        return None
+
+    def get_definition_token(self, params: lsp.DefinitionParams) -> Token | None:
+        line = self.workspace.get_text_document(params.text_document.uri).lines[params.position.line]
+        name = self.get_word_at_position(line, params.position.character)
+        if name is None:
+            return None
+        if server.old_workspace is None:
+            return None
+        for unit in server.old_workspace.get_all_units():
+            if isinstance(unit.ast, Declaration) and unit.ast.name == name:
+                return unit.ast.name_token
+        return None
+
 server = ProofLanguageServer()
 
 @server.feature(lsp.INITIALIZE)
@@ -141,6 +163,24 @@ def did_save(ls: ProofLanguageServer, params: lsp.DidSaveTextDocumentParams) -> 
         lsp.ShowMessageParams(
             type=lsp.MessageType.Info,
             message=f"{len(updated_files)} HTML files are updated"
+        )
+    )
+
+@server.feature(lsp.TEXT_DOCUMENT_DEFINITION)
+def lsp_definition(ls: ProofLanguageServer, params: lsp.DefinitionParams) -> lsp.Location | None:
+    token = ls.get_definition_token(params)
+    if token is None:
+        return None
+    uri = uris.from_fs_path(token.file)
+    if uri is None:
+        return
+    import sys
+    print(token, file=sys.stderr)
+    return lsp.Location(
+        uri=uri,
+        range=lsp.Range(
+            start=lsp.Position(line=token.line - 1, character=token.column - 1),
+            end=lsp.Position(line=token.line - 1, character=token.column - 1 + len(token.value))
         )
     )
 

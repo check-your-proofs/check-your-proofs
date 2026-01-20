@@ -303,6 +303,7 @@ class Assert(Control):
 class Declaration:
     name: str
     token: Token
+    name_token: Token
     proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
 
 @dataclass
