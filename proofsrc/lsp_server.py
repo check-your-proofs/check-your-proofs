@@ -5,7 +5,7 @@ import os
 import re
 
 from dependency import DependencyResolver
-from lexer import Token
+from lexer import Token, KEYWORDS, STRINGS
 from ast_types import Context, DeclarationUnit, Workspace, Declaration
 from parser import Parser
 from checker import Checker
@@ -110,6 +110,33 @@ class ProofLanguageServer(LanguageServer):
                 return unit.ast.name_token
         return None
 
+    def get_completion(self) -> list[lsp.CompletionItem]:
+        items: list[lsp.CompletionItem] = []
+        for keyword in KEYWORDS:
+            items.append(
+                lsp.CompletionItem(
+                    label=keyword,
+                    kind=lsp.CompletionItemKind.Keyword
+                )
+            )
+        for operator in STRINGS.keys():
+            items.append(
+                lsp.CompletionItem(
+                    label=operator,
+                    kind=lsp.CompletionItemKind.Operator
+                )
+            )
+        if self.old_workspace:
+            for unit in self.old_workspace.get_all_units():
+                if isinstance(unit.ast, Declaration):
+                    items.append(
+                        lsp.CompletionItem(
+                            label=unit.ast.name,
+                            kind=lsp.CompletionItemKind.Function
+                        )
+                    )
+        return items
+
 server = ProofLanguageServer()
 
 @server.feature(lsp.INITIALIZE)
@@ -183,6 +210,11 @@ def lsp_definition(ls: ProofLanguageServer, params: lsp.DefinitionParams) -> lsp
             end=lsp.Position(line=token.line - 1, character=token.column - 1 + len(token.value))
         )
     )
+
+@server.feature(lsp.TEXT_DOCUMENT_COMPLETION)
+def lsp_completion(ls: ProofLanguageServer, params: lsp.CompletionParams):
+    items = ls.get_completion()
+    return lsp.CompletionList(is_incomplete=False, items=items)
 
 if __name__ == "__main__":
     server.start_io()
