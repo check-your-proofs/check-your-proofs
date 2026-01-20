@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, PredTemplate, Membership, RefDefPred, RefDefFunTerm
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, PredTemplate, Membership, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from logic_utils import pretty_expr
@@ -312,6 +312,13 @@ class Renderer:
                            "は帰属関係である。"]
         return header_parts, header_parts_jp, ""
 
+    def render_invalid_declaration(self, node: InvalidDeclaration):
+        header_parts = [self.bullet,
+                        self.render_keyword(f"InvalidDeclaration")]
+        header_parts_jp = [self.bullet,
+                           self.render_keyword(f"不正な宣言")]
+        return header_parts, header_parts_jp, ""
+
     def render_declaration(self, node: Declaration):
         if isinstance(node, PrimPred):
             return self.render_primpred(node)
@@ -339,6 +346,8 @@ class Renderer:
             return self.render_equality(node)
         elif isinstance(node, Membership):
             return self.render_membership(node)
+        elif isinstance(node, InvalidDeclaration):
+            return self.render_invalid_declaration(node)
         else:
             raise Exception(f"Unexpected type: {type(node)}")
 
@@ -651,6 +660,13 @@ class Renderer:
                            "を呼び出す。"]
         return header_parts, header_parts_jp, ""
 
+    def render_invalid_control(self, node: InvalidControl):
+        header_parts = [self.bullet,
+                        self.render_keyword(f"InvalidControl")]
+        header_parts_jp = [self.bullet,
+                           self.render_keyword(f"不正な制御文")]
+        return header_parts, header_parts_jp, ""
+
     def render_control(self, node: Control) -> tuple[list[str], list[str], str]:
         if isinstance(node, Any):
             return self.render_any(node)
@@ -692,6 +708,8 @@ class Renderer:
             return self.render_show(node)
         elif isinstance(node, Assert):
             return self.render_assert(node)
+        elif isinstance(node, InvalidControl):
+            return self.render_invalid_control(node)
         else:
             raise Exception(f"Unexpected type: {type(node)}")
 
