@@ -18,7 +18,20 @@ class ProofLanguageServer(LanguageServer):
         self.old_workspace: Workspace | None = None
         self.updated_files: set[str] = set()
 
-    def analyze(self, path: str) -> dict[str, list[lsp.Diagnostic]]:
+    def run_analysis(self, path: str, save_html: bool):
+        self.analyze(path)
+
+        if save_html:
+            self.to_html()
+
+    def analyze(self, path: str) -> None:
+        self.window_show_message(
+            lsp.ShowMessageParams(
+                type=lsp.MessageType.Info,
+                message=f"Checking {os.path.basename(path)}..."
+            )
+        )
+
         resolver = DependencyResolver()
         resolver.resolve(path, self)
         resolved_files, tokens_cache = resolver.get_result()
@@ -75,7 +88,17 @@ class ProofLanguageServer(LanguageServer):
             updated_files.add(old_all_units[i].file)
         self.updated_files.update(updated_files)
 
-        return final_diagnostics
+        self.window_show_message(
+            lsp.ShowMessageParams(
+                type=lsp.MessageType.Info,
+                message=f"{sum(len(v) for v in final_diagnostics.values())} errors"
+            )
+        )
+
+        for uri, diags in final_diagnostics.items():
+            self.text_document_publish_diagnostics(
+                lsp.PublishDiagnosticsParams(uri=uri, diagnostics=diags)
+            )
 
     def to_html(self) -> None:
         if self.old_workspace is None:
@@ -91,6 +114,15 @@ class ProofLanguageServer(LanguageServer):
             f = open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "html", f"{title}.html"), 'w', encoding='utf-8')
             f.write(checker_html)
             f.close()
+
+        self.window_show_message(
+            lsp.ShowMessageParams(
+                type=lsp.MessageType.Info,
+                message=f"{len(self.updated_files)} HTML files are updated"
+            )
+        )
+
+        self.updated_files.clear()
 
     @staticmethod
     def get_word_at_position(line: str, character: int) -> str | None:
@@ -175,37 +207,7 @@ def did_save(ls: ProofLanguageServer, params: lsp.DidSaveTextDocumentParams) -> 
     if path is None:
         raise Exception(f"Cannot convert {params.text_document.uri} to path")
 
-    ls.window_show_message(
-        lsp.ShowMessageParams(
-            type=lsp.MessageType.Info,
-            message=f"Checking {os.path.basename(path)}..."
-        )
-    )
-
-    final_diagnostics = ls.analyze(path)
-
-    ls.window_show_message(
-        lsp.ShowMessageParams(
-            type=lsp.MessageType.Info,
-            message=f"{sum(len(v) for v in final_diagnostics.values())} errors"
-        )
-    )
-
-    for uri, diags in final_diagnostics.items():
-        ls.text_document_publish_diagnostics(
-            lsp.PublishDiagnosticsParams(uri=uri, diagnostics=diags)
-        )
-
-    ls.to_html()
-
-    ls.window_show_message(
-        lsp.ShowMessageParams(
-            type=lsp.MessageType.Info,
-            message=f"{len(ls.updated_files)} HTML files are updated"
-        )
-    )
-
-    ls.updated_files.clear()
+    ls.run_analysis(path, True)
 
 @server.feature(lsp.TEXT_DOCUMENT_DEFINITION)
 def lsp_definition(ls: ProofLanguageServer, params: lsp.DefinitionParams) -> lsp.Location | None:
@@ -222,12 +224,7 @@ def did_change(ls: ProofLanguageServer, params: lsp.DidChangeTextDocumentParams)
     if path is None:
         return
 
-    final_diagnostics = ls.analyze(path)
-
-    for uri, diags in final_diagnostics.items():
-        ls.text_document_publish_diagnostics(
-            lsp.PublishDiagnosticsParams(uri=uri, diagnostics=diags)
-        )
+    ls.run_analysis(path, False)
 
 if __name__ == "__main__":
     server.start_io()
