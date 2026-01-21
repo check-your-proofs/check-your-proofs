@@ -19,7 +19,7 @@ class ProofLanguageServer(LanguageServer):
 
     def analyze(self, path: str) -> tuple[dict[str, list[lsp.Diagnostic]], set[str]]:
         resolver = DependencyResolver()
-        resolver.resolve(path)
+        resolver.resolve(path, self)
         resolved_files, tokens_cache = resolver.get_result()
         workspace = split(resolved_files, tokens_cache, resolver.source_cache)
 
@@ -211,6 +211,19 @@ def lsp_definition(ls: ProofLanguageServer, params: lsp.DefinitionParams) -> lsp
 def lsp_completion(ls: ProofLanguageServer, params: lsp.CompletionParams):
     items = ls.get_completion()
     return lsp.CompletionList(is_incomplete=False, items=items)
+
+@server.feature(lsp.TEXT_DOCUMENT_DID_CHANGE)
+def did_change(ls: ProofLanguageServer, params: lsp.DidChangeTextDocumentParams) -> None:
+    path = uris.to_fs_path(params.text_document.uri)
+    if path is None:
+        return
+
+    final_diagnostics, _ = ls.analyze(path)
+
+    for uri, diags in final_diagnostics.items():
+        ls.text_document_publish_diagnostics(
+            lsp.PublishDiagnosticsParams(uri=uri, diagnostics=diags)
+        )
 
 if __name__ == "__main__":
     server.start_io()

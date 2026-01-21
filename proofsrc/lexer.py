@@ -47,10 +47,11 @@ STRINGS = {
     "\\bot":      "BOT",
 }
 
-def lex(path: str) -> tuple[list[Token], str]:
-    f = open(path)
-    src = f.read()
-    f.close()
+def lex(path: str, src: str | None = None) -> tuple[list[Token], str]:
+    if src is None:
+        f = open(path)
+        src = f.read()
+        f.close()
     tokens: list[Token] = []
     i = 0
     line = 1

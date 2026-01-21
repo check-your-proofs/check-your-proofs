@@ -4,6 +4,28 @@ import os
 from lsprotocol import types as lsp
 from pygls import uris
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from lsp_server import ProofLanguageServer
+
+def get_content(target_path: str, ls: "ProofLanguageServer | None" = None) -> str:
+    if ls is None:
+        f = open(target_path)
+        src = f.read()
+        f.close()
+        return src
+    else:
+        for uri, doc in ls.workspace.text_documents.items():
+            path = uris.to_fs_path(uri)
+            if path is None:
+                continue
+            if path == target_path:
+                return doc.source
+        f = open(target_path)
+        src = f.read()
+        f.close()
+        return src
+
 class DependencyResolver:
     def __init__(self):
         self.resolved_files: list[str] = []
@@ -29,13 +51,14 @@ class DependencyResolver:
             self.diagnostics[uri] = []
         self.diagnostics[uri].append(diag)
 
-    def resolve(self, path: str):
+    def resolve(self, path: str, ls: "ProofLanguageServer | None" = None):
         if path in self.resolved_files:
             # print(f"Skipping {path}")
             return
         self.visiting_files.add(path)
         # print(f"Visiting {path}")
-        tokens, src = lex(path)
+        src = get_content(path, ls)
+        tokens, _ = lex(path, src)
         self.tokens_cache[path] = tokens
         self.source_cache[path] = src
         stream = TokenStream(tokens)
