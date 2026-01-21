@@ -16,8 +16,9 @@ class ProofLanguageServer(LanguageServer):
     def __init__(self):
         super().__init__("proof-server", "v0.1") # type: ignore[reportUnknownMemberType]
         self.old_workspace: Workspace | None = None
+        self.updated_files: set[str] = set()
 
-    def analyze(self, path: str) -> tuple[dict[str, list[lsp.Diagnostic]], set[str]]:
+    def analyze(self, path: str) -> dict[str, list[lsp.Diagnostic]]:
         resolver = DependencyResolver()
         resolver.resolve(path, self)
         resolved_files, tokens_cache = resolver.get_result()
@@ -72,14 +73,15 @@ class ProofLanguageServer(LanguageServer):
             updated_files.add(all_units[i].file)
         for i in range(start_index, len(old_all_units)):
             updated_files.add(old_all_units[i].file)
+        self.updated_files.update(updated_files)
 
-        return final_diagnostics, updated_files
+        return final_diagnostics
 
-    def to_html(self, updated_files: set[str]) -> None:
+    def to_html(self) -> None:
         if self.old_workspace is None:
             return
         for file in self.old_workspace.resolved_files:
-            if file not in updated_files:
+            if file not in self.updated_files:
                 continue
             units = self.old_workspace.file_units[file]
             asts = [unit.ast for unit in units if unit.ast is not None]
@@ -180,7 +182,7 @@ def did_save(ls: ProofLanguageServer, params: lsp.DidSaveTextDocumentParams) -> 
         )
     )
 
-    final_diagnostics, updated_files = ls.analyze(path)
+    final_diagnostics = ls.analyze(path)
 
     ls.window_show_message(
         lsp.ShowMessageParams(
@@ -194,14 +196,16 @@ def did_save(ls: ProofLanguageServer, params: lsp.DidSaveTextDocumentParams) -> 
             lsp.PublishDiagnosticsParams(uri=uri, diagnostics=diags)
         )
 
-    ls.to_html(updated_files)
+    ls.to_html()
 
     ls.window_show_message(
         lsp.ShowMessageParams(
             type=lsp.MessageType.Info,
-            message=f"{len(updated_files)} HTML files are updated"
+            message=f"{len(ls.updated_files)} HTML files are updated"
         )
     )
+
+    ls.updated_files.clear()
 
 @server.feature(lsp.TEXT_DOCUMENT_DEFINITION)
 def lsp_definition(ls: ProofLanguageServer, params: lsp.DefinitionParams) -> lsp.Location | None:
@@ -218,7 +222,7 @@ def did_change(ls: ProofLanguageServer, params: lsp.DidChangeTextDocumentParams)
     if path is None:
         return
 
-    final_diagnostics, _ = ls.analyze(path)
+    final_diagnostics = ls.analyze(path)
 
     for uri, diags in final_diagnostics.items():
         ls.text_document_publish_diagnostics(
