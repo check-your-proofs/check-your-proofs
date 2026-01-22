@@ -35,7 +35,7 @@ class ProofLanguageServer(LanguageServer):
 
         if self.resolver is None:
             self.resolver = DependencyResolver()
-        self.resolver.resolved_files = []
+        self.resolver.dependencies.pop(path, None)
         self.resolver.resolve(path, self)
         resolved_files, tokens_cache = self.resolver.get_result()
         workspace = split(resolved_files, tokens_cache, self.resolver.source_cache)

@@ -12,7 +12,7 @@ import sys
 
 class DependencyResolver:
     def __init__(self):
-        self.resolved_files: list[str] = []
+        self.dependencies: dict[str, list[str]] = {}
         self.tokens_cache: dict[str, list[Token]] = {}
         self.source_cache: dict[str, str] = {}
         self.visiting_files: set[str] = set()
@@ -43,7 +43,7 @@ class DependencyResolver:
                     continue
                 if path == target_path:
                     tokens, _ = lex(path, doc.source)
-                    print(f"editor memory: {os.path.basename(target_path)} {doc.source[-10:]}", file=sys.stderr)
+                    print(f"editor memory: {os.path.basename(target_path)}", file=sys.stderr)
                     return doc.source, tokens
         if target_path in self.source_cache:
             print(f"resolver cache: {os.path.basename(target_path)}", file=sys.stderr)
@@ -56,7 +56,7 @@ class DependencyResolver:
         return src, tokens
 
     def resolve(self, path: str, ls: "ProofLanguageServer | None" = None):
-        if path in self.resolved_files:
+        if path in self.dependencies:
             # print(f"Skipping {path}")
             return
         self.visiting_files.add(path)
@@ -64,6 +64,7 @@ class DependencyResolver:
         src, tokens = self.get_content(path, ls)
         self.tokens_cache[path] = tokens
         self.source_cache[path] = src
+        dependency: list[str] = []
         stream = TokenStream(tokens)
         while True:
             token = stream.peek()
@@ -73,6 +74,7 @@ class DependencyResolver:
                 if token.type == "STRING":
                     token = stream.consume("STRING")
                     new_path = os.path.join(os.path.dirname(path), token.value)
+                    dependency.append(new_path)
                     if not os.path.exists(new_path):
                         self.add_lsp_error(token, f"File not found: {new_path}")
                     elif new_path in self.visiting_files:
@@ -84,11 +86,37 @@ class DependencyResolver:
             else:
                 stream.consume(token.type)
         self.visiting_files.remove(path)
-        self.resolved_files.append(path)
+        self.dependencies[path] = dependency
         # print(f"Resolved {path}")
 
     def get_result(self) -> tuple[list[str], dict[str, list[Token]]]:
-        return self.resolved_files, self.tokens_cache
+        return self.get_combined_order(), self.tokens_cache
+
+    def get_combined_order(self) -> list[str]:
+        all_roots = self.find_all_roots()
+        print(f"all_roots: {', '.join(os.path.basename(root) for root in all_roots)}", file=sys.stderr)
+        order: list[str] = []
+        visited: set[str] = set()
+        for root in all_roots:
+            self.walk(root, visited, order)
+        return order
+
+    def find_all_roots(self) -> list[str]:
+        all_files = set(self.dependencies.keys())
+        referenced_files: set[str] = set()
+        for dependency in self.dependencies.values():
+            for file in dependency:
+                referenced_files.add(file)
+        all_roots = list(all_files - referenced_files)
+        return all_roots
+
+    def walk(self, path: str, visited: set[str], order: list[str]):
+        if path in visited or path not in self.dependencies:
+            return
+        visited.add(path)
+        for child in self.dependencies[path]:
+            self.walk(child, visited, order)
+        order.append(path)
 
 if __name__ == "__main__":
     import sys
