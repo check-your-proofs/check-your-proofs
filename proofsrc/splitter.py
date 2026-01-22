@@ -20,7 +20,8 @@ def split(resolved_files: list[str], tokens_cache: dict[str, list[Token]], sourc
             start = tokens[0].pos
             end = tokens[-1].pos
             raw_text = source_cache[file][start:end]
-            hash = hashlib.md5(raw_text.encode()).hexdigest()
+            normalized_text = raw_text.replace("\r\n", "\n")
+            hash = hashlib.md5(normalized_text.encode()).hexdigest()
             unit = DeclarationUnit(file=file, tokens=tokens, hash=hash)
             units.append(unit)
         file_units[file] = units
