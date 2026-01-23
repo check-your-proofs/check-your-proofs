@@ -120,11 +120,13 @@ class Checker:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, arity: {node.arity}")
         context.add_decl(node)
+        self.unit.hover = f"```proof\nprimitive predicate {node.name} arity {node.arity}\n```"
 
     def check_axiom(self, node: Axiom, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, conclusion: {pretty_expr(node.conclusion, context)}")
         context.add_decl(node)
+        self.unit.hover = f"```proof\naxiom {node.name} {pretty_expr(node.conclusion, context)}\n```"
 
     def check_theorem(self, node: Theorem, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -135,6 +137,7 @@ class Checker:
         if goal_in_context(node.conclusion, local_ctx):
             logger.debug(f"{debug_prefix}{node.name} proved: {pretty_expr(node.conclusion, context)}")
             context.add_decl(node)
+            self.unit.hover = f"```proof\ntheorem {node.name} {pretty_expr(node.conclusion, context)}\n```"
         else:
             msg = f"{node.name} not proved: {pretty_expr(node.conclusion, context)}"
             raise CheckError(node.token, msg)
@@ -143,6 +146,7 @@ class Checker:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, args: {node.args}, formula: {pretty_expr(node.formula, context)}")
         context.add_decl(node)
+        self.unit.hover = f"```proof\ndefinition predicate {node.name}({", ".join(pretty_expr(arg, context) for arg in node.args)}) as {pretty_expr(node.formula, context)}\n```"
 
     def check_defcon(self, node: DefCon, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -153,6 +157,7 @@ class Checker:
             raise CheckError(node.token, msg)
         logger.debug(f"{debug_prefix}ExistsUniq object: {pretty_expr(existsuniq, context)}")
         context.add_decl(node)
+        self.unit.hover = f"```proof\ndefinition constant {node.name}\n```"
 
     def check_defconexist(self, node: DefConExist, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -168,6 +173,7 @@ class Checker:
             raise CheckError(node.token, msg)
         logger.debug(f"{debug_prefix}existence_formula is matched with theorem: {pretty_expr(node.formula, context)}")
         context.add_decl(node)
+        self.unit.hover = f"```proof\nexistence {node.name} {pretty_expr(node.formula, context)} by {node.con_name}\n```"
 
     def check_defconuniq(self, node: DefConUniq, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -189,11 +195,13 @@ class Checker:
             raise CheckError(node.token, msg)
         logger.debug(f"{debug_prefix}uniqueness_formula is matched with theorem: {pretty_expr(node.formula, context)}")
         context.add_decl(node)
+        self.unit.hover = f"```proof\nuniqueness {node.name} {pretty_expr(node.formula, context)} by {node.con_name}\n```"
 
     def check_deffun(self, node: DefFun, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, theorem: {node.theorem}")
         context.add_decl(node)
+        self.unit.hover = f"```proof\ndefinition function {node.name} by {node.theorem}\n```"
 
     def check_deffunexist(self, node: DefFunExist, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -212,6 +220,7 @@ class Checker:
             raise CheckError(node.token, msg)
         logger.debug(f"{debug_prefix}existence_formula is matched with theorem: {pretty_expr(node.formula, context)}")
         context.add_decl(node)
+        self.unit.hover = f"```proof\nexistence {node.name} {pretty_expr(node.formula, context)} by {node.fun_name}"
 
     def check_deffununiq(self, node: DefFunUniq, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -233,6 +242,7 @@ class Checker:
             raise CheckError(node.token, msg)
         logger.debug(f"{debug_prefix}uniqueness_formula is matched with theorem: {pretty_expr(node.formula, context)}")
         context.add_decl(node)
+        self.unit.hover = f"```proof\nuniqueness {node.name} {pretty_expr(node.formula, context)} by {node.fun_name}"
 
     def check_deffunterm(self, node: DefFunTerm, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -243,6 +253,7 @@ class Checker:
             raise CheckError(node.token, msg)
         logger.debug(f"{debug_prefix}args are mathced with free vars of term: {set(fv) | set(fpt) | set(fft)}")
         context.add_decl(node)
+        self.unit.hover = f"```proof\ndefinition function {node.name}({", ".join(pretty_expr(arg, context) for arg in node.args)}) as {pretty_expr(node.varterm, context)}"
 
     def check_equality(self, node: Equality, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)

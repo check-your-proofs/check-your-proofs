@@ -56,6 +56,7 @@ class ProofLanguageServer(LanguageServer):
                 all_units[i].ast = old_all_units[i].ast
                 all_units[i].context = old_all_units[i].context
                 all_units[i].diagnostics = old_all_units[i].diagnostics
+                all_units[i].hover = old_all_units[i].hover
                 context = all_units[i].context
                 start_index = i + 1
             else:
@@ -184,6 +185,23 @@ class ProofLanguageServer(LanguageServer):
                     )
         return items
 
+    def hovers(self, params: lsp.HoverParams) -> lsp.Hover | None:
+        line = self.workspace.get_text_document(params.text_document.uri).lines[params.position.line]
+        name = self.get_word_at_position(line, params.position.character)
+        if name is None:
+            return None
+        if self.old_workspace is None:
+            return None
+        for unit in self.old_workspace.get_all_units():
+            if isinstance(unit.ast, Declaration) and unit.ast.name == name and isinstance(unit.hover, str):
+                return lsp.Hover(
+                    contents=lsp.MarkupContent(
+                        kind=lsp.MarkupKind.Markdown,
+                        value=unit.hover
+                    )
+                )
+        return None
+
 server = ProofLanguageServer()
 
 @server.feature(lsp.INITIALIZE)
@@ -228,6 +246,10 @@ def did_change(ls: ProofLanguageServer, params: lsp.DidChangeTextDocumentParams)
         return
 
     ls.run_analysis(path, False)
+
+@server.feature(lsp.TEXT_DOCUMENT_HOVER)
+def hovers(ls: ProofLanguageServer, params: lsp.HoverParams) -> lsp.Hover | None:
+    return ls.hovers(params)
 
 if __name__ == "__main__":
     server.start_io()
