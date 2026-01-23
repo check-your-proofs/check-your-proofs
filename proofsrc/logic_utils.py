@@ -17,9 +17,9 @@ class AlphaEquiv:
 
     def begin_log(self, depth: int, e1: Formula | Term, e2: Formula | Term, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate]):
         if False:
-            print(f"{'  ' * depth}[{e1.__class__.__name__}] e1: {pretty_expr(e1, self.context)}")
-            print(f"{'  ' * depth}[{e2.__class__.__name__}] e2: {pretty_expr(e2, self.context)}")
-            print(f"{'  ' * depth}[env] {", ".join([pretty_expr(k, self.context) + ": " + pretty_expr(v, self.context) for k, v in env.items()])}")
+            print(f"{'  ' * depth}[{e1.__class__.__name__}] e1: {ExprFormatter(self.context).pretty_expr(e1)}")
+            print(f"{'  ' * depth}[{e2.__class__.__name__}] e2: {ExprFormatter(self.context).pretty_expr(e2)}")
+            print(f"{'  ' * depth}[env] {", ".join([ExprFormatter(self.context).pretty_expr(k) + ": " + ExprFormatter(self.context).pretty_expr(v) for k, v in env.items()])}")
 
     def end_log(self, depth: int, result: bool):
         if False:
@@ -757,167 +757,171 @@ def alpha_safe_formula(expr: Formula, mapping: dict[Term, Term], context: Contex
     renamer, renamed_mapping = alpha_safe(expr, mapping, context, skip_key)
     return renamer.alpha_rename_formula(expr), renamed_mapping
 
-TERM_PRECEDENCE = {
-    "Lowest": 0,
-    "CompoundInfix": 1,
-    "CompoundFunction": 2
-}
+class ExprFormatter:
+    TERM_PRECEDENCE = {
+        "Lowest": 0,
+        "CompoundInfix": 1,
+        "CompoundFunction": 2
+    }
 
-FORMULA_PRECEDENCE = {
-    "Lowest": 0,
-    "Iff": 1,
-    "Implies": 1,
-    "Or": 2,
-    "And": 2,
-    "Symbol": 3,
-    "Not": 4,
-    "Quantifier": 5,
-}
+    FORMULA_PRECEDENCE = {
+        "Lowest": 0,
+        "Iff": 1,
+        "Implies": 1,
+        "Or": 2,
+        "And": 2,
+        "Symbol": 3,
+        "Not": 4,
+        "Quantifier": 5,
+    }
 
-def pretty_expr_fragments(expr: AtomicFormula | Compound, context: Context) -> list[str]:
-    if isinstance(expr, AtomicFormula):
-        if isinstance(expr.pred, RefPrimPred):
-            if expr.pred.name == "ordinal":
-                print(expr.pred)
-            tex = context.decl.primpreds[expr.pred.name].tex
-        elif isinstance(expr.pred, RefDefPred):
-            tex = context.decl.defpreds[expr.pred.name].tex
+    def __init__(self, context: Context) -> None:
+        self.context = context
+
+    def pretty_expr_fragments(self, expr: AtomicFormula | Compound) -> list[str]:
+        if isinstance(expr, AtomicFormula):
+            if isinstance(expr.pred, RefPrimPred):
+                if expr.pred.name == "ordinal":
+                    print(expr.pred)
+                tex = self.context.decl.primpreds[expr.pred.name].tex
+            elif isinstance(expr.pred, RefDefPred):
+                tex = self.context.decl.defpreds[expr.pred.name].tex
+            else:
+                raise Exception(f"Unexpected type: {type(expr.pred)}")
+            return tex
+        elif isinstance(expr, Compound):
+            if isinstance(expr.fun, RefDefFun):
+                tex = self.context.decl.deffuns[expr.fun.name].tex
+            elif isinstance(expr.fun, RefDefFunTerm):
+                tex = self.context.decl.deffunterms[expr.fun.name].tex
+            else:
+                raise Exception(f"Unexpected type: {type(expr.fun)}")
+            return tex
         else:
-            raise Exception(f"Unexpected type: {type(expr.pred)}")
-        return tex
-    elif isinstance(expr, Compound):
-        if isinstance(expr.fun, RefDefFun):
-            tex = context.decl.deffuns[expr.fun.name].tex
-        elif isinstance(expr.fun, RefDefFunTerm):
-            tex = context.decl.deffunterms[expr.fun.name].tex
-        else:
-            raise Exception(f"Unexpected type: {type(expr.fun)}")
-        return tex
-    else:
-        raise TypeError(f"Unsupported node type: {type(expr)}")
+            raise TypeError(f"Unsupported node type: {type(expr)}")
 
-def pretty_term(expr: Term, context: Context, parent_prec: int = TERM_PRECEDENCE["Lowest"]) -> str:
-    if isinstance(expr, Var):
-        return expr.name
-    elif isinstance(expr, (RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm)):
-        return f"\\mathrm{{{expr.name}}}"
-    elif isinstance(expr, (PredTemplate, FunTemplate)):
-        return f"{expr.name}[{str(expr.arity)}]"
-    elif isinstance(expr, RefDefCon):
-        tex = context.decl.defcons[expr.name].tex
-        if len(tex) != 1:
-            raise Exception("arity is different")
-        return tex[0]
-    elif isinstance(expr, Compound):
-        if isinstance(expr.fun, (RefDefFun, RefDefFunTerm)):
-            tex = pretty_expr_fragments(expr, context)
-            if len(tex) != len(expr.args) + 1:
+    def pretty_term(self, expr: Term, parent_prec: int = TERM_PRECEDENCE["Lowest"]) -> str:
+        if isinstance(expr, Var):
+            return expr.name
+        elif isinstance(expr, (RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm)):
+            return f"\\mathrm{{{expr.name}}}"
+        elif isinstance(expr, (PredTemplate, FunTemplate)):
+            return f"{expr.name}[{str(expr.arity)}]"
+        elif isinstance(expr, RefDefCon):
+            tex = self.context.decl.defcons[expr.name].tex
+            if len(tex) != 1:
                 raise Exception("arity is different")
-            prec = TERM_PRECEDENCE["CompoundInfix"] if tex[0] == "" or tex[-1] == "" else TERM_PRECEDENCE["CompoundFunction"]
-            text = ""
-            for i in range(len(expr.args)):
-                text += tex[i]
-                text += " "
-                text += pretty_term(expr.args[i], context, prec)
-                text += " "
-            text += tex[-1]
-            return text if prec > parent_prec or parent_prec == TERM_PRECEDENCE["CompoundFunction"] else f"({text})"
-        elif isinstance(expr.fun, FunTemplate):
-            if expr.fun.arity == 0:
-                text = expr.fun.name
+            return tex[0]
+        elif isinstance(expr, Compound):
+            if isinstance(expr.fun, (RefDefFun, RefDefFunTerm)):
+                tex = self.pretty_expr_fragments(expr)
+                if len(tex) != len(expr.args) + 1:
+                    raise Exception("arity is different")
+                prec = self.__class__.TERM_PRECEDENCE["CompoundInfix"] if tex[0] == "" or tex[-1] == "" else self.__class__.TERM_PRECEDENCE["CompoundFunction"]
+                text = ""
+                for i in range(len(expr.args)):
+                    text += tex[i]
+                    text += " "
+                    text += self.pretty_term(expr.args[i], prec)
+                    text += " "
+                text += tex[-1]
+                return text if prec > parent_prec or parent_prec == self.__class__.TERM_PRECEDENCE["CompoundFunction"] else f"({text})"
+            elif isinstance(expr.fun, FunTemplate):
+                if expr.fun.arity == 0:
+                    text = expr.fun.name
+                else:
+                    text = f"{expr.fun.name}({",".join([self.pretty_term(arg) for arg in expr.args])})"
+                return text if self.__class__.TERM_PRECEDENCE["CompoundFunction"] > parent_prec else f"({text})"
+            elif isinstance(expr.fun, FunLambda):
+                if len(expr.fun.args) == 0:
+                    text = self.pretty_term(expr.fun)
+                else:
+                    text = f"{self.pretty_term(expr.fun)}({",".join([self.pretty_term(arg) for arg in expr.args])})"
+                return text if self.__class__.TERM_PRECEDENCE["CompoundFunction"] > parent_prec else f"({text})"
             else:
-                text = f"{expr.fun.name}({",".join([pretty_term(arg, context) for arg in expr.args])})"
-            return text if TERM_PRECEDENCE["CompoundFunction"] > parent_prec else f"({text})"
-        elif isinstance(expr.fun, FunLambda):
-            if len(expr.fun.args) == 0:
-                text = pretty_term(expr.fun, context)
-            else:
-                text = f"{pretty_term(expr.fun, context)}({",".join([pretty_term(arg, context) for arg in expr.args])})"
-            return text if TERM_PRECEDENCE["CompoundFunction"] > parent_prec else f"({text})"
+                raise Exception(f"Unexpected type: {type(expr.fun)}")
+        elif isinstance(expr, PredLambda):
+            return f"\\lambda^P {",".join([var.name for var in expr.args])}. {self.pretty_formula(expr.body)}"
+        elif isinstance(expr, FunLambda):
+            return f"\\lambda^F {",".join([var.name for var in expr.args])}. {self.pretty_term(expr.body)}"
+        elif isinstance(expr, MembershipLambda):
+            return self.pretty_term(expr.varterm)
         else:
-            raise Exception(f"Unexpected type: {type(expr.fun)}")
-    elif isinstance(expr, PredLambda):
-        return f"\\lambda^P {",".join([var.name for var in expr.args])}. {pretty_formula(expr.body, context)}"
-    elif isinstance(expr, FunLambda):
-        return f"\\lambda^F {",".join([var.name for var in expr.args])}. {pretty_term(expr.body, context)}"
-    elif isinstance(expr, MembershipLambda):
-        return pretty_term(expr.varterm, context)
-    else:
-        raise TypeError(f"Unsupported node type: {type(expr)}")
+            raise TypeError(f"Unsupported node type: {type(expr)}")
 
-def pretty_formula(expr: Formula, context: Context, parent_prec: int = FORMULA_PRECEDENCE["Lowest"]) -> str:
-    if isinstance(expr, AtomicFormula):
-        if isinstance(expr.pred, (RefPrimPred, RefDefPred)):
-            tex = pretty_expr_fragments(expr, context)
-            if len(tex) != len(expr.args) + 1:
-                raise Exception("arity is different")
-            text = ""
-            for i in range(len(expr.args)):
-                text += tex[i]
-                text += " "
-                text += pretty_term(expr.args[i], context)
-                text += " "
-            text += tex[-1]
-            return text if FORMULA_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
-        elif isinstance(expr.pred, PredTemplate):
-            if expr.pred.arity == 0:
-                text = expr.pred.name
+    def pretty_formula(self, expr: Formula, parent_prec: int = FORMULA_PRECEDENCE["Lowest"]) -> str:
+        if isinstance(expr, AtomicFormula):
+            if isinstance(expr.pred, (RefPrimPred, RefDefPred)):
+                tex = self.pretty_expr_fragments(expr)
+                if len(tex) != len(expr.args) + 1:
+                    raise Exception("arity is different")
+                text = ""
+                for i in range(len(expr.args)):
+                    text += tex[i]
+                    text += " "
+                    text += self.pretty_term(expr.args[i])
+                    text += " "
+                text += tex[-1]
+                return text if self.__class__.FORMULA_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
+            elif isinstance(expr.pred, PredTemplate):
+                if expr.pred.arity == 0:
+                    text = expr.pred.name
+                else:
+                    text = f"{expr.pred.name}({",".join([self.pretty_term(arg) for arg in expr.args])})"
+                return text if self.__class__.FORMULA_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
             else:
-                text = f"{expr.pred.name}({",".join([pretty_term(arg, context) for arg in expr.args])})"
-            return text if FORMULA_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
+                raise Exception(f"Unexpected type: {type(expr.pred)}")
+        elif isinstance(expr, Not):
+            text = f"\\neg {self.pretty_formula(expr.body, self.__class__.FORMULA_PRECEDENCE["Not"])}"
+            return text if self.__class__.FORMULA_PRECEDENCE["Not"] > parent_prec else f"({text})"
+        elif isinstance(expr, And):
+            parts = flatten_op(expr, And)
+            text = " \\wedge ".join(self.pretty_formula(part, self.__class__.FORMULA_PRECEDENCE["And"]) for part in parts)
+            return text if self.__class__.FORMULA_PRECEDENCE["And"] > parent_prec else f"({text})"
+        elif isinstance(expr, Or):
+            parts = flatten_op(expr, Or)
+            text = " \\vee ".join(self.pretty_formula(part, self.__class__.FORMULA_PRECEDENCE["Or"]) for part in parts)
+            return text if self.__class__.FORMULA_PRECEDENCE["Or"] > parent_prec else f"({text})"
+        elif isinstance(expr, Implies):
+            text = f"{self.pretty_formula(expr.left, self.__class__.FORMULA_PRECEDENCE["Implies"])} \\to {self.pretty_formula(expr.right, self.__class__.FORMULA_PRECEDENCE["Implies"])}"
+            return text if self.__class__.FORMULA_PRECEDENCE["Implies"] > parent_prec else f"({text})"
+        elif isinstance(expr, Iff):
+            text = f"{self.pretty_formula(expr.left, self.__class__.FORMULA_PRECEDENCE["Iff"])} \\leftrightarrow {self.pretty_formula(expr.right, self.__class__.FORMULA_PRECEDENCE["Iff"])}"
+            return text if self.__class__.FORMULA_PRECEDENCE["Iff"] > parent_prec else f"({text})"
+        elif isinstance(expr, (Forall, Exists, ExistsUniq)):
+            body = expr
+            qvars_text = ""
+            while True:
+                if isinstance(body, Forall):
+                    qvars_text += "\\forall"
+                elif isinstance(body, Exists):
+                    qvars_text += "\\exists"
+                elif isinstance(body, ExistsUniq):
+                    qvars_text += "\\exists!"
+                else:
+                    break
+                if isinstance(body.var, Var):
+                    qvars_text += f" {self.pretty_term(body.var)}"
+                elif isinstance(body.var, PredTemplate):
+                    qvars_text += f"^P {self.pretty_term(body.var)}"
+                elif isinstance(body.var, FunTemplate):
+                    qvars_text += f"^F {self.pretty_term(body.var)}"
+                else:
+                    raise Exception(f"Unexpected type: {type(body.var)}")
+                body = body.body
+            text = f"{qvars_text} {self.pretty_formula(body, self.__class__.FORMULA_PRECEDENCE["Quantifier"])}"
+            return text if self.__class__.FORMULA_PRECEDENCE["Quantifier"] > parent_prec else f"({text})"
         else:
-            raise Exception(f"Unexpected type: {type(expr.pred)}")
-    elif isinstance(expr, Not):
-        text = f"\\neg {pretty_formula(expr.body, context, FORMULA_PRECEDENCE["Not"])}"
-        return text if FORMULA_PRECEDENCE["Not"] > parent_prec else f"({text})"
-    elif isinstance(expr, And):
-        parts = flatten_op(expr, And)
-        text = " \\wedge ".join(pretty_formula(part, context, FORMULA_PRECEDENCE["And"]) for part in parts)
-        return text if FORMULA_PRECEDENCE["And"] > parent_prec else f"({text})"
-    elif isinstance(expr, Or):
-        parts = flatten_op(expr, Or)
-        text = " \\vee ".join(pretty_formula(part, context, FORMULA_PRECEDENCE["Or"]) for part in parts)
-        return text if FORMULA_PRECEDENCE["Or"] > parent_prec else f"({text})"
-    elif isinstance(expr, Implies):
-        text = f"{pretty_formula(expr.left, context, FORMULA_PRECEDENCE["Implies"])} \\to {pretty_formula(expr.right, context, FORMULA_PRECEDENCE["Implies"])}"
-        return text if FORMULA_PRECEDENCE["Implies"] > parent_prec else f"({text})"
-    elif isinstance(expr, Iff):
-        text = f"{pretty_formula(expr.left, context, FORMULA_PRECEDENCE["Iff"])} \\leftrightarrow {pretty_formula(expr.right, context, FORMULA_PRECEDENCE["Iff"])}"
-        return text if FORMULA_PRECEDENCE["Iff"] > parent_prec else f"({text})"
-    elif isinstance(expr, (Forall, Exists, ExistsUniq)):
-        body = expr
-        qvars_text = ""
-        while True:
-            if isinstance(body, Forall):
-                qvars_text += "\\forall"
-            elif isinstance(body, Exists):
-                qvars_text += "\\exists"
-            elif isinstance(body, ExistsUniq):
-                qvars_text += "\\exists!"
-            else:
-                break
-            if isinstance(body.var, Var):
-                qvars_text += f" {pretty_term(body.var, context)}"
-            elif isinstance(body.var, PredTemplate):
-                qvars_text += f"^P {pretty_term(body.var, context)}"
-            elif isinstance(body.var, FunTemplate):
-                qvars_text += f"^F {pretty_term(body.var, context)}"
-            else:
-                raise Exception(f"Unexpected type: {type(body.var)}")
-            body = body.body
-        text = f"{qvars_text} {pretty_formula(body, context, FORMULA_PRECEDENCE["Quantifier"])}"
-        return text if FORMULA_PRECEDENCE["Quantifier"] > parent_prec else f"({text})"
-    else:
-        raise TypeError(f"Unsupported node type: {type(expr)}")
+            raise TypeError(f"Unsupported node type: {type(expr)}")
 
-def pretty_expr(expr: str | Bottom | Formula | Term, context: Context) -> str:
-    if isinstance(expr, str):
-        return expr
-    elif isinstance(expr, Bottom):
-        return "\\bot"
-    elif isinstance(expr, Formula):
-        return pretty_formula(expr, context)
-    elif isinstance(expr, Term):
-        return pretty_term(expr, context)
-    else:
-        raise TypeError(f"Unsupported node type: {type(expr)}")
+    def pretty_expr(self, expr: str | Bottom | Formula | Term) -> str:
+        if isinstance(expr, str):
+            return expr
+        elif isinstance(expr, Bottom):
+            return "\\bot"
+        elif isinstance(expr, Formula):
+            return self.pretty_formula(expr)
+        elif isinstance(expr, Term):
+            return self.pretty_term(expr)
+        else:
+            raise TypeError(f"Unsupported node type: {type(expr)}")

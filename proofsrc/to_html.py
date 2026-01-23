@@ -3,7 +3,7 @@ from html import escape
 from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, PredTemplate, Membership, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
-from logic_utils import pretty_expr
+from logic_utils import ExprFormatter
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -81,7 +81,7 @@ class Renderer:
         if isinstance(node, str):
             return self.render_identifier(node)
         else:
-            return escape(f"\\({pretty_expr(node, self.context)}\\)")
+            return escape(f"\\({ExprFormatter(self.context).pretty_expr(node)}\\)")
 
     def render_expr_list_mathjax(self, expr_list: Sequence[str | Bottom | Formula | Term]) -> str:
         return ",".join(self.render_expr_mathjax(expr) for expr in expr_list)
@@ -89,7 +89,7 @@ class Renderer:
     T_Key = TypeVar("T_Key", str, Var)
 
     def render_expr_dict_mathjax(self, expr_dict: Mapping[T_Key, Term]) -> str:
-        parts = [f"{escape(f"\\({pretty_expr(k, self.context)}\\)")}:{escape(f"\\({pretty_expr(v, self.context)}\\)")}" for k, v in expr_dict.items()]
+        parts = [f"{escape(f"\\({ExprFormatter(self.context).pretty_expr(k)}\\)")}:{escape(f"\\({ExprFormatter(self.context).pretty_expr(v)}\\)")}" for k, v in expr_dict.items()]
         return ",".join(parts)
 
     def render_tex_mathjax(self, tex: list[str]):
@@ -102,7 +102,7 @@ class Renderer:
         if isinstance(node, str):
             return self.render_identifier(node)
         else:
-            latex_code = pretty_expr(node, self.context)
+            latex_code = ExprFormatter(self.context).pretty_expr(node)
             svg_path = output_svg(latex_code)
             return self.img_tag(svg_path, latex_code)
 
