@@ -1,7 +1,7 @@
 from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Context, Compound, RefDefCon, Var, Bottom, Term, Formula, PredTemplate, PredLambda, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm
 from itertools import permutations
 from copy import deepcopy
-from typing import Mapping
+from typing import Mapping, Literal
 from dataclasses import dataclass, field
 import re
 
@@ -775,10 +775,11 @@ class ExprFormatter:
         "Quantifier": 5,
     }
 
-    def __init__(self, context: Context) -> None:
+    def __init__(self, context: Context, mode: Literal["source", "tex"] = "source") -> None:
         self.context = context
+        self.mode = mode
 
-    def pretty_expr_fragments(self, expr: AtomicFormula | Compound) -> list[str]:
+    def get_tex_fragments(self, expr: AtomicFormula | Compound) -> list[str]:
         if isinstance(expr, AtomicFormula):
             if isinstance(expr.pred, RefPrimPred):
                 if expr.pred.name == "ordinal":
@@ -808,23 +809,29 @@ class ExprFormatter:
         elif isinstance(expr, (PredTemplate, FunTemplate)):
             return f"{expr.name}[{str(expr.arity)}]"
         elif isinstance(expr, RefDefCon):
-            tex = self.context.decl.defcons[expr.name].tex
-            if len(tex) != 1:
+            fragments = self.context.decl.defcons[expr.name].tex
+            if len(fragments) != 1:
                 raise Exception("arity is different")
-            return tex[0]
+            return fragments[0]
         elif isinstance(expr, Compound):
             if isinstance(expr.fun, (RefDefFun, RefDefFunTerm)):
-                tex = self.pretty_expr_fragments(expr)
-                if len(tex) != len(expr.args) + 1:
-                    raise Exception("arity is different")
-                prec = self.__class__.TERM_PRECEDENCE["CompoundInfix"] if tex[0] == "" or tex[-1] == "" else self.__class__.TERM_PRECEDENCE["CompoundFunction"]
+                if self.mode == "source":
+                    fragments = [f"{expr.fun.name}("]
+                    for i in range(len(expr.args) - 1):
+                        fragments.append(",")
+                    fragments.append(")")
+                else:
+                    fragments = self.get_tex_fragments(expr)
+                    if len(fragments) != len(expr.args) + 1:
+                        raise Exception("arity is different")
+                prec = self.__class__.TERM_PRECEDENCE["CompoundInfix"] if fragments[0] == "" or fragments[-1] == "" else self.__class__.TERM_PRECEDENCE["CompoundFunction"]
                 text = ""
                 for i in range(len(expr.args)):
-                    text += tex[i]
+                    text += fragments[i]
                     text += " "
                     text += self.pretty_term(expr.args[i], prec)
                     text += " "
-                text += tex[-1]
+                text += fragments[-1]
                 return text if prec > parent_prec or parent_prec == self.__class__.TERM_PRECEDENCE["CompoundFunction"] else f"({text})"
             elif isinstance(expr.fun, FunTemplate):
                 if expr.fun.arity == 0:
@@ -852,16 +859,22 @@ class ExprFormatter:
     def pretty_formula(self, expr: Formula, parent_prec: int = FORMULA_PRECEDENCE["Lowest"]) -> str:
         if isinstance(expr, AtomicFormula):
             if isinstance(expr.pred, (RefPrimPred, RefDefPred)):
-                tex = self.pretty_expr_fragments(expr)
-                if len(tex) != len(expr.args) + 1:
-                    raise Exception("arity is different")
+                if self.mode == "source":
+                    fragments = [f"{expr.pred.name}("]
+                    for i in range(len(expr.args) - 1):
+                        fragments.append(",")
+                    fragments.append(")")
+                else:
+                    fragments = self.get_tex_fragments(expr)
+                    if len(fragments) != len(expr.args) + 1:
+                        raise Exception("arity is different")
                 text = ""
                 for i in range(len(expr.args)):
-                    text += tex[i]
+                    text += fragments[i]
                     text += " "
                     text += self.pretty_term(expr.args[i])
                     text += " "
-                text += tex[-1]
+                text += fragments[-1]
                 return text if self.__class__.FORMULA_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
             elif isinstance(expr.pred, PredTemplate):
                 if expr.pred.arity == 0:
