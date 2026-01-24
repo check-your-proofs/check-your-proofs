@@ -487,29 +487,28 @@ class Context:
     decl: DeclarationContext
     ctrl: ControlContext
     form: FormulaContext
-    diagnostics: dict[str, list[lsp.Diagnostic]]
 
     @staticmethod
     def init() -> "Context":
-        return Context(DeclarationContext.init(), ControlContext.init(), FormulaContext.init(), {})
+        return Context(DeclarationContext.init(), ControlContext.init(), FormulaContext.init())
 
     def add_decl(self, declaration: Declaration):
         self.decl.add(declaration)
 
     def copy_ctrl(self):
-        return Context(self.decl, self.ctrl.copy(), self.form, self.diagnostics)
+        return Context(self.decl, self.ctrl.copy(), self.form)
 
     def add_ctrl(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate]):
-        return Context(self.decl, self.ctrl.add(new_vars, new_formulas, new_pred_tmpls, new_fun_tmpls), self.form, self.diagnostics)
+        return Context(self.decl, self.ctrl.add(new_vars, new_formulas, new_pred_tmpls, new_fun_tmpls), self.form)
 
     def copy_form(self):
-        return Context(self.decl, self.ctrl, self.form.copy(), self.diagnostics)
+        return Context(self.decl, self.ctrl, self.form.copy())
 
     def add_form(self, new_vars: list[Var], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate]):
-        return Context(self.decl, self.ctrl, self.form.add(new_vars, new_pred_tmpls, new_fun_tmpls), self.diagnostics)
+        return Context(self.decl, self.ctrl, self.form.add(new_vars, new_pred_tmpls, new_fun_tmpls))
 
     def copy(self):
-        return Context(self.decl.copy(), self.ctrl.copy(), self.form.copy(), self.diagnostics.copy())
+        return Context(self.decl.copy(), self.ctrl.copy(), self.form.copy())
 
 @dataclass
 class Include:
