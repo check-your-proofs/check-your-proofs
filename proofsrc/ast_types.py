@@ -557,6 +557,7 @@ class DeclarationUnit:
     context: Context = field(default_factory=Context.init)
     diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])
     hover: str | None = None
+    decl_refs: dict[str, list[Token]] = field(default_factory=dict[str, list[Token]])
 
 class Workspace:
     def __init__(self, resolved_files: list[str], file_units: dict[str, list[DeclarationUnit]]):
@@ -568,3 +569,10 @@ class Workspace:
         for file in self.resolved_files:
             all_units.extend(self.file_units[file])
         return all_units
+
+    def get_all_decl_refs(self, name: str) -> list[Token]:
+        all_decl_refs: list[Token] = []
+        for unit in self.get_all_units():
+            if name in unit.decl_refs:
+                all_decl_refs.extend(unit.decl_refs[name])
+        return all_decl_refs

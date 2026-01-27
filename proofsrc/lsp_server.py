@@ -57,6 +57,7 @@ class ProofLanguageServer(LanguageServer):
                 all_units[i].context = old_all_units[i].context
                 all_units[i].diagnostics = old_all_units[i].diagnostics
                 all_units[i].hover = old_all_units[i].hover
+                all_units[i].decl_refs = old_all_units[i].decl_refs
                 context = all_units[i].context
                 start_index = i + 1
             else:
@@ -158,6 +159,28 @@ class ProofLanguageServer(LanguageServer):
                 )
         return None
 
+    def get_references(self, params: lsp.ReferenceParams) -> list[lsp.Location]:
+        line = self.workspace.get_text_document(params.text_document.uri).lines[params.position.line]
+        name = self.get_word_at_position(line, params.position.character)
+        if name is None:
+            return []
+        if self.old_workspace is None:
+            return []
+        all_decl_refs = self.old_workspace.get_all_decl_refs(name)
+        locations: list[lsp.Location] = []
+        for token in all_decl_refs:
+            uri = uris.from_fs_path(token.file)
+            if uri is None:
+                return []
+            locations.append(lsp.Location(
+                uri=uri,
+                range=lsp.Range(
+                    start=lsp.Position(line=token.line - 1, character=token.column - 1),
+                    end=lsp.Position(line=token.line - 1, character=token.column - 1 + len(token.value))
+                )
+            ))
+        return locations
+
     def get_completion(self) -> list[lsp.CompletionItem]:
         items: list[lsp.CompletionItem] = []
         for keyword in KEYWORDS:
@@ -250,6 +273,10 @@ def did_change(ls: ProofLanguageServer, params: lsp.DidChangeTextDocumentParams)
 @server.feature(lsp.TEXT_DOCUMENT_HOVER)
 def hovers(ls: ProofLanguageServer, params: lsp.HoverParams) -> lsp.Hover | None:
     return ls.hovers(params)
+
+@server.feature(lsp.TEXT_DOCUMENT_REFERENCES)
+def lsp_references(ls: ProofLanguageServer, params: lsp.ReferenceParams) -> list[lsp.Location]:
+    return ls.get_references(params)
 
 if __name__ == "__main__":
     server.start_io()
