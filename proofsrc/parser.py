@@ -283,6 +283,7 @@ class Parser:
                 msg = f"arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}"
                 raise ParseError(start_token, msg)
         elif name in context.decl.defpreds:
+            self.add_decl_ref(name, tok)
             equal = RefDefPred(tok, name)
             if len(context.decl.defpreds[name].args) != 2:
                 msg = f"arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}"
@@ -344,6 +345,7 @@ class Parser:
                 msg = f"arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}"
                 raise ParseError(start_token, msg)
         elif name in context.decl.defpreds:
+            self.add_decl_ref(name, tok)
             membership = RefDefPred(tok, name)
             if len(context.decl.defpreds[name].args) != 2:
                 msg = f"arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}"
@@ -751,6 +753,7 @@ class Parser:
                 pred = RefPrimPred(tok, name)
                 defargs: list[Var | PredTemplate | FunTemplate] = [Var(tok, f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
             elif name in context.decl.defpreds:
+                self.add_decl_ref(name, tok)
                 pred = RefDefPred(tok, name)
                 defargs = context.decl.defpreds[name].args
             else:
@@ -927,6 +930,7 @@ class Parser:
                 self.add_decl_ref(name, tok)
                 return RefPrimPred(tok, name)
             elif name in context.decl.defpreds:
+                self.add_decl_ref(name, tok)
                 return RefDefPred(tok, name)
             else:
                 msg = f"Term object is required, but {name} is unknown"
