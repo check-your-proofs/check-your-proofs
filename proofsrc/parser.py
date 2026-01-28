@@ -861,35 +861,12 @@ class Parser:
         return varterms
 
     def parse_var_term(self, context: Context) -> VarTerm:
-        tok = self.stream.consume("IDENT")
-        name = tok.value
-        if any(var.name == name for var in context.form.vars):
-            return next(var for var in context.form.vars if var.name == name)
-        elif any(var.name == name for var in context.ctrl.vars):
-            return next((var for var in context.ctrl.vars if var.name == name))
-        elif name in context.decl.defcons:
-            return RefDefCon(tok, name)
-        elif name in context.decl.deffuns or name in context.decl.deffunterms or any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.fun_tmpls):
-            if name in context.decl.deffuns:
-                fun = RefDefFun(tok, name)
-                defargs = context.decl.deffuns[name].args
-            elif name in context.decl.deffunterms:
-                fun = RefDefFunTerm(tok, name)
-                defargs = context.decl.deffunterms[name].args
-            elif any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls):
-                fun = next(fun_tmpl for fun_tmpl in context.form.fun_tmpls if fun_tmpl.name == name)
-                defargs = [Var(tok, f"x_{i}") for i in range(fun.arity)]
-            else:
-                fun = next(fun_tmpl for fun_tmpl in context.ctrl.fun_tmpls if fun_tmpl.name == name)
-                defargs = [Var(tok, f"x_{i}") for i in range(fun.arity)]
-            self.stream.consume("LPAREN")
-            subargs = self.parse_terms(context)
-            self.stream.consume("RPAREN")
-            resolved_args = self.match_args(defargs, subargs, context, tok)
-            return Compound(tok, fun, tuple(resolved_args))
+        term = self.parse_term(context)
+        if isinstance(term, VarTerm):
+            return term
         else:
-            msg = f"Unexpected name: {name}"
-            raise ParseError(tok, msg)
+            msg = f"Expected VarTerm, got {type(term)}"
+            raise ParseError(term.token, msg)
 
     def parse_term(self, context: Context) -> Term:
         tok = self.stream.peek()
@@ -904,12 +881,15 @@ class Parser:
             elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
                 return next((pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name))
             elif name in context.decl.defcons:
+                self.add_decl_ref(name, tok)
                 return RefDefCon(tok, name)
             elif name in context.decl.deffuns or name in context.decl.deffunterms or any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.fun_tmpls):
                 if name in context.decl.deffuns:
+                    self.add_decl_ref(name, tok)
                     fun = RefDefFun(tok, name)
                     defargs = context.decl.deffuns[name].args
                 elif name in context.decl.deffunterms:
+                    self.add_decl_ref(name, tok)
                     fun = RefDefFunTerm(tok, name)
                     defargs = context.decl.deffunterms[name].args
                 elif any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls):
