@@ -6,7 +6,7 @@ import re
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS
-from ast_types import Context, DeclarationUnit, Workspace, Declaration
+from ast_types import Context, DeclarationUnit, Workspace, Declaration, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm
 from parser import Parser
 from checker import Checker
 from splitter import split
@@ -145,8 +145,8 @@ class ProofLanguageServer(LanguageServer):
         if server.old_workspace is None:
             return None
         for unit in server.old_workspace.get_all_units():
-            if isinstance(unit.ast, Declaration) and unit.ast.name == name:
-                token = unit.ast.name_token
+            if isinstance(unit.ast, PrimPred | Axiom | Theorem | DefPred | DefConExist | DefConUniq | DefCon | DefFunExist | DefFunUniq | DefFun | DefFunTerm) and unit.ast.name == name:
+                token = unit.node_to_token[id(unit.ast.ref)][0]
                 uri = uris.from_fs_path(token.file)
                 if uri is None:
                     return None

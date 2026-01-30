@@ -13,11 +13,11 @@ class ContextError(Exception):
 
 @dataclass(frozen=True)
 class Term:
-    token: Token = field(compare=False)
+    pass
 
 @dataclass(frozen=True)
 class Formula:
-    token: Token = field(compare=False)
+    pass
 
 @dataclass(frozen=True)
 class VarTerm(Term):
@@ -103,7 +103,7 @@ class FormulaContext:
         for item in new_vars + new_pred_tmpls + new_fun_tmpls:
             if item.name in new_used_names:
                 msg = f"{item.name} is already used"
-                raise ContextError(item.token, msg)
+                raise Exception(msg)
             new_used_names.add(item.name)
         return FormulaContext(list(self.vars + new_vars), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), new_used_names)
 
@@ -175,14 +175,13 @@ class ControlContext:
         for item in new_vars + new_pred_tmpls + new_fun_tmpls:
             if item.name in new_used_names:
                 msg = f"{item.name} is already used"
-                raise ContextError(item.token, msg)
+                raise Exception(msg)
             new_used_names.add(item.name)
         return ControlContext(list(self.vars + new_vars), list(self.formulas + new_formulas), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), new_used_names)
 
 @dataclass(frozen=True)
 class RefFact:
     name: str
-    token: Token
 
 @dataclass(frozen=True)
 class RefAxiom(RefFact):
@@ -220,7 +219,6 @@ class ProofInfo:
 
 @dataclass
 class Control:
-    token: Token
     proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
 
 @dataclass
@@ -331,8 +329,6 @@ class Assert(Control):
 @dataclass
 class Declaration:
     name: str
-    token: Token
-    name_token: Token
     proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
 
 @dataclass
@@ -341,25 +337,28 @@ class InvalidDeclaration(Declaration):
 
 @dataclass
 class DeclarationSupport:
-    token: Token
     proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
 
 @dataclass
 class PrimPred(Declaration):
+    ref: RefPrimPred
     arity: int
     tex: list[str]
 
 @dataclass
 class Axiom(Declaration):
+    ref: RefAxiom
     conclusion: Formula
 
 @dataclass
 class Theorem(Declaration):
+    ref: RefTheorem
     conclusion: Formula
     proof: list[Control]
 
 @dataclass
 class DefPred(Declaration):
+    ref: RefDefPred
     args: list[Var | PredTemplate | FunTemplate]
     formula: Formula
     autoexpand: bool
@@ -367,31 +366,37 @@ class DefPred(Declaration):
 
 @dataclass
 class DefConExist(Declaration):
+    ref: RefDefConExist
     formula: Formula
     con_name: str
 
 @dataclass
 class DefConUniq(Declaration):
+    ref: RefDefConUniq
     formula: Formula
     con_name: str
 
 @dataclass
 class DefCon(Declaration):
+    ref: RefDefCon
     theorem: str
     tex: list[str]
 
 @dataclass
 class DefFunExist(Declaration):
+    ref: RefDefFunExist
     formula: Formula
     fun_name: str
 
 @dataclass
 class DefFunUniq(Declaration):
+    ref: RefDefFunUniq
     formula: Formula
     fun_name: str
 
 @dataclass
 class DefFun(Declaration):
+    ref: RefDefFun
     args: list[Var | PredTemplate | FunTemplate]
     returned: Var | PredTemplate
     theorem: str
@@ -399,6 +404,7 @@ class DefFun(Declaration):
 
 @dataclass
 class DefFunTerm(Declaration):
+    ref: RefDefFunTerm
     args: list[Var | PredTemplate | FunTemplate]
     varterm: VarTerm
     tex: list[str]
@@ -448,19 +454,19 @@ class DeclarationContext:
         if isinstance(declaration, Equality):
             if self.equality is not None:
                 msg = "equality is already declared"
-                raise ContextError(declaration.token, msg)
+                raise Exception(msg)
             self.equality = declaration
             return
         if isinstance(declaration, Membership):
             if self.membership is not None:
                 msg = "membership is already declared"
-                raise ContextError(declaration.token, msg)
+                raise Exception(msg)
             self.membership = declaration
             return
         if declaration.name in self.used_names:
             if not (isinstance(declaration, DefPred) and declaration.name in self.defpreds):
                 msg = f"{declaration.name} is already used"
-                raise ContextError(declaration.token, msg)
+                raise Exception(msg)
         if isinstance(declaration, PrimPred):
             self.primpreds[declaration.name] = declaration
         elif isinstance(declaration, Axiom):
@@ -485,7 +491,7 @@ class DeclarationContext:
             self.deffunterms[declaration.name] = declaration
         else:
             msg = f"Unexpected type: {type(declaration)}"
-            raise ContextError(declaration.token, msg)
+            raise Exception(msg)
         self.used_names.add(declaration.name)
 
     def has_reference(self, name: str) -> bool:
@@ -554,6 +560,7 @@ class DeclarationUnit:
     tokens: list[Token]
     hash: str
     ast: Include | Declaration | None = None
+    node_to_token: dict[int, tuple[Token, Token]] = field(default_factory=dict[int, tuple[Token, Token]])
     context: Context = field(default_factory=Context.init)
     diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])
     hover: str | None = None

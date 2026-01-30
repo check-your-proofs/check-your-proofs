@@ -9,6 +9,7 @@ class TokenStream:
     def __init__(self, tokens: list[Token]):
         self.tokens = tokens
         self.pos = 0
+        self.last_token = tokens[0]
 
     def peek(self) -> Token:
         if self.pos >= len(self.tokens):
@@ -22,4 +23,5 @@ class TokenStream:
             msg = f"Expected {expected_type}, got {tok.type}"
             raise TokenStreamError(tok, msg)
         self.pos += 1
+        self.last_token = tok
         return tok

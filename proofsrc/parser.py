@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, ContextError, DeclarationUnit, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, ContextError, DeclarationUnit, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, DeclarationSupport
 from lexer import Token
 from token_stream import TokenStream, TokenStreamError
 from logic_utils import strip_forall_vars
@@ -36,6 +36,9 @@ class Parser:
         )
         self.unit.diagnostics.append(diag)
 
+    def add_node_to_token(self, node: Declaration | DeclarationSupport | Control | Formula | Term | RefFact, start_token: Token, end_token: Token):
+        self.unit.node_to_token[id(node)] = (start_token, end_token)
+
     def add_decl_ref(self, name: str, token: Token) -> None:
         if name not in self.unit.decl_refs:
             self.unit.decl_refs[name] = []
@@ -68,7 +71,9 @@ class Parser:
                 raise ParseError(tok, msg)
         except (ParseError, TokenStreamError, ContextError) as e:
             self.add_lsp_error(e.token, e.msg, context)
-            self.unit.ast = InvalidDeclaration("<invalid>", tok, tok)
+            node = InvalidDeclaration("<invalid>")
+            self.add_node_to_token(node, tok, self.stream.last_token)
+            self.unit.ast = node
 
     def parse_declaration(self, context: Context, tok: Token) -> Declaration:
         try:
@@ -93,20 +98,25 @@ class Parser:
                 raise ParseError(tok, msg)
         except (ParseError, TokenStreamError, ContextError) as e:
             self.add_lsp_error(e.token, e.msg, context)
-            return InvalidDeclaration(name="<invalid>", token=tok, name_token=tok)
+            node = InvalidDeclaration("<invalid>")
+            self.add_node_to_token(node, tok, self.stream.last_token)
+            return node
 
     def parse_primitive(self, context: Context) -> PrimPred:
         start_token = self.stream.consume("PRIMITIVE")
         self.stream.consume("PREDICATE")
         name_token = self.stream.consume("IDENT")
         name = name_token.value
+        ref = RefPrimPred(name)
+        self.add_node_to_token(ref, name_token, name_token)
         self.stream.consume("ARITY")
         arity = int(self.stream.consume("NUMBER").value)
         tex = self.parse_or_create_tex(name, arity)
         if len(tex) != arity + 1:
             msg = f"arity of {name} is {arity}, but length of tex is {len(tex)}"
             raise ParseError(start_token, msg)
-        primpred = PrimPred(name=name, token=start_token, name_token=name_token, arity=arity, tex=tex)
+        primpred = PrimPred(name=name, ref=ref, arity=arity, tex=tex)
+        self.add_node_to_token(primpred, start_token, self.stream.last_token)
         # context.add_decl(primpred)
         logger.debug(f"[primpred] {name}")
         return primpred
@@ -115,8 +125,11 @@ class Parser:
         start_token = self.stream.consume("AXIOM")
         name_token = self.stream.consume("IDENT")
         name = name_token.value
+        ref = RefAxiom(name)
+        self.add_node_to_token(ref, name_token, name_token)
         conclusion = self.parse_formula(context)
-        axiom = Axiom(name=name, token=start_token, name_token=name_token, conclusion=conclusion)
+        axiom = Axiom(name=name, ref=ref, conclusion=conclusion)
+        self.add_node_to_token(axiom, start_token, self.stream.last_token)
         # context.add_decl(axiom)
         logger.debug(f"[axiom] {name}")
         return axiom
@@ -125,11 +138,14 @@ class Parser:
         start_token = self.stream.consume("THEOREM")
         name_token = self.stream.consume("IDENT")
         name = name_token.value
+        ref = RefTheorem(name)
+        self.add_node_to_token(ref, name_token, name_token)
         conclusion = self.parse_formula(context)
         self.stream.consume("LBRACE")
         proof = self.parse_block(context.copy_ctrl())
         self.stream.consume("RBRACE")
-        theorem = Theorem(name=name, token=start_token, name_token=name_token, conclusion=conclusion, proof=proof)
+        theorem = Theorem(name=name, ref=ref, conclusion=conclusion, proof=proof)
+        self.add_node_to_token(theorem, start_token, self.stream.last_token)
         # context.add_decl(theorem)
         logger.debug(f"[theorem] {name}")
         return theorem
@@ -156,6 +172,8 @@ class Parser:
             autoexpand =False
         name_token = self.stream.consume("IDENT")
         name = name_token.value
+        ref = RefDefPred(name)
+        self.add_node_to_token(ref, name_token, name_token)
         self.stream.consume("LPAREN")
         args, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("RPAREN")
@@ -165,7 +183,8 @@ class Parser:
         if len(tex) != len(args) + 1:
             msg = f"arity of {name} is {len(args)}, but length of tex is {len(tex)}"
             raise ParseError(start_token, msg)
-        defpred = DefPred(name=name, token=start_token, name_token=name_token,args=args, formula=formula, autoexpand=autoexpand, tex=tex)
+        defpred = DefPred(name=name, ref=ref, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
+        self.add_node_to_token(defpred, start_token, self.stream.last_token)
         # context.add_decl(defpred)
         logger.debug(f"[defpred] {name}")
         return defpred
@@ -174,13 +193,16 @@ class Parser:
         self.stream.consume("CONSTANT")
         name_token = self.stream.consume("IDENT")
         name = name_token.value
+        ref = RefDefCon(name)
+        self.add_node_to_token(ref, name_token, name_token)
         self.stream.consume("BY")
         theorem = self.stream.consume("IDENT").value
         tex = self.parse_or_create_tex(name, 0)
         if len(tex) != 1:
             msg = f"{name} is constant, but length of tex is {len(tex)}"
             raise ParseError(start_token, msg)
-        defcon = DefCon(name=name, token=start_token, name_token=name_token, theorem=theorem, tex=tex)
+        defcon = DefCon(name=name, ref=ref, theorem=theorem, tex=tex)
+        self.add_node_to_token(defcon, start_token, self.stream.last_token)
         # context.add_decl(defcon)
         logger.debug(f"[defcon] {name}")
         return defcon
@@ -195,6 +217,8 @@ class Parser:
 
     def parse_deffun(self, context: Context, start_token: Token, name_token: Token) -> DefFun:
         name = name_token.value
+        ref = RefDefFun(name)
+        self.add_node_to_token(ref, name_token, name_token)
         self.stream.consume("BY")
         theorem = self.stream.consume("IDENT").value
         if theorem not in context.decl.theorems:
@@ -213,13 +237,16 @@ class Parser:
         if len(tex) != arity + 1:
             msg = f"arity or {name} is {arity}, but length of tex is {len(tex)}"
             raise ParseError(start_token, msg)
-        deffun = DefFun(name=name, token=start_token, name_token=name_token, args=vars_, returned=existsuniq.var, theorem=theorem, tex=tex)
+        deffun = DefFun(name=name, ref=ref, args=vars_, returned=existsuniq.var, theorem=theorem, tex=tex)
+        self.add_node_to_token(deffun, start_token, self.stream.last_token)
         # context.add_decl(deffun)
         logger.debug(f"[deffun] {name}")
         return deffun
 
     def parse_deffunterm(self, context: Context, start_token: Token, name_token: Token) -> DefFunTerm:
         name = name_token.value
+        ref = RefDefFunTerm(name)
+        self.add_node_to_token(ref, name_token, name_token)
         self.stream.consume("LPAREN")
         args, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("RPAREN")
@@ -229,7 +256,8 @@ class Parser:
         if len(tex) != len(args) + 1:
             msg = f"arity of {name} is {len(args)}, but length of tex is {len(tex)}"
             raise ParseError(start_token, msg)
-        deffunterm = DefFunTerm(name=name, token=start_token, name_token=name_token, args=args, varterm=term, tex=tex)
+        deffunterm = DefFunTerm(name=name, ref=ref, args=args, varterm=term, tex=tex)
+        self.add_node_to_token(deffunterm, start_token, self.stream.last_token)
         # context.add_decl(deffunterm)
         logger.debug(f"[deffunterm] {name}")
         return deffunterm
@@ -242,11 +270,17 @@ class Parser:
         self.stream.consume("BY")
         name = self.stream.consume("IDENT").value
         if name in context.decl.defcons:
-            defconexist = DefConExist(name=existence_name, token=start_token, name_token=existence_name_token, formula=existence_formula, con_name=name)
+            ref = RefDefConExist(existence_name)
+            self.add_node_to_token(ref, existence_name_token, existence_name_token)
+            defconexist = DefConExist(name=existence_name, ref=ref, formula=existence_formula, con_name=name)
+            self.add_node_to_token(defconexist, start_token, self.stream.last_token)
             # context.add_decl(defconexist)
             return defconexist
         elif name in context.decl.deffuns:
-            deffunexist = DefFunExist(name=existence_name, token=start_token, name_token=existence_name_token, formula=existence_formula, fun_name=name)
+            ref = RefDefFunExist(existence_name)
+            self.add_node_to_token(ref, existence_name_token, existence_name_token)
+            deffunexist = DefFunExist(name=existence_name, ref=ref, formula=existence_formula, fun_name=name)
+            self.add_node_to_token(deffunexist, start_token, self.stream.last_token)
             # context.add_decl(deffunexist)
             return deffunexist
         else:
@@ -261,11 +295,17 @@ class Parser:
         self.stream.consume("BY")
         name = self.stream.consume("IDENT").value
         if name in context.decl.defcons:
-            defconuniq = DefConUniq(name=uniqueness_name, token=start_token, name_token=uniqueness_name_token, formula=uniqueness_formula, con_name=name)
+            ref = RefDefConUniq(uniqueness_name)
+            self.add_node_to_token(ref, uniqueness_name_token, uniqueness_name_token)
+            defconuniq = DefConUniq(name=uniqueness_name, ref=ref, formula=uniqueness_formula, con_name=name)
+            self.add_node_to_token(defconuniq, start_token, self.stream.last_token)
             # context.add_decl(defconuniq)
             return defconuniq
         elif name in context.decl.deffuns:
-            deffununiq = DefFunUniq(name=uniqueness_name, token=start_token, name_token=uniqueness_name_token, formula=uniqueness_formula, fun_name=name)
+            ref = RefDefFunUniq(uniqueness_name)
+            self.add_node_to_token(ref, uniqueness_name_token, uniqueness_name_token)
+            deffununiq = DefFunUniq(name=uniqueness_name, ref=ref, formula=uniqueness_formula, fun_name=name)
+            self.add_node_to_token(deffununiq, start_token, self.stream.last_token)
             # context.add_decl(deffununiq)
             return deffununiq
         else:
@@ -278,13 +318,15 @@ class Parser:
         name = tok.value
         if name in context.decl.primpreds:
             self.add_decl_ref(name, tok)
-            equal = RefPrimPred(tok, name)
+            equal = RefPrimPred(name)
+            self.add_node_to_token(equal, tok, tok)
             if context.decl.primpreds[name].arity != 2:
                 msg = f"arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}"
                 raise ParseError(start_token, msg)
         elif name in context.decl.defpreds:
             self.add_decl_ref(name, tok)
-            equal = RefDefPred(tok, name)
+            equal = RefDefPred(name)
+            self.add_node_to_token(equal, tok, tok)
             if len(context.decl.defpreds[name].args) != 2:
                 msg = f"arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}"
                 raise ParseError(start_token, msg)
@@ -293,7 +335,8 @@ class Parser:
             raise ParseError(start_token, msg)
         reflection = self.parse_equality_reflection(equal, context)
         replacement = self.parse_equality_replacement(equal, context)
-        equality = Equality(name=name, token=start_token, name_token=tok, equal=equal, reflection=reflection, replacement=replacement)
+        equality = Equality(name=name, equal=equal, reflection=reflection, replacement=replacement)
+        self.add_node_to_token(equality, start_token, self.stream.last_token)
         # context.add_decl(equality)
         logger.debug(f"[equality] {type(equal)}: {equal.name}")
         return equality
@@ -308,7 +351,9 @@ class Parser:
         else:
             msg = f"axiom or theorem is required, but {name} is unknown"
             raise ParseError(start_token, msg)
-        return EqualityReflection(token=start_token, equal=equal, evidence=reflection_evidence)
+        equality_reflection = EqualityReflection(equal=equal, evidence=reflection_evidence)
+        self.add_node_to_token(equality_reflection, start_token, self.stream.last_token)
+        return equality_reflection
 
     def parse_equality_replacement(self, equal: RefPrimPred | RefDefPred, context: Context) -> EqualityReplacement:
         start_token = self.stream.consume("REPLACEMENT")
@@ -332,7 +377,9 @@ class Parser:
                 self.stream.consume("COMMA")
             else:
                 break
-        return EqualityReplacement(token=start_token, equal=equal, evidence=replacement_evidence)
+        equality_replacement = EqualityReplacement(equal=equal, evidence=replacement_evidence)
+        self.add_node_to_token(equality_replacement, start_token, self.stream.last_token)
+        return equality_replacement
 
     def parse_membership(self, context: Context) -> Membership:
         start_token = self.stream.consume("MEMBERSHIP")
@@ -340,22 +387,25 @@ class Parser:
         name = tok.value
         if name in context.decl.primpreds:
             self.add_decl_ref(name, tok)
-            membership = RefPrimPred(tok, name)
+            membership = RefPrimPred(name)
+            self.add_node_to_token(membership, tok, tok)
             if context.decl.primpreds[name].arity != 2:
                 msg = f"arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}"
                 raise ParseError(start_token, msg)
         elif name in context.decl.defpreds:
             self.add_decl_ref(name, tok)
-            membership = RefDefPred(tok, name)
+            membership = RefDefPred(name)
+            self.add_node_to_token(membership, tok, tok)
             if len(context.decl.defpreds[name].args) != 2:
                 msg = f"arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}"
                 raise ParseError(start_token, msg)
         else:
             msg = f"primpred or defpred is required, but {name} is unknown"
             raise ParseError(start_token, msg)
-        membership = Membership(name=name, token=start_token, name_token=tok, membership=membership)
+        membership = Membership(name=name, membership=membership)
+        self.add_node_to_token(membership, start_token, self.stream.last_token)
         # context.add_decl(membership)
-        logger.debug(f"[membership] {type(membership)}: {membership.name}")
+        logger.debug(f"[membership] {type(membership)}: {membership.membership.name}")
         return membership
 
     def parse_include(self, context: Context) -> Include | InvalidInclude:
@@ -426,7 +476,9 @@ class Parser:
                 raise ParseError(tok, msg)
         except (ParseError, TokenStreamError, ContextError) as e:
             self.add_lsp_error(e.token, e.msg, context)
-            return InvalidControl(token=tok)
+            node = InvalidControl()
+            self.add_node_to_token(node, tok, self.stream.last_token)
+            return node
 
     def parse_any(self, context: Context) -> Any:
         start_token = self.stream.consume("ANY")
@@ -434,7 +486,9 @@ class Parser:
         self.stream.consume("LBRACE")
         body = self.parse_block(context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls))
         self.stream.consume("RBRACE")
-        return Any(token=start_token, items=items, body=body)
+        node = Any(items=items, body=body)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
 
     def parse_assume(self, context: Context) -> Assume:
         start_token = self.stream.consume("ASSUME")
@@ -442,7 +496,9 @@ class Parser:
         self.stream.consume("LBRACE")
         body = self.parse_block(context.copy_ctrl())
         self.stream.consume("RBRACE")
-        return Assume(token=start_token, premise=premise, body=body)
+        node = Assume(premise=premise, body=body)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
     
     def parse_divide(self, context: Context) -> Divide:
         start_token = self.stream.consume("DIVIDE")
@@ -453,7 +509,9 @@ class Parser:
         if len(cases) < 2:
             msg = "At least two cases are required"
             raise ParseError(start_token, msg)
-        return Divide(token=start_token, fact=fact, cases=cases)
+        node = Divide(fact=fact, cases=cases)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
     
     def parse_case(self, context: Context) -> Case:
         start_token = self.stream.consume("CASE")
@@ -461,7 +519,9 @@ class Parser:
         self.stream.consume("LBRACE")
         body = self.parse_block(context.copy_ctrl())
         self.stream.consume("RBRACE")
-        return Case(token=start_token, premise=premise, body=body)
+        node = Case(premise=premise, body=body)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
     
     def parse_some(self, context: Context) -> Some:
         start_token = self.stream.consume("SOME")
@@ -481,7 +541,9 @@ class Parser:
         local_vars = [item for item in items if isinstance(item, Var)]
         body = self.parse_block(context.add_ctrl(local_vars, [], [], []))
         self.stream.consume("RBRACE")
-        return Some(token=start_token, items=items, fact=fact, body=body)
+        node = Some(items=items, fact=fact, body=body)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
     
     def parse_deny(self, context: Context) -> Deny:
         start_token = self.stream.consume("DENY")
@@ -489,17 +551,23 @@ class Parser:
         self.stream.consume("LBRACE")
         body = self.parse_block(context.copy_ctrl())
         self.stream.consume("RBRACE")
-        return Deny(token=start_token, premise=premise, body=body)
+        node = Deny(premise=premise, body=body)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
     
     def parse_contradict(self, context: Context) -> Contradict:
         start_token = self.stream.consume("CONTRADICT")
         contradiction = self.parse_formula(context)
-        return Contradict(token=start_token, contradiction=contradiction)
+        node = Contradict(contradiction=contradiction)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
     
     def parse_explode(self, context: Context) -> Explode:
         start_token = self.stream.consume("EXPLODE")
         conclusion = self.parse_formula(context)
-        return Explode(token=start_token, conclusion=conclusion)
+        node = Explode(conclusion=conclusion)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
 
     def parse_apply(self, context: Context) -> Apply:
         start_token = self.stream.consume("APPLY")
@@ -518,7 +586,9 @@ class Parser:
         fact = self.parse_reference_or_formula(context)
         self.stream.consume("FOR")
         terms = self.parse_terms_or_none(context)
-        return Apply(token=start_token, invoke=invoke, fact=fact, terms=terms)
+        node = Apply(invoke=invoke, fact=fact, terms=terms)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
 
     def parse_lift(self, context: Context) -> Lift:
         start_token = self.stream.consume("LIFT")
@@ -529,7 +599,9 @@ class Parser:
         if not isinstance(conclusion, Exists):
             msg = "Exists object is required"
             raise ParseError(start_token, msg)
-        return Lift(token=start_token, varterms=varterms, conclusion=conclusion)
+        node = Lift(varterms=varterms, conclusion=conclusion)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
 
     def parse_characterize(self, context: Context) -> Characterize:
         start_token = self.stream.consume("CHARACTERIZE")
@@ -540,7 +612,9 @@ class Parser:
         if not isinstance(conclusion, ExistsUniq):
             msg = "ExistsUniq object is required"
             raise ParseError(start_token, msg)
-        return Characterize(token=start_token, varterm=varterm, conclusion=conclusion)
+        node = Characterize(varterm=varterm, conclusion=conclusion)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
 
     def parse_invoke(self, context: Context) -> Invoke:
         start_token = self.stream.consume("INVOKE")
@@ -561,7 +635,9 @@ class Parser:
             if not isinstance(fact, Iff):
                 msg = "Iff object is required"
                 raise ParseError(start_token, msg)
-        return Invoke(token=start_token, direction=direction, fact=fact)
+        node = Invoke(direction=direction, fact=fact)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
 
     def parse_expand(self, context: Context) -> Expand:
         start_token = self.stream.consume("EXPAND")
@@ -587,7 +663,9 @@ class Parser:
                 self.stream.consume("COMMA")
             else:
                 break
-        return Expand(token=start_token, fact=fact, defs=defs, indexes=indexes)
+        node = Expand(fact=fact, defs=defs, indexes=indexes)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
 
     def parse_fold(self, context: Context) -> Fold:
         start_token = self.stream.consume("FOLD")
@@ -614,7 +692,9 @@ class Parser:
                 break
         self.stream.consume("CONCLUDE")
         conclusion = self.parse_formula(context)
-        return Fold(token=start_token, defs=defs, indexes=indexes, conclusion=conclusion)
+        node = Fold(defs=defs, indexes=indexes, conclusion=conclusion)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
 
     def parse_pad(self, context: Context) -> Pad:
         start_token = self.stream.consume("PAD")
@@ -624,7 +704,9 @@ class Parser:
         if not isinstance(conclusion, Or):
             msg = "Or object is required"
             raise ParseError(start_token, msg)
-        return Pad(token=start_token, fact=fact, conclusion=conclusion)
+        node = Pad(fact=fact, conclusion=conclusion)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
 
     def parse_split(self, context: Context) -> Split:
         start_token = self.stream.consume("SPLIT")
@@ -633,12 +715,16 @@ class Parser:
         else:
             index = None
         fact = self.parse_reference_or_formula(context)
-        return Split(token=start_token, index=index, fact=fact)
+        node = Split(index=index, fact=fact)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
 
     def parse_connect(self, context: Context) -> Connect:
         start_token = self.stream.consume("CONNECT")
         conclusion = self.parse_formula(context)
-        return Connect(token=start_token, conclusion=conclusion)
+        node = Connect(conclusion=conclusion)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
 
     def parse_substitute(self, context: Context) -> Substitute:
         start_token = self.stream.consume("SUBSTITUTE")
@@ -666,7 +752,9 @@ class Parser:
                 self.stream.consume("COMMA")
             else:
                 break
-        return Substitute(token=start_token, fact=fact, env=env, indexes=indexes)
+        node = Substitute(fact=fact, env=env, indexes=indexes)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
 
     def parse_show(self, context: Context) -> Show:
         start_token = self.stream.consume("SHOW")
@@ -674,12 +762,16 @@ class Parser:
         self.stream.consume("LBRACE")
         body = self.parse_block(context.copy_ctrl())
         self.stream.consume("RBRACE")
-        return Show(token=start_token, conclusion=conclusion, body=body)
+        node = Show(conclusion=conclusion, body=body)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
 
     def parse_assert(self, context: Context) -> Assert:
         start_token = self.stream.consume("ASSERT")
         reference = self.parse_reference_or_formula(context)
-        return Assert(token=start_token, reference=reference)
+        node = Assert(reference=reference)
+        self.add_node_to_token(node, start_token, self.stream.last_token)
+        return node
 
     def parse_reference_or_formula(self, context: Context) -> RefFact | Formula:
         token = self.stream.peek()
@@ -701,7 +793,9 @@ class Parser:
             if ref is not None:
                 self.add_decl_ref(name, token)
                 self.stream.consume(token.type)
-                return ref(name, token)
+                node = ref(name)
+                self.add_node_to_token(node, token, token)
+                return node
         return self.parse_formula(context)
 
     def parse_bot_or_formula(self, context: Context) -> Bottom | Formula:
@@ -716,26 +810,32 @@ class Parser:
 
     def parse_implies(self, context: Context) -> Formula:
         left = self.parse_and(context.copy_form())
+        start_token = self.unit.node_to_token[id(left)][0]
         while self.stream.peek().type in ("IMPLIES", "IFF"):
             tok = self.stream.peek()
             self.stream.consume(tok.type)
             right = self.parse_and(context.copy_form())
             if tok.type == "IMPLIES":
-                left = Implies(tok, left, right)
+                left = Implies(left, right)
+                self.add_node_to_token(left, start_token, self.stream.last_token)
             elif tok.type == "IFF":
-                left = Iff(tok, left, right)
+                left = Iff(left, right)
+                self.add_node_to_token(left, start_token, self.stream.last_token)
         return left
 
     def parse_and(self, context: Context) -> Formula:
         left = self.parse_primary(context.copy_form())
+        start_token = self.unit.node_to_token[id(left)][0]
         while self.stream.peek().type in ("AND", "OR"):
             tok = self.stream.peek()
             self.stream.consume(tok.type)
             right = self.parse_primary(context.copy_form())
             if tok.type == "AND":
-                left = And(tok, left, right)
+                left = And(left, right)
+                self.add_node_to_token(left, start_token, self.stream.last_token)
             elif tok.type == "OR":
-                left = Or(tok, left, right)
+                left = Or(left, right)
+                self.add_node_to_token(left, start_token, self.stream.last_token)
         return left
 
     def parse_primary(self, context: Context) -> Formula:
@@ -744,17 +844,19 @@ class Parser:
             name = self.stream.consume("IDENT").value
             if any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
                 pred = next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
-                defargs: list[Var | PredTemplate | FunTemplate] = [Var(tok, f"x_{i}") for i in range(pred.arity)]
+                defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
             elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
                 pred = next(pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name)
-                defargs: list[Var | PredTemplate | FunTemplate] = [Var(tok, f"x_{i}") for i in range(pred.arity)]
+                defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
             elif name in context.decl.primpreds:
                 self.add_decl_ref(name, tok)
-                pred = RefPrimPred(tok, name)
-                defargs: list[Var | PredTemplate | FunTemplate] = [Var(tok, f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
+                pred = RefPrimPred(name)
+                self.add_node_to_token(pred, tok, tok)
+                defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
             elif name in context.decl.defpreds:
                 self.add_decl_ref(name, tok)
-                pred = RefDefPred(tok, name)
+                pred = RefDefPred(name)
+                self.add_node_to_token(pred, tok, tok)
                 defargs = context.decl.defpreds[name].args
             else:
                 msg = f"Unexpected name: {name}"
@@ -766,7 +868,9 @@ class Parser:
             else:
                 subargs: list[Term] = []
             resolved_args = self.match_args(defargs, subargs, context, tok)
-            return AtomicFormula(tok, pred, tuple(resolved_args))
+            formula = AtomicFormula(pred, tuple(resolved_args))
+            self.add_node_to_token(formula, tok, self.stream.last_token)
+            return formula
 
         elif tok.type == "LPAREN":
             self.stream.consume("LPAREN")
@@ -779,7 +883,9 @@ class Parser:
             self.stream.consume("LPAREN")
             body = self.parse_formula(context.copy_form())
             self.stream.consume("RPAREN")
-            return Not(tok, body)
+            formula = Not(body)
+            self.add_node_to_token(formula, tok, self.stream.last_token)
+            return formula
 
         elif tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
             quantified_pairs: list[tuple[Token, Var | PredTemplate | FunTemplate]] = []
@@ -808,16 +914,19 @@ class Parser:
             self.stream.consume("RPAREN")
             for tok, item in reversed(quantified_pairs):
                 if tok.type in ("FORALL", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
-                    body = Forall(tok, item, body)
+                    body = Forall(item, body)
+                    self.add_node_to_token(body, tok, self.stream.last_token)
                 elif tok.type == "EXISTS":
                     if isinstance(item, Var):
-                        body = Exists(tok, item, body)
+                        body = Exists(item, body)
+                        self.add_node_to_token(body, tok, self.stream.last_token)
                     else:
                         msg = f"Unexpected type: {type(item)}"
                         raise ParseError(tok, msg)
                 elif tok.type == "EXISTS_UNIQ":
                     if isinstance(item, Var):
-                        body = ExistsUniq(tok, item, body)
+                        body = ExistsUniq(item, body)
+                        self.add_node_to_token(body, tok, self.stream.last_token)
                     else:
                         msg = f"Unexpected type: {type(item)}"
                         raise ParseError(tok, msg)
@@ -866,7 +975,7 @@ class Parser:
             return term
         else:
             msg = f"Expected VarTerm, got {type(term)}"
-            raise ParseError(term.token, msg)
+            raise ParseError(self.unit.node_to_token[id(term)][0], msg)
 
     def parse_term(self, context: Context) -> Term:
         tok = self.stream.peek()
@@ -882,36 +991,46 @@ class Parser:
                 return next((pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name))
             elif name in context.decl.defcons:
                 self.add_decl_ref(name, tok)
-                return RefDefCon(tok, name)
+                ref = RefDefCon(name)
+                self.add_node_to_token(ref, tok, tok)
+                return ref
             elif name in context.decl.deffuns or name in context.decl.deffunterms or any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.fun_tmpls):
                 if name in context.decl.deffuns:
                     self.add_decl_ref(name, tok)
-                    fun = RefDefFun(tok, name)
+                    fun = RefDefFun(name)
+                    self.add_node_to_token(fun, tok, tok)
                     defargs = context.decl.deffuns[name].args
                 elif name in context.decl.deffunterms:
                     self.add_decl_ref(name, tok)
-                    fun = RefDefFunTerm(tok, name)
+                    fun = RefDefFunTerm(name)
+                    self.add_node_to_token(fun, tok, tok)
                     defargs = context.decl.deffunterms[name].args
                 elif any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls):
                     fun = next(fun_tmpl for fun_tmpl in context.form.fun_tmpls if fun_tmpl.name == name)
-                    defargs = [Var(tok, f"x_{i}") for i in range(fun.arity)]
+                    defargs = [Var(f"x_{i}") for i in range(fun.arity)]
                 else:
                     fun = next(fun_tmpl for fun_tmpl in context.ctrl.fun_tmpls if fun_tmpl.name == name)
-                    defargs = [Var(tok, f"x_{i}") for i in range(fun.arity)]
+                    defargs = [Var(f"x_{i}") for i in range(fun.arity)]
                 if self.stream.peek().type == "LPAREN":
                     self.stream.consume("LPAREN")
                     subargs = self.parse_terms(context)
                     self.stream.consume("RPAREN")
                     resolved_args = self.match_args(defargs, subargs, context, tok)
-                    return Compound(tok, fun, tuple(resolved_args))
+                    term = Compound(fun, tuple(resolved_args))
+                    self.add_node_to_token(term, tok, self.stream.last_token)
+                    return term
                 else:
                     return fun
             elif name in context.decl.primpreds:
                 self.add_decl_ref(name, tok)
-                return RefPrimPred(tok, name)
+                ref = RefPrimPred(name)
+                self.add_node_to_token(ref, tok, tok)
+                return ref
             elif name in context.decl.defpreds:
                 self.add_decl_ref(name, tok)
-                return RefDefPred(tok, name)
+                ref = RefDefPred(name)
+                self.add_node_to_token(ref, tok, tok)
+                return ref
             else:
                 msg = f"Term object is required, but {name} is unknown"
                 raise ParseError(tok, msg)
@@ -923,7 +1042,9 @@ class Parser:
                 vars = self.parse_vars()
             self.stream.consume("DOT")
             formula = self.parse_formula(context.add_form(vars, [], []))
-            return PredLambda(tok, tuple(vars), formula)
+            term = PredLambda(tuple(vars), formula)
+            self.add_node_to_token(term, tok, self.stream.last_token)
+            return term
         elif tok.type == "LAMBDA_FUN":
             self.stream.consume("LAMBDA_FUN")
             if self.stream.peek().type == "DOT":
@@ -932,7 +1053,9 @@ class Parser:
                 vars = self.parse_vars()
             self.stream.consume("DOT")
             term = self.parse_var_term(context.add_form(vars, [], []))
-            return FunLambda(tok, tuple(vars), term)
+            term = FunLambda(tuple(vars), term)
+            self.add_node_to_token(term, tok, self.stream.last_token)
+            return term
         else:
             msg = "Term object is required, but unknown token is found"
             raise ParseError(tok, msg)
@@ -1022,7 +1145,9 @@ class Parser:
     def parse_var(self) -> Var:
         tok = self.stream.consume("IDENT")
         var_name = tok.value
-        return Var(tok, var_name)
+        var = Var(var_name)
+        self.add_node_to_token(var, tok, tok)
+        return var
 
     def parse_pred_tmpl(self) -> PredTemplate:
         tok = self.stream.consume("IDENT")
@@ -1030,7 +1155,9 @@ class Parser:
         self.stream.consume("LBRACKET")
         arity = int(self.stream.consume("NUMBER").value)
         self.stream.consume("RBRACKET")
-        return PredTemplate(tok, pred_tmpl_name, arity)
+        pred = PredTemplate(pred_tmpl_name, arity)
+        self.add_node_to_token(pred, tok, self.stream.last_token)
+        return pred
 
     def parse_fun_tmpl(self) -> FunTemplate:
         tok = self.stream.consume("IDENT")
@@ -1038,7 +1165,9 @@ class Parser:
         self.stream.consume("LBRACKET")
         arity = int(self.stream.consume("NUMBER").value)
         self.stream.consume("RBRACKET")
-        return FunTemplate(tok, fun_tmpl_name, arity)
+        fun = FunTemplate(fun_tmpl_name, arity)
+        self.add_node_to_token(fun, tok, self.stream.last_token)
+        return fun
 
     def match_args(self, defargs: Sequence[Var | PredTemplate | FunTemplate], subargs: Sequence[Term], context: Context, tok: Token) -> list[Term]:
         if len(defargs) != len(subargs):
@@ -1061,7 +1190,10 @@ class Parser:
                             msg = "VarTerm is substituted into PredTerm with arity 1, but membership has not been declared"
                             raise ParseError(tok, msg)
                         else:
-                            resolved_args.append(MembershipLambda(tok, subarg))
+                            term = MembershipLambda(subarg)
+                            start_token, end_token = self.unit.node_to_token[id(subarg)]
+                            self.add_node_to_token(term, start_token, end_token)
+                            resolved_args.append(term)
                     else:
                         msg = f"VarTerm cannot be substituted into PredTerm with arity {defarg.arity}"
                         raise ParseError(tok, msg)
