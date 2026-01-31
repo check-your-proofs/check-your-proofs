@@ -850,10 +850,16 @@ class Parser:
         if tok.type == "IDENT":
             name = self.stream.consume("IDENT").value
             if any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
-                pred = next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
+                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
+                pred = PredTemplate(name, def_pred_tmpl.arity)
+                self.add_node_to_token(pred, tok, tok)
+                self.add_ctrl_defs_refs(def_pred_tmpl, pred)
                 defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
             elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
-                pred = next(pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name)
+                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name)
+                pred = PredTemplate(name, def_pred_tmpl.arity)
+                self.add_node_to_token(pred, tok, tok)
+                self.add_ctrl_defs_refs(def_pred_tmpl, pred)
                 defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
             elif name in context.decl.primpreds:
                 self.add_decl_ref(name, tok)
@@ -995,7 +1001,11 @@ class Parser:
                 self.add_ctrl_defs_refs(def_var, ref_var)
                 return ref_var
             elif any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
-                return next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
+                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
+                ref_pred_tmpl = PredTemplate(name, def_pred_tmpl.arity)
+                self.add_node_to_token(ref_pred_tmpl, tok, tok)
+                self.add_ctrl_defs_refs(def_pred_tmpl, ref_pred_tmpl)
+                return ref_pred_tmpl
             elif any(var.name == name for var in context.ctrl.vars):
                 def_var = next((var for var in context.ctrl.vars if var.name == name))
                 ref_var = Var(name)
@@ -1003,7 +1013,11 @@ class Parser:
                 self.add_ctrl_defs_refs(def_var, ref_var)
                 return ref_var
             elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
-                return next((pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name))
+                def_pred_tmpl = next((pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name))
+                ref_pred_tmpl = PredTemplate(name, def_pred_tmpl.arity)
+                self.add_node_to_token(ref_pred_tmpl, tok, tok)
+                self.add_ctrl_defs_refs(def_pred_tmpl, ref_pred_tmpl)
+                return ref_pred_tmpl
             elif name in context.decl.defcons:
                 self.add_decl_ref(name, tok)
                 ref = RefDefCon(name)
@@ -1021,10 +1035,16 @@ class Parser:
                     self.add_node_to_token(fun, tok, tok)
                     defargs = context.decl.deffunterms[name].args
                 elif any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls):
-                    fun = next(fun_tmpl for fun_tmpl in context.form.fun_tmpls if fun_tmpl.name == name)
+                    def_fun_tmpl = next(fun_tmpl for fun_tmpl in context.form.fun_tmpls if fun_tmpl.name == name)
+                    fun = FunTemplate(name, def_fun_tmpl.arity)
+                    self.add_node_to_token(fun, tok, tok)
+                    self.add_ctrl_defs_refs(def_fun_tmpl, fun)
                     defargs = [Var(f"x_{i}") for i in range(fun.arity)]
                 else:
-                    fun = next(fun_tmpl for fun_tmpl in context.ctrl.fun_tmpls if fun_tmpl.name == name)
+                    def_fun_tmpl = next(fun_tmpl for fun_tmpl in context.ctrl.fun_tmpls if fun_tmpl.name == name)
+                    fun = FunTemplate(name, def_fun_tmpl.arity)
+                    self.add_node_to_token(fun, tok, tok)
+                    self.add_ctrl_defs_refs(def_fun_tmpl, fun)
                     defargs = [Var(f"x_{i}") for i in range(fun.arity)]
                 if self.stream.peek().type == "LPAREN":
                     self.stream.consume("LPAREN")
@@ -1173,6 +1193,7 @@ class Parser:
         self.stream.consume("RBRACKET")
         pred = PredTemplate(pred_tmpl_name, arity)
         self.add_node_to_token(pred, tok, self.stream.last_token)
+        self.add_ctrl_defs_refs(pred, pred)
         return pred
 
     def parse_fun_tmpl(self) -> FunTemplate:
@@ -1183,6 +1204,7 @@ class Parser:
         self.stream.consume("RBRACKET")
         fun = FunTemplate(fun_tmpl_name, arity)
         self.add_node_to_token(fun, tok, self.stream.last_token)
+        self.add_ctrl_defs_refs(fun, fun)
         return fun
 
     def match_args(self, defargs: Sequence[Var | PredTemplate | FunTemplate], subargs: Sequence[Term], context: Context, tok: Token) -> list[Term]:
