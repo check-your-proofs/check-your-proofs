@@ -290,6 +290,7 @@ class ProofLanguageServer(LanguageServer):
     def find_token_at(unit: DeclarationUnit, pos: lsp.Position) -> Token | None:
         target_line = pos.line + 1
         target_column = pos.character + 1
+        candidate = None
         for token in unit.tokens:
             if target_line < token.line or target_line > token.end_line:
                 continue
@@ -297,8 +298,10 @@ class ProofLanguageServer(LanguageServer):
                 continue
             if target_line == token.end_line and target_column > token.end_column:
                 continue
-            return token
-        return None
+            if token.type == "IDENT":
+                return token
+            candidate = token
+        return candidate
 
     @staticmethod
     def is_in_range(pos: lsp.Position, unit: DeclarationUnit) -> bool:
