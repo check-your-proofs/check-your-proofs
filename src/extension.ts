@@ -2,7 +2,13 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { LanguageClient, ServerOptions, LanguageClientOptions } from "vscode-languageclient/node";
 
+interface PreviewResponse {
+    html: string;
+}
+
 let client: LanguageClient;
+let mediaPath: vscode.Uri;
+let panel: vscode.WebviewPanel | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
     const pythonPath = context.asAbsolutePath(path.join(".venv", "Scripts", "python.exe"));
@@ -23,20 +29,51 @@ export function activate(context: vscode.ExtensionContext) {
     console.log("Proof LSP Client starting...");
     client.start();
 
+    mediaPath = vscode.Uri.joinPath(context.extensionUri, "html");
+
     const previewCommand = vscode.commands.registerCommand("dsl-proof.showPreview", () => {
-        const panel = vscode.window.createWebviewPanel(
-            "proofPreview",
-            "Proof Preview",
-            vscode.ViewColumn.Two,
-            { enableScripts: true }
-        );
-        panel.webview.html = "webview test message";
+        if (vscode.window.activeTextEditor) {
+            if (!panel) {
+                panel = vscode.window.createWebviewPanel(
+                    "proofPreview",
+                    "Proof Preview",
+                    vscode.ViewColumn.Two,
+                    {
+                        enableScripts: true,
+                        localResourceRoots: [mediaPath]
+                    }
+                );
+                panel.onDidDispose(() => { panel = undefined; }, null, context.subscriptions);
+            }
+            updateWebView(vscode.window.activeTextEditor.document);
+        }
     });
 
     context.subscriptions.push(previewCommand);
+
+    vscode.workspace.onDidSaveTextDocument(document => {
+        if (panel && document === vscode.window.activeTextEditor?.document) {
+            updateWebView(document);
+        }
+    });
 }
 
 export function deactivate(): Thenable<void> | undefined {
-    if (!client) return undefined;
+    if (!client) { return undefined; }
     return client.stop();
+}
+
+async function updateWebView(document: vscode.TextDocument) {
+    if (!panel) { return; }
+
+    const response = await client.sendRequest<PreviewResponse>("proof/getPreviewHtml", {
+        uri: document.uri.toString()
+    });
+
+    const scriptUri = panel.webview.asWebviewUri(vscode.Uri.joinPath(mediaPath, "script.js"));
+    const cssUri = panel.webview.asWebviewUri(vscode.Uri.joinPath(mediaPath, "style_mathjax.css"));
+    let html = response.html;
+    html = html.replace("script.js", scriptUri.toString());
+    html = html.replace("style_mathjax.css", cssUri.toString());
+    panel.webview.html = html;
 }
