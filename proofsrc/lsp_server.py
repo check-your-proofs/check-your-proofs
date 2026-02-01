@@ -300,7 +300,7 @@ class ProofLanguageServer(LanguageServer):
         target_line = pos.line + 1
         target_column = pos.character + 1
         candidate = None
-        for token in unit.tokens:
+        for token in unit.tokens[:-1]:
             if target_line < token.line or target_line > token.end_line:
                 continue
             if target_line == token.line and target_column < token.column:
