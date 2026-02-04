@@ -397,14 +397,21 @@ class ProofLanguageServer(LanguageServer):
             )
         )
 
+    @staticmethod
+    def find_node_by_line(unit: DeclarationUnit, position: lsp.Position) -> Declaration | DeclarationSupport | Control | None:
+        target_line = position.line + 1
+        for token in unit.tokens:
+            if token.line == target_line and token.index in unit.token_to_control:
+                return unit.token_to_control[token.index]
+        return None
+
     def get_proofinfo(self, params: GetProofInfoParams) -> str:
         unit = self.get_unit_at(params.uri, params.position)
         if unit is None:
             return "unit is not found"
-        token = self.find_token_at(unit, params.position)
-        if token is None:
-            return "token is not found"
-        node = unit.token_to_node[token.index]
+        node = self.find_node_by_line(unit, params.position)
+        if node is None:
+            return "node is not found"
         return HTML_TEMPLATE.format(body=render_proofinfo(node, unit.context))
 
 server = ProofLanguageServer()
