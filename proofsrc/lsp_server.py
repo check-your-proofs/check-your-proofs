@@ -10,8 +10,22 @@ from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include,
 from parser import Parser
 from checker import Checker
 from splitter import split
-from to_html import to_html
+from to_html import Renderer, to_html
 from logic_utils import ExprFormatter
+
+HTML_TEMPLATE = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="stylesheet" href="style_mathjax.css">
+</head>
+<body>
+{body}
+</body>
+</html>
+"""
 
 @dataclass
 class GetPreviewParams:
@@ -20,6 +34,11 @@ class GetPreviewParams:
 @dataclass
 class GetPreviewResponse:
     html: str
+
+@dataclass
+class GetProofInfoParams:
+    uri: str
+    position: lsp.Position
 
 def get_hover(node: Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact, context: Context) -> str:
     if isinstance(node, Declaration):
@@ -93,6 +112,34 @@ local_conclusions: {local_conclusions}
             return f"{node.__class__.__name__}\n```proof\nuniqueness {deffununiq.name} {ExprFormatter(context).pretty_expr(deffununiq.formula)} by {deffununiq.fun_name}"
         else:
             return f"{node.__class__.__name__}: Unknown"
+    else:
+        return node.__class__.__name__
+
+def render_proofinfo(node: Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact, context: Context) -> str:
+    if isinstance(node, Declaration):
+        return f"{node.__class__.__name__}: {node.proofinfo.status}"
+    elif isinstance(node, Control):
+        renderer = Renderer(context, "mathjax")
+        context_vars = renderer.render_expr_list(node.proofinfo.ctrl_ctx.vars)
+        context_formulas = renderer.render_expr_list(node.proofinfo.ctrl_ctx.formulas)
+        context_pred_tmpls = renderer.render_expr_list(node.proofinfo.ctrl_ctx.pred_tmpls)
+        context_fun_tmpls = renderer.render_expr_list(node.proofinfo.ctrl_ctx.fun_tmpls)
+        premises = renderer.render_expr_list(node.proofinfo.premises)
+        conclusions = renderer.render_expr_list(node.proofinfo.conclusions)
+        local_vars = renderer.render_expr_list(node.proofinfo.local_vars)
+        local_premises = renderer.render_expr_list(node.proofinfo.local_premise)
+        local_conclusions = renderer.render_expr_list(node.proofinfo.local_conclusion)
+        return f"""{node.__class__.__name__}: {node.proofinfo.status}<br>
+context_vars: {context_vars}<br>
+context_formulas: {context_formulas}<br>
+context_pred_tmpls: {context_pred_tmpls}<br>
+context_fun_tmpls: {context_fun_tmpls}<br>
+premises: {premises}<br>
+conclusions: {conclusions}<br>
+local_vars: {local_vars}<br>
+local_premises: {local_premises}<br>
+local_conclusions: {local_conclusions}
+"""
     else:
         return node.__class__.__name__
 
@@ -350,6 +397,16 @@ class ProofLanguageServer(LanguageServer):
             )
         )
 
+    def get_proofinfo(self, params: GetProofInfoParams) -> str:
+        unit = self.get_unit_at(params.uri, params.position)
+        if unit is None:
+            return "unit is not found"
+        token = self.find_token_at(unit, params.position)
+        if token is None:
+            return "token is not found"
+        node = unit.token_to_node[token.index]
+        return HTML_TEMPLATE.format(body=render_proofinfo(node, unit.context))
+
 server = ProofLanguageServer()
 
 @server.feature(lsp.INITIALIZE)
@@ -417,6 +474,10 @@ def get_preview_html(ls: ProofLanguageServer, params: GetPreviewParams) -> GetPr
     title = os.path.splitext(os.path.basename(path))[0]
     checker_html, _ = to_html(asts, last_context, title, "mathjax")
     return GetPreviewResponse(html=checker_html)
+
+@server.feature("proof/getProofInfo")
+def get_proofinfo(ls: ProofLanguageServer, params: GetProofInfoParams):
+    return ls.get_proofinfo(params)
 
 if __name__ == "__main__":
     server.start_io()

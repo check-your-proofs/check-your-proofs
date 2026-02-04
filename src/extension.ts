@@ -56,6 +56,15 @@ export function activate(context: vscode.ExtensionContext) {
             updateWebView(document);
         }
     });
+
+    vscode.window.onDidChangeTextEditorSelection(async (e) => {
+        if (panel) {
+            panel.webview.html = await client.sendRequest<string>("proof/getProofInfo", {
+                uri: e.textEditor.document.uri.toString(),
+                position: e.textEditor.selection.active
+            });
+        }
+    });
 }
 
 export function deactivate(): Thenable<void> | undefined {
