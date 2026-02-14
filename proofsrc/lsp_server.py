@@ -3,6 +3,7 @@ from pygls import uris
 from lsprotocol import types as lsp
 import os
 from dataclasses import dataclass
+import threading
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
@@ -169,6 +170,8 @@ class ProofLanguageServer(LanguageServer):
         self.old_workspace: Workspace | None = None
         self.updated_files: set[str] = set()
         self.resolver: DependencyResolver | None = None
+        self.analysis_timer: threading.Timer | None = None
+        self.cancel_analysis = threading.Event()
 
     def run_analysis(self, path: str, save_html: bool):
         self.analyze(path)
@@ -177,6 +180,8 @@ class ProofLanguageServer(LanguageServer):
             self.to_html()
 
     def analyze(self, path: str) -> None:
+        self.cancel_analysis.clear()
+
         self.window_show_message(
             lsp.ShowMessageParams(
                 type=lsp.MessageType.Info,
@@ -213,6 +218,8 @@ class ProofLanguageServer(LanguageServer):
                 break
 
         for i in range(start_index, len(all_units)):
+            if self.cancel_analysis.is_set():
+                return
             unit = all_units[i]
             working_context = context.copy()
             Parser(unit).parse_unit(working_context)
@@ -459,7 +466,11 @@ def did_change(ls: ProofLanguageServer, params: lsp.DidChangeTextDocumentParams)
     if path is None:
         return
 
-    ls.run_analysis(path, False)
+    if ls.analysis_timer is not None:
+        ls.analysis_timer.cancel()
+    ls.cancel_analysis.set()
+    ls.analysis_timer = threading.Timer(0.5, ls.run_analysis, args=[path, False])
+    ls.analysis_timer.start()
 
 @server.feature(lsp.TEXT_DOCUMENT_HOVER)
 def hovers(ls: ProofLanguageServer, params: lsp.HoverParams) -> lsp.Hover | None:
