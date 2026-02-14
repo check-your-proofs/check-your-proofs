@@ -1,5 +1,5 @@
 from lexer import Token
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, Include, DeclarationSupport, Assert, Fold, Membership, VarTerm, FunTemplate, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, InvalidInclude, DeclarationUnit, RefFact, RefEquality
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, Include, DeclarationSupport, Assert, Fold, VarTerm, FunTemplate, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, InvalidInclude, DeclarationUnit, RefFact, RefEquality
 from logic_utils import Substitutor, DefExpander, ExprFormatter, expr_in_context, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, alpha_safe_formula
 from copy import deepcopy
 from lsprotocol import types as lsp
@@ -98,8 +98,6 @@ class Checker:
                 self.check_deffunterm(node, context, indent)
             elif isinstance(node, Equality):
                 self.check_equality(node, context, indent)
-            elif isinstance(node, Membership):
-                self.check_membership(node, context, indent)
             elif isinstance(node, InvalidDeclaration):
                 msg = "InvalidDeclaration"
                 raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
@@ -247,12 +245,6 @@ class Checker:
         logger.debug(f"{debug_prefix}name: {node.ref.name}")
         context.add_decl(node)
         logger.debug(f"{debug_prefix}{node.ref.name} is registered as equality")
-
-    def check_membership(self, node: Membership, context: Context, indent: int) -> None:
-        debug_prefix = make_debug_prefix(node, indent)
-        logger.debug(f"{debug_prefix}name: {node.membership.name}")
-        context.add_decl(node)
-        logger.debug(f"{debug_prefix}{node.membership.name} is registered as membership")
 
     def check_control(self, node: Control, context: Context, indent: int) -> None:
 

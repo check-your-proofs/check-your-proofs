@@ -415,10 +415,6 @@ class Equality(Declaration):
     tex: list[str]
 
 @dataclass
-class Membership(Declaration):
-    membership: RefPrimPred | RefDefPred
-
-@dataclass
 class DeclarationContext:
     primpreds: dict[str, PrimPred]
     axioms: dict[str, Axiom]
@@ -432,12 +428,11 @@ class DeclarationContext:
     deffununiqs: dict[str, DefFunUniq]
     deffunterms: dict[str, DefFunTerm]
     equality: Equality | None
-    membership: Membership | None
     used_names: set[str]
 
     @staticmethod
     def init() -> "DeclarationContext":
-        return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None, membership=None, used_names=set())
+        return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None, used_names=set())
 
     def add(self, declaration: Declaration):
         if isinstance(declaration, Equality):
@@ -445,12 +440,6 @@ class DeclarationContext:
                 msg = "equality is already declared"
                 raise Exception(msg)
             self.equality = declaration
-            return
-        if isinstance(declaration, Membership):
-            if self.membership is not None:
-                msg = "membership is already declared"
-                raise Exception(msg)
-            self.membership = declaration
             return
         if declaration.name in self.used_names:
             if not (isinstance(declaration, DefPred) and declaration.name in self.defpreds):
@@ -504,7 +493,7 @@ class DeclarationContext:
             raise ContextError(token, msg)
 
     def copy(self) -> "DeclarationContext":
-        return DeclarationContext(self.primpreds.copy(), self.axioms.copy(), self.theorems.copy(), self.defpreds.copy(), self.defcons.copy(), self.defconexists.copy(), self.defconuniqs.copy(), self.deffuns.copy(), self.deffunexists.copy(), self.deffununiqs.copy(), self.deffunterms.copy(), self.equality, self.membership, set(self.used_names))
+        return DeclarationContext(self.primpreds.copy(), self.axioms.copy(), self.theorems.copy(), self.defpreds.copy(), self.defcons.copy(), self.defconexists.copy(), self.defconuniqs.copy(), self.deffuns.copy(), self.deffunexists.copy(), self.deffununiqs.copy(), self.deffunterms.copy(), self.equality, set(self.used_names))
 
 @dataclass
 class Context:

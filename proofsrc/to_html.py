@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, PredTemplate, Membership, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from logic_utils import ExprFormatter
@@ -301,16 +301,6 @@ class Renderer:
                         "は等号である。"]
         return header_parts, header_parts_jp, ""
 
-    def render_membership(self, node: Membership):
-        header_parts = [self.bullet,
-                        self.render_keyword("membership"),
-                        self.render_identifier(node.membership.name)]
-        header_parts_jp = [self.bullet,
-                           self.render_keyword("帰属関係宣言"),
-                           self.render_identifier(node.membership.name),
-                           "は帰属関係である。"]
-        return header_parts, header_parts_jp, ""
-
     def render_invalid_declaration(self, node: InvalidDeclaration):
         header_parts = [self.bullet,
                         self.render_keyword(f"InvalidDeclaration")]
@@ -343,8 +333,6 @@ class Renderer:
             return self.render_deffunterm(node)
         elif isinstance(node, Equality):
             return self.render_equality(node)
-        elif isinstance(node, Membership):
-            return self.render_membership(node)
         elif isinstance(node, InvalidDeclaration):
             return self.render_invalid_declaration(node)
         else:

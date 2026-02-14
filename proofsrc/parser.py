@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, ContextError, DeclarationUnit, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, DeclarationSupport, RefEquality
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, ContextError, DeclarationUnit, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, DeclarationSupport, RefEquality
 from lexer import Token
 from token_stream import TokenStream, TokenStreamError
 from logic_utils import strip_forall_vars
@@ -98,8 +98,6 @@ class Parser:
                 return self.parse_uniqueness(context)
             elif tok.type == "EQUALITY":
                 return self.parse_equality(context)
-            elif tok.type == "MEMBERSHIP":
-                return self.parse_membership(context)
             else:
                 msg = "Declaration is required"
                 raise ParseError(tok, msg)
@@ -334,33 +332,6 @@ class Parser:
         self.add_node_to_token(equality, start_token, self.stream.last_token)
         logger.debug(f"[equality] {name}")
         return equality
-
-    def parse_membership(self, context: Context) -> Membership:
-        start_token = self.stream.consume("MEMBERSHIP")
-        tok = self.stream.consume("IDENT")
-        name = tok.value
-        if name in context.decl.primpreds:
-            self.add_decl_ref(name, tok)
-            membership = RefPrimPred(name)
-            self.add_node_to_token(membership, tok, tok)
-            if context.decl.primpreds[name].arity != 2:
-                msg = f"arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}"
-                raise ParseError(start_token, msg)
-        elif name in context.decl.defpreds:
-            self.add_decl_ref(name, tok)
-            membership = RefDefPred(name)
-            self.add_node_to_token(membership, tok, tok)
-            if len(context.decl.defpreds[name].args) != 2:
-                msg = f"arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}"
-                raise ParseError(start_token, msg)
-        else:
-            msg = f"primpred or defpred is required, but {name} is unknown"
-            raise ParseError(start_token, msg)
-        membership = Membership(name=name, membership=membership)
-        self.add_node_to_token(membership, start_token, self.stream.last_token)
-        # context.add_decl(membership)
-        logger.debug(f"[membership] {type(membership)}: {membership.membership.name}")
-        return membership
 
     def parse_include(self, context: Context) -> Include:
         start_token = self.stream.consume("INCLUDE")
