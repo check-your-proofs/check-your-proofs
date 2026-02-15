@@ -182,13 +182,6 @@ class ProofLanguageServer(LanguageServer):
     def analyze(self, path: str) -> None:
         self.cancel_analysis.clear()
 
-        self.window_show_message(
-            lsp.ShowMessageParams(
-                type=lsp.MessageType.Info,
-                message=f"Checking {os.path.basename(path)}..."
-            )
-        )
-
         if self.resolver is None:
             self.resolver = DependencyResolver()
         else:
@@ -251,13 +244,6 @@ class ProofLanguageServer(LanguageServer):
             updated_files.add(old_all_units[i].file)
         self.updated_files.update(updated_files)
 
-        self.window_show_message(
-            lsp.ShowMessageParams(
-                type=lsp.MessageType.Info,
-                message=f"{sum(len(v) for v in final_diagnostics.values())} errors"
-            )
-        )
-
         for uri, diags in final_diagnostics.items():
             self.text_document_publish_diagnostics(
                 lsp.PublishDiagnosticsParams(uri=uri, diagnostics=diags)
@@ -277,13 +263,6 @@ class ProofLanguageServer(LanguageServer):
             f = open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "html", f"{title}.html"), 'w', encoding='utf-8')
             f.write(checker_html)
             f.close()
-
-        self.window_show_message(
-            lsp.ShowMessageParams(
-                type=lsp.MessageType.Info,
-                message=f"{len(self.updated_files)} HTML files are updated"
-            )
-        )
 
         self.updated_files.clear()
 
