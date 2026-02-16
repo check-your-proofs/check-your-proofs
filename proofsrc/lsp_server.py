@@ -165,7 +165,10 @@ class ProofLanguageServer(LanguageServer):
         self.analysis_timer: threading.Timer | None = None
         self.cancel_analysis = threading.Event()
 
-    def run_analysis(self, path: str, save_html: bool):
+    def run_analysis(self, uri: str, save_html: bool):
+        path = uris.to_fs_path(uri)
+        if path is None:
+            return
         self.analyze(path)
 
         if save_html:
@@ -257,6 +260,16 @@ class ProofLanguageServer(LanguageServer):
             f.close()
 
         self.updated_files.clear()
+
+    def did_save(self, params: lsp.DidSaveTextDocumentParams) -> None:
+        self.run_analysis(params.text_document.uri, True)
+
+    def did_change(self, params: lsp.DidChangeTextDocumentParams) -> None:
+        if self.analysis_timer is not None:
+            self.analysis_timer.cancel()
+        self.cancel_analysis.set()
+        self.analysis_timer = threading.Timer(0.5, self.run_analysis, args=[params.text_document.uri, False])
+        self.analysis_timer.start()
 
     def get_definition(self, params: lsp.DefinitionParams) -> lsp.Location | None:
         unit = self.get_unit_at(params.text_document.uri, params.position)
@@ -416,11 +429,7 @@ def did_open(ls: ProofLanguageServer, params: lsp.DidOpenTextDocumentParams) -> 
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_SAVE)
 def did_save(ls: ProofLanguageServer, params: lsp.DidSaveTextDocumentParams) -> None:
-    path = uris.to_fs_path(params.text_document.uri)
-    if path is None:
-        raise Exception(f"Cannot convert {params.text_document.uri} to path")
-
-    ls.run_analysis(path, True)
+    ls.did_save(params)
 
 @server.feature(lsp.TEXT_DOCUMENT_DEFINITION)
 def lsp_definition(ls: ProofLanguageServer, params: lsp.DefinitionParams) -> lsp.Location | None:
@@ -433,15 +442,7 @@ def lsp_completion(ls: ProofLanguageServer, params: lsp.CompletionParams):
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_CHANGE)
 def did_change(ls: ProofLanguageServer, params: lsp.DidChangeTextDocumentParams) -> None:
-    path = uris.to_fs_path(params.text_document.uri)
-    if path is None:
-        return
-
-    if ls.analysis_timer is not None:
-        ls.analysis_timer.cancel()
-    ls.cancel_analysis.set()
-    ls.analysis_timer = threading.Timer(0.5, ls.run_analysis, args=[path, False])
-    ls.analysis_timer.start()
+    ls.did_change(params)
 
 @server.feature(lsp.TEXT_DOCUMENT_HOVER)
 def hovers(ls: ProofLanguageServer, params: lsp.HoverParams) -> lsp.Hover | None:
