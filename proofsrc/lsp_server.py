@@ -373,10 +373,15 @@ class ProofLanguageServer(LanguageServer):
         if self.old_workspace is None:
             return None
         units = self.old_workspace.file_units.get(path, [])
+        target_line = position.line + 1
+        last_unit = None
         for unit in units:
+            if target_line < unit.tokens[0].line:
+                return last_unit
             if self.is_in_range(position, unit):
                 return unit
-        return None
+            last_unit = unit
+        return last_unit
 
     def hovers(self, params: lsp.HoverParams) -> lsp.Hover | None:
         unit = self.get_unit_at(params.text_document.uri, params.position)
@@ -398,9 +403,9 @@ class ProofLanguageServer(LanguageServer):
         target_line = position.line + 1
         last_node = None
         for token in unit.tokens:
-            if token.line < target_line:
+            if token.line < target_line and token.index in unit.token_to_control:
                 last_node = unit.token_to_control[token.index]
-            elif token.line == target_line:
+            elif token.line == target_line and token.index in unit.token_to_control:
                 return unit.token_to_control[token.index]
             else:
                 break
