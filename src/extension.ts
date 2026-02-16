@@ -50,12 +50,16 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(previewCommand);
 
-    vscode.window.onDidChangeTextEditorSelection(async (e) => {
+    vscode.window.onDidChangeTextEditorSelection((e) => {
+        client.sendNotification("proof/moveCursor", {
+            uri: e.textEditor.document.uri.toString(),
+            position: e.textEditor.selection.active
+        });
+    });
+
+    client.onNotification("proof/updatePanel", (html: string) => {
         if (panel) {
-            panel.webview.html = await client.sendRequest<string>("proof/getProofInfo", {
-                uri: e.textEditor.document.uri.toString(),
-                position: e.textEditor.selection.active
-            });
+            panel.webview.html = html;
         }
     });
 }

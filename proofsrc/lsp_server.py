@@ -23,13 +23,14 @@ HTML_TEMPLATE = """<!doctype html>
 <link rel="stylesheet" href="style_mathjax.css">
 </head>
 <body>
-{body}
+{current_cursor}<br>
+{proofinfo}
 </body>
 </html>
 """
 
 @dataclass
-class GetProofInfoParams:
+class CursorState:
     uri: str
     position: lsp.Position
 
@@ -164,13 +165,14 @@ class ProofLanguageServer(LanguageServer):
         self.resolver: DependencyResolver | None = None
         self.analysis_timer: threading.Timer | None = None
         self.cancel_analysis = threading.Event()
+        self.current_cursor: CursorState | None = None
 
     def run_analysis(self, uri: str, save_html: bool):
         path = uris.to_fs_path(uri)
         if path is None:
             return
         self.analyze(path)
-
+        self.update_panel()
         if save_html:
             self.to_html()
 
@@ -398,14 +400,23 @@ class ProofLanguageServer(LanguageServer):
                 return unit.token_to_control[token.index]
         return None
 
-    def get_proofinfo(self, params: GetProofInfoParams) -> str:
-        unit = self.get_unit_at(params.uri, params.position)
+    def get_proofinfo(self) -> str:
+        if self.current_cursor is None:
+            return "current_cursor is not found"
+        unit = self.get_unit_at(self.current_cursor.uri, self.current_cursor.position)
         if unit is None:
             return "unit is not found"
-        node = self.find_node_by_line(unit, params.position)
+        node = self.find_node_by_line(unit, self.current_cursor.position)
         if node is None:
             return "node is not found"
-        return HTML_TEMPLATE.format(body=render_proofinfo(node, unit.context))
+        path = uris.from_fs_path(self.current_cursor.uri)
+        if path is None:
+            return "path is not found"
+        current_cursor = f"{os.path.basename(path)}, line {self.current_cursor.position.line + 1}, column {self.current_cursor.position.character + 1}"
+        return HTML_TEMPLATE.format(current_cursor=current_cursor, proofinfo=render_proofinfo(node, unit.context))
+
+    def update_panel(self) -> None:
+        self.protocol.notify("proof/updatePanel", self.get_proofinfo())
 
 server = ProofLanguageServer()
 
@@ -452,9 +463,10 @@ def hovers(ls: ProofLanguageServer, params: lsp.HoverParams) -> lsp.Hover | None
 def lsp_references(ls: ProofLanguageServer, params: lsp.ReferenceParams) -> list[lsp.Location]:
     return ls.get_references(params)
 
-@server.feature("proof/getProofInfo")
-def get_proofinfo(ls: ProofLanguageServer, params: GetProofInfoParams):
-    return ls.get_proofinfo(params)
+@server.feature("proof/moveCursor")
+def move_cursor(ls: ProofLanguageServer, params: CursorState) -> None:
+    ls.current_cursor = params
+    ls.update_panel()
 
 if __name__ == "__main__":
     server.start_io()
