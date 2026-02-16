@@ -172,6 +172,7 @@ class ProofLanguageServer(LanguageServer):
         if path is None:
             return
         self.analyze(path)
+        self.analysis_timer = None
         self.update_panel()
         if save_html:
             self.to_html()
@@ -466,6 +467,8 @@ def lsp_references(ls: ProofLanguageServer, params: lsp.ReferenceParams) -> list
 @server.feature("proof/moveCursor")
 def move_cursor(ls: ProofLanguageServer, params: CursorState) -> None:
     ls.current_cursor = params
+    if ls.analysis_timer is not None:
+        return
     ls.update_panel()
 
 if __name__ == "__main__":
