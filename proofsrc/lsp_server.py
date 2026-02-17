@@ -23,7 +23,6 @@ HTML_TEMPLATE = """<!doctype html>
 <link rel="stylesheet" href="style_mathjax.css">
 </head>
 <body>
-{current_cursor}<br>
 {decl_info}<br>
 {ctrl_info}
 </body>
@@ -110,10 +109,21 @@ local_conclusions: {local_conclusions}
     else:
         return node.__class__.__name__
 
+def render_statement(node: Declaration | Control, context: Context) -> str:
+    renderer = Renderer(context, "mathjax")
+    method_name = f"render_{node.__class__.__name__.lower()}"
+    renderer_method = getattr(renderer, method_name, None)
+    if renderer_method is None:
+        return f"[{node.__class__.__name__}]"
+    else:
+        return " ".join(renderer_method(node)[0][1:])
+
 def render_proofinfo(node: Include | Declaration | Control, context: Context) -> str:
     if isinstance(node, Declaration):
-        return f"{node.__class__.__name__}: {node.proofinfo.status}"
+        statement = render_statement(node, context)
+        return f"{node.proofinfo.status} {statement}"
     elif isinstance(node, Control):
+        statement = render_statement(node, context)
         renderer = Renderer(context, "mathjax")
         context_vars = renderer.render_expr_list(node.proofinfo.ctrl_ctx.vars)
         context_formulas = renderer.render_expr_list(node.proofinfo.ctrl_ctx.formulas)
@@ -124,16 +134,21 @@ def render_proofinfo(node: Include | Declaration | Control, context: Context) ->
         local_vars = renderer.render_expr_list(node.proofinfo.local_vars)
         local_premises = renderer.render_expr_list(node.proofinfo.local_premise)
         local_conclusions = renderer.render_expr_list(node.proofinfo.local_conclusion)
-        return f"""{node.__class__.__name__}: {node.proofinfo.status}<br>
-context_vars: {context_vars}<br>
-context_formulas: {context_formulas}<br>
-context_pred_tmpls: {context_pred_tmpls}<br>
-context_fun_tmpls: {context_fun_tmpls}<br>
-premises: {premises}<br>
-conclusions: {conclusions}<br>
-local_vars: {local_vars}<br>
-local_premises: {local_premises}<br>
-local_conclusions: {local_conclusions}
+        return f"""{node.proofinfo.status} {statement}<br>
+<style>
+    td {{ border: 1px solid var(--vscode-panel-border); }}
+</style>
+<table>
+    <tr><td>context_vars</td><td>{context_vars}</td></tr>
+    <tr><td>context_formulas</td><td>{context_formulas}</td></tr>
+    <tr><td>context_pred_tmpls</td><td>{context_pred_tmpls}</td></tr>
+    <tr><td>context_fun_tmpls</td><td>{context_fun_tmpls}</td></tr>
+    <tr><td>premises</td><td>{premises}</td></tr>
+    <tr><td>conclusions</td><td>{conclusions}</td></tr>
+    <tr><td>local_vars</td><td>{local_vars}</td></tr>
+    <tr><td>local_premises</td><td>{local_premises}</td></tr>
+    <tr><td>local_conclusions</td><td>{local_conclusions}</td></tr>
+</table>
 """
     else:
         return node.__class__.__name__
@@ -422,10 +437,9 @@ class ProofLanguageServer(LanguageServer):
         path = uris.from_fs_path(self.current_cursor.uri)
         if path is None:
             return "path is not found"
-        current_cursor = f"{os.path.basename(path)}, line {self.current_cursor.position.line + 1}, column {self.current_cursor.position.character + 1}"
         decl_info = render_proofinfo(unit.ast, unit.context)
         ctrl_info = "" if node is None else render_proofinfo(node, unit.context)
-        return HTML_TEMPLATE.format(current_cursor=current_cursor, decl_info=decl_info, ctrl_info=ctrl_info)
+        return HTML_TEMPLATE.format(decl_info=decl_info, ctrl_info=ctrl_info)
 
     def update_panel(self) -> None:
         self.protocol.notify("proof/updatePanel", self.get_proofinfo())
