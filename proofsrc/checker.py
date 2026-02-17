@@ -329,7 +329,7 @@ class Checker:
             goal = Forall(item, goal)
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [goal]
-        node.proofinfo.local_vars = local_vars
+        node.proofinfo.local_vars = node.items
         node.proofinfo.local_premise = []
         node.proofinfo.local_conclusion = [local_goal]
         add_conclusion(context, goal)

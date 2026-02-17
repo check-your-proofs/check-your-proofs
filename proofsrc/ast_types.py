@@ -214,7 +214,7 @@ class ProofInfo:
     ctrl_ctx: ControlContext = field(init=False, default_factory=ControlContext.init)
     premises: Sequence[RefFact | Bottom | Formula] = field(init=False, default_factory=list[RefFact | Bottom | Formula])
     conclusions: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Bottom | Formula])
-    local_vars: Sequence[Var] = field(init=False, default_factory=list[Var])
+    local_vars: Sequence[Var | PredTemplate | FunTemplate] = field(init=False, default_factory=list[Var | PredTemplate | FunTemplate])
     local_premise: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Formula])
     local_conclusion: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Bottom | Formula])
 
