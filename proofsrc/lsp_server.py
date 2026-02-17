@@ -125,29 +125,31 @@ def render_proofinfo(node: Include | Declaration | Control, context: Context) ->
     elif isinstance(node, Control):
         statement = render_statement(node, context)
         renderer = Renderer(context, "mathjax")
-        context_vars = renderer.render_expr_list(node.proofinfo.ctrl_ctx.vars)
+        context_symbols = renderer.render_expr_list(node.proofinfo.ctrl_ctx.symbols)
         context_formulas = renderer.render_expr_list(node.proofinfo.ctrl_ctx.formulas)
-        context_pred_tmpls = renderer.render_expr_list(node.proofinfo.ctrl_ctx.pred_tmpls)
-        context_fun_tmpls = renderer.render_expr_list(node.proofinfo.ctrl_ctx.fun_tmpls)
         premises = renderer.render_expr_list(node.proofinfo.premises)
         conclusions = renderer.render_expr_list(node.proofinfo.conclusions)
         local_vars = renderer.render_expr_list(node.proofinfo.local_vars)
         local_premises = renderer.render_expr_list(node.proofinfo.local_premise)
         local_conclusions = renderer.render_expr_list(node.proofinfo.local_conclusion)
-        return f"""{node.proofinfo.status} {statement}<br>
-<style>
-    td {{ border: 1px solid var(--vscode-panel-border); }}
+        return f"""<style>
+    .statement {{ min-height: 1.5em; }}
+    table {{ width: 100%; }}
+    td {{ border: 1px solid var(--vscode-panel-border); height: 1.5em; }}
+    .current {{ background-color: rgba(255, 255, 0, 0.1); }}
+    .block {{ background-color: rgba(0, 122, 204, 0.1); }}
+    .context {{ background-color: rgba(128, 128, 128, 0.1); }}
+    td:first-child {{ color: var(--vscode-descriptionForeground); width: 200px; }}
 </style>
+<div class="statement">{node.proofinfo.status} {statement}</div>
 <table>
-    <tr><td>context_vars</td><td>{context_vars}</td></tr>
-    <tr><td>context_formulas</td><td>{context_formulas}</td></tr>
-    <tr><td>context_pred_tmpls</td><td>{context_pred_tmpls}</td></tr>
-    <tr><td>context_fun_tmpls</td><td>{context_fun_tmpls}</td></tr>
-    <tr><td>premises</td><td>{premises}</td></tr>
-    <tr><td>conclusions</td><td>{conclusions}</td></tr>
-    <tr><td>local_vars</td><td>{local_vars}</td></tr>
-    <tr><td>local_premises</td><td>{local_premises}</td></tr>
-    <tr><td>local_conclusions</td><td>{local_conclusions}</td></tr>
+    <tr class="current"><td>Premises of this statement</td><td>{premises}</td></tr>
+    <tr class="current"><td>Conclusions of this statement</td><td>{conclusions}</td></tr>
+    <tr class="block"><td>New symbols in this block</td><td>{local_vars}</td></tr>
+    <tr class="block"><td>New formulas in this block</td><td>{local_premises}</td></tr>
+    <tr class="block"><td>Conclusions in this block</td><td>{local_conclusions}</td></tr>
+    <tr class="context"><td>Available symbols</td><td>{context_symbols}</td></tr>
+    <tr class="context"><td>Available formulas</td><td>{context_formulas}</td></tr>
 </table>
 """
     else:
