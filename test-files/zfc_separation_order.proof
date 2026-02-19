@@ -1,35 +1,35 @@
 include "zfc_separation.proof"
 
-definition predicate transrelon(X, template \psi[2]) as \forall x\forall y\forall z(in(x,X)\wedge in(y,X)\wedge in(z,X)\to(\psi(x,y)\wedge\psi(y,z)\to\psi(x,z)))
+definition predicate transrelon(X, predicate \psi[2]) as \forall x\forall y\forall z(in(x,X)\wedge in(y,X)\wedge in(z,X)\to(\psi(x,y)\wedge\psi(y,z)\to\psi(x,z)))
 
-definition predicate antisymrelon(X, template \psi[2]) as \forall x\forall y(in(x,X)\wedge in(y,X)\to(\psi(x,y)\wedge\psi(y,x)\to equal(x,y)))
+definition predicate antisymrelon(X, predicate \psi[2]) as \forall x\forall y(in(x,X)\wedge in(y,X)\to(\psi(x,y)\wedge\psi(y,x)\to equal(x,y)))
 
-definition predicate orderon(X, template \psi[2]) as transrelon(X,\psi)\wedge antisymrelon(X,\psi)
+definition predicate orderon(X, predicate \psi[2]) as transrelon(X,\psi)\wedge antisymrelon(X,\psi)
 
-definition predicate irrefrelon(X, template \psi[2]) as \forall x(in(x,X)\to\neg(\psi(x,x)))
+definition predicate irrefrelon(X, predicate \psi[2]) as \forall x(in(x,X)\to\neg(\psi(x,x)))
 
-definition predicate linorder(X, template \psi[2]) as orderon(X,\psi)\wedge\forall x\forall y(in(x,X)\wedge in(y,X)\to\psi(x,y)\vee equal(x,y)\vee\psi(y,x))
+definition predicate linorder(X, predicate \psi[2]) as orderon(X,\psi)\wedge\forall x\forall y(in(x,X)\wedge in(y,X)\to\psi(x,y)\vee equal(x,y)\vee\psi(y,x))
 
-definition function seg(X, template \psi[2], x) as sep(X,lambda y.neq(y,x)\wedge\psi(y,x))
+definition function seg(X, predicate \psi[2], x) as sep(X,\lambda^P y.neq(y,x)\wedge\psi(y,x))
 
-theorem seg_characterization \forall X\forall^T\psi[2]\forall x\forall y(in(y,seg(X,\psi,x))\leftrightarrow in(y,X)\wedge neq(y,x)\wedge\psi(y,x)) {
-  any X, template \psi[2],x,y {
+theorem seg_characterization \forall X\forall^P\psi[2]\forall x\forall y(in(y,seg(X,\psi,x))\leftrightarrow in(y,X)\wedge neq(y,x)\wedge\psi(y,x)) {
+  any X, predicate \psi[2],x,y {
     assume in(y,seg(X,\psi,x)) {
       expand in(y,seg(X,\psi,x)) for seg
-      apply invoke rightward sep_existence for X,lambda y.neq(y,x)\wedge\psi(y,x),y
+      apply invoke rightward sep_existence for X,\lambda^P y.neq(y,x)\wedge\psi(y,x),y
     }
     assume in(y,X)\wedge neq(y,x)\wedge\psi(y,x) {
-      apply invoke leftward sep_existence for X,lambda y.neq(y,x)\wedge\psi(y,x),y
+      apply invoke leftward sep_existence for X,\lambda^P y.neq(y,x)\wedge\psi(y,x),y
       fold for seg conclude in(y,seg(X,\psi,x))
     }
     connect in(y,seg(X,\psi,x))\leftrightarrow in(y,X)\wedge neq(y,x)\wedge\psi(y,x)
   }
 }
 
-definition predicate minimal(X, template \psi[2], A, a) as subset(A,X)\wedge in(a,A)\wedge\forall x(in(x,A)\wedge neq(x,a)\to\neg(\psi(x,a)))
+definition predicate minimal(X, predicate \psi[2], A, a) as subset(A,X)\wedge in(a,A)\wedge\forall x(in(x,A)\wedge neq(x,a)\to\neg(\psi(x,a)))
 
-theorem minimal_equivalence \forall X\forall^T\psi[2]\forall A\forall a(minimal(X,\psi,A,a)\leftrightarrow subset(A,X)\wedge in(a,A)\wedge equal(cap(seg(X,\psi,a),A),emptyset)) {
-  any X, template \psi[2], A, a {
+theorem minimal_equivalence \forall X\forall^P\psi[2]\forall A\forall a(minimal(X,\psi,A,a)\leftrightarrow subset(A,X)\wedge in(a,A)\wedge equal(cap(seg(X,\psi,a),A),emptyset)) {
+  any X, predicate \psi[2], A, a {
     assume minimal(X,\psi,A,a) {
       expand minimal(X,\psi,A,a) for minimal
       split subset(A,X)\wedge in(a,A)\wedge\forall x(in(x,A)\wedge neq(x,a)\to\neg(\psi(x,a)))
@@ -72,10 +72,10 @@ theorem minimal_equivalence \forall X\forall^T\psi[2]\forall A\forall a(minimal(
   }
 }
 
-definition predicate minimum(X, template \psi[2], A, a) as subset(A,X)\wedge in(a,A)\wedge\forall x(in(x,A)\wedge neq(x,a)\to\psi(a,x))
+definition predicate minimum(X, predicate \psi[2], A, a) as subset(A,X)\wedge in(a,A)\wedge\forall x(in(x,A)\wedge neq(x,a)\to\psi(a,x))
 
-theorem minimum_implies_minimal \forall X\forall^T\psi[2]\forall A\forall a(antisymrelon(X,\psi)\wedge minimum(X,\psi,A,a)\to minimal(X,\psi,A,a)) {
-  any X, template \psi[2], A, a {
+theorem minimum_implies_minimal \forall X\forall^P\psi[2]\forall A\forall a(antisymrelon(X,\psi)\wedge minimum(X,\psi,A,a)\to minimal(X,\psi,A,a)) {
+  any X, predicate \psi[2], A, a {
     assume antisymrelon(X,\psi)\wedge minimum(X,\psi,A,a) {
       split antisymrelon(X,\psi)\wedge minimum(X,\psi,A,a)
       expand minimum(X,\psi,A,a) for minimum
@@ -104,8 +104,8 @@ theorem minimum_implies_minimal \forall X\forall^T\psi[2]\forall A\forall a(anti
   }
 }
 
-theorem linorder_and_minmal_implies_minimum \forall X\forall^T\psi[2]\forall A\forall a(linorder(X,\psi)\wedge minimal(X,\psi,A,a)\to minimum(X,\psi,A,a)) {
-  any X, template \psi[2], A, a {
+theorem linorder_and_minmal_implies_minimum \forall X\forall^P\psi[2]\forall A\forall a(linorder(X,\psi)\wedge minimal(X,\psi,A,a)\to minimum(X,\psi,A,a)) {
+  any X, predicate \psi[2], A, a {
     assume linorder(X,\psi)\wedge minimal(X,\psi,A,a) {
       split linorder(X,\psi)\wedge minimal(X,\psi,A,a)
       expand minimal(X,\psi,A,a) for minimal
@@ -140,12 +140,12 @@ theorem linorder_and_minmal_implies_minimum \forall X\forall^T\psi[2]\forall A\f
   }
 }
 
-definition predicate wellfounded(X, template \psi[2]) as \forall A(subset(A,X)\wedge neq(A,emptyset)\to\exists a(minimal(X,\psi,A,a)))
+definition predicate wellfounded(X, predicate \psi[2]) as \forall A(subset(A,X)\wedge neq(A,emptyset)\to\exists a(minimal(X,\psi,A,a)))
 
-definition predicate wellorder(X, template \psi[2]) as orderon(X,\psi)\wedge\forall A(subset(A,X)\wedge neq(A,emptyset)\to\exists a(minimum(X,\psi,A,a)))
+definition predicate wellorder(X, predicate \psi[2]) as orderon(X,\psi)\wedge\forall A(subset(A,X)\wedge neq(A,emptyset)\to\exists a(minimum(X,\psi,A,a)))
 
-theorem linorder_and_wellfounded_implies_wellorder \forall X\forall^T\psi[2](linorder(X,\psi)\wedge wellfounded(X,\psi)\to wellorder(X,\psi)) {
-  any X, template \psi[2] {
+theorem linorder_and_wellfounded_implies_wellorder \forall X\forall^P\psi[2](linorder(X,\psi)\wedge wellfounded(X,\psi)\to wellorder(X,\psi)) {
+  any X, predicate \psi[2] {
     assume linorder(X,\psi)\wedge wellfounded(X,\psi) {
       split linorder(X,\psi)\wedge wellfounded(X,\psi)
       expand linorder(X,\psi) for linorder
@@ -167,8 +167,8 @@ theorem linorder_and_wellfounded_implies_wellorder \forall X\forall^T\psi[2](lin
   }
 }
 
-theorem wellorder_implies_linorder \forall X\forall^T\psi[2](wellorder(X,\psi)\to linorder(X,\psi)) {
-  any X, template \psi[2] {
+theorem wellorder_implies_linorder \forall X\forall^P\psi[2](wellorder(X,\psi)\to linorder(X,\psi)) {
+  any X, predicate \psi[2] {
     assume wellorder(X,\psi) {
       expand wellorder(X,\psi) for wellorder
       split orderon(X,\psi)\wedge\forall A(subset(A,X)\wedge neq(A,emptyset)\to\exists a(minimum(X,\psi,A,a)))
@@ -182,7 +182,7 @@ theorem wellorder_implies_linorder \forall X\forall^T\psi[2](wellorder(X,\psi)\t
             expand minimum(X,\psi,pair(x,y),a) for minimum
             split subset(pair(x,y),X)\wedge in(a,pair(x,y))\wedge\forall z(in(z,pair(x,y))\wedge neq(z,a)\to\psi(a,z))
             apply invoke rightward pair_existence for x,y,a
-            apply law_of_excluded_middle for lambda.equal(x,y)
+            apply law_of_excluded_middle for \lambda^P.equal(x,y)
             divide equal(x,y)\vee neq(x,y)
               case equal(x,y) {
                 pad equal(x,y) conclude \psi(x,y)\vee equal(x,y)\vee\psi(y,x)
@@ -213,8 +213,8 @@ theorem wellorder_implies_linorder \forall X\forall^T\psi[2](wellorder(X,\psi)\t
   }
 }
 
-theorem wellorder_implies_wellfounded \forall X\forall^T\psi[2](wellorder(X,\psi)\to wellfounded(X,\psi)) {
-  any X, template \psi[2] {
+theorem wellorder_implies_wellfounded \forall X\forall^P\psi[2](wellorder(X,\psi)\to wellfounded(X,\psi)) {
+  any X, predicate \psi[2] {
     assume wellorder(X,\psi) {
       expand wellorder(X,\psi) for wellorder
       split orderon(X,\psi)\wedge\forall A(subset(A,X)\wedge neq(A,emptyset)\to\exists a(minimum(X,\psi,A,a)))
@@ -235,8 +235,8 @@ theorem wellorder_implies_wellfounded \forall X\forall^T\psi[2](wellorder(X,\psi
   }
 }
 
-theorem wellorder_equivalent_linorder_and_wellfounded \forall X\forall^T\psi[2](wellorder(X,\psi)\leftrightarrow linorder(X,\psi)\wedge wellfounded(X,\psi)) {
-  any X, template \psi[2] {
+theorem wellorder_equivalent_linorder_and_wellfounded \forall X\forall^P\psi[2](wellorder(X,\psi)\leftrightarrow linorder(X,\psi)\wedge wellfounded(X,\psi)) {
+  any X, predicate \psi[2] {
     assume wellorder(X,\psi) {
       apply invoke wellorder_implies_linorder for X,\psi
       apply invoke wellorder_implies_wellfounded for X,\psi
@@ -249,8 +249,8 @@ theorem wellorder_equivalent_linorder_and_wellfounded \forall X\forall^T\psi[2](
   }
 }
 
-theorem transrelon_subset \forall X\forall^T\phi[2]\forall Y(transrelon(X,\phi)\wedge subset(Y,X)\to transrelon(Y,\phi)) {
-  any X, template \phi[2], Y {
+theorem transrelon_subset \forall X\forall^P\phi[2]\forall Y(transrelon(X,\phi)\wedge subset(Y,X)\to transrelon(Y,\phi)) {
+  any X, predicate \phi[2], Y {
     assume transrelon(X,\phi)\wedge subset(Y,X) {
       split transrelon(X,\phi)\wedge subset(Y,X)
       any x,y,z {
@@ -272,8 +272,8 @@ theorem transrelon_subset \forall X\forall^T\phi[2]\forall Y(transrelon(X,\phi)\
   }
 }
 
-theorem antisymrelon_subset \forall X\forall^T\phi[2]\forall Y(antisymrelon(X,\phi)\wedge subset(Y,X)\to antisymrelon(Y,\phi)) {
-  any X, template \phi[2], Y {
+theorem antisymrelon_subset \forall X\forall^P\phi[2]\forall Y(antisymrelon(X,\phi)\wedge subset(Y,X)\to antisymrelon(Y,\phi)) {
+  any X, predicate \phi[2], Y {
     assume antisymrelon(X,\phi)\wedge subset(Y,X) {
       split antisymrelon(X,\phi)\wedge subset(Y,X)
       any x,y {
@@ -293,8 +293,8 @@ theorem antisymrelon_subset \forall X\forall^T\phi[2]\forall Y(antisymrelon(X,\p
   }
 }
 
-theorem orderon_subset \forall X\forall^T\phi[2]\forall Y(orderon(X,\phi)\wedge subset(Y,X)\to orderon(Y,\phi)) {
-  any X, template \phi[2], Y {
+theorem orderon_subset \forall X\forall^P\phi[2]\forall Y(orderon(X,\phi)\wedge subset(Y,X)\to orderon(Y,\phi)) {
+  any X, predicate \phi[2], Y {
     assume orderon(X,\phi)\wedge subset(Y,X) {
       split orderon(X,\phi)\wedge subset(Y,X)
       expand orderon(X,\phi) for orderon
@@ -309,8 +309,8 @@ theorem orderon_subset \forall X\forall^T\phi[2]\forall Y(orderon(X,\phi)\wedge 
   }
 }
 
-theorem irrefrelon_subset \forall X\forall^T\phi[2]\forall Y(irrefrelon(X,\phi)\wedge subset(Y,X)\to irrefrelon(Y,\phi)) {
-  any X, template \phi[2], Y {
+theorem irrefrelon_subset \forall X\forall^P\phi[2]\forall Y(irrefrelon(X,\phi)\wedge subset(Y,X)\to irrefrelon(Y,\phi)) {
+  any X, predicate \phi[2], Y {
     assume irrefrelon(X,\phi)\wedge subset(Y,X) {
       split irrefrelon(X,\phi)\wedge subset(Y,X)
       any x {
@@ -326,8 +326,8 @@ theorem irrefrelon_subset \forall X\forall^T\phi[2]\forall Y(irrefrelon(X,\phi)\
   }
 }
 
-theorem wellorder_subset \forall X\forall^T\phi[2]\forall Y(wellorder(X,\phi)\wedge subset(Y,X)\to wellorder(Y,\phi)) {
-  any X, template \phi[2], Y {
+theorem wellorder_subset \forall X\forall^P\phi[2]\forall Y(wellorder(X,\phi)\wedge subset(Y,X)\to wellorder(Y,\phi)) {
+  any X, predicate \phi[2], Y {
     assume wellorder(X,\phi)\wedge subset(Y,X) {
       split wellorder(X,\phi)\wedge subset(Y,X)
       expand wellorder(X,\phi) for wellorder

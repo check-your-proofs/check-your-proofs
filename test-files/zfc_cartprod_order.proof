@@ -18,16 +18,16 @@ definition predicate irrefrelon(X,R) as relon(X,R)\wedge irrefrel(R)
 
 definition predicate linorder(X,R) as orderon(X,R)\wedge\forall x\forall y(in(x,X)\wedge in(y,X)\to in(op(x,y),R)\vee equal(x,y)\vee in(op(y,x),R))
 
-definition function seg(X,R,x) as sep(X,lambda y.neq(y,x)\wedge in(op(y,x),R))
+definition function seg(X,R,x) as sep(X,\lambda^P y.neq(y,x)\wedge in(op(y,x),R))
 
 theorem seg_characterization \forall X\forall R\forall x\forall y(in(y,seg(X,R,x))\leftrightarrow in(y,X)\wedge neq(y,x)\wedge in(op(y,x),R)) {
   any X,R,x,y {
     assume in(y,seg(X,R,x)) {
       expand in(y,seg(X,R,x)) for seg
-      apply invoke rightward sep_existence for X,lambda y.neq(y,x)\wedge in(op(y,x),R),y
+      apply invoke rightward sep_existence for X,\lambda^P y.neq(y,x)\wedge in(op(y,x),R),y
     }
     assume in(y,X)\wedge neq(y,x)\wedge in(op(y,x),R) {
-      apply invoke leftward sep_existence for X,lambda y.neq(y,x)\wedge in(op(y,x),R),y
+      apply invoke leftward sep_existence for X,\lambda^P y.neq(y,x)\wedge in(op(y,x),R),y
       fold for seg conclude in(y,seg(X,R,x))
     }
     connect in(y,seg(X,R,x))\leftrightarrow in(y,X)\wedge neq(y,x)\wedge in(op(y,x),R)
@@ -185,7 +185,7 @@ theorem wellorder_implies_linorder \forall X\forall R(wellorder(X,R)\to linorder
             expand minimum(X,R,pair(x,y),a) for minimum
             split subset(pair(x,y),X)\wedge in(a,pair(x,y))\wedge\forall z(in(z,pair(x,y))\wedge neq(z,a)\to in(op(a,z),R))
             apply invoke rightward pair_existence for x,y,a
-            apply law_of_excluded_middle for lambda.equal(x,y)
+            apply law_of_excluded_middle for \lambda^P.equal(x,y)
             divide equal(x,y)\vee neq(x,y)
               case equal(x,y) {
                 pad equal(x,y) conclude in(op(x,y),R)\vee equal(x,y)\vee in(op(y,x),R)
@@ -425,8 +425,8 @@ theorem res_of_wellorder_is_wellorder \forall R\forall X\forall Y(wellorder(X,R)
   }
 }
 
-theorem transrel_relsep_subset \forall X\forall^T\phi[2]\forall Y(transrel(relsep(X,\phi))\wedge subset(Y,X)\to transrel(relsep(Y,\phi))) {
-  any X, template \phi[2], Y {
+theorem transrel_relsep_subset \forall X\forall^P\phi[2]\forall Y(transrel(relsep(X,\phi))\wedge subset(Y,X)\to transrel(relsep(Y,\phi))) {
+  any X, predicate \phi[2], Y {
     assume transrel(relsep(X,\phi))\wedge subset(Y,X) {
       split transrel(relsep(X,\phi))\wedge subset(Y,X)
       apply invoke res_of_transrel_is_transrel for relsep(X,\phi),Y
@@ -436,8 +436,8 @@ theorem transrel_relsep_subset \forall X\forall^T\phi[2]\forall Y(transrel(relse
   }
 }
 
-theorem transrelon_relsep_subset \forall X\forall^T\phi[2]\forall Y(transrelon(X,relsep(X,\phi))\wedge subset(Y,X)\to transrelon(Y,relsep(Y,\phi))) {
-  any X, template \phi[2], Y {
+theorem transrelon_relsep_subset \forall X\forall^P\phi[2]\forall Y(transrelon(X,relsep(X,\phi))\wedge subset(Y,X)\to transrelon(Y,relsep(Y,\phi))) {
+  any X, predicate \phi[2], Y {
     assume transrelon(X,relsep(X,\phi))\wedge subset(Y,X) {
       split transrelon(X,relsep(X,\phi))\wedge subset(Y,X)
       apply invoke res_of_transrelon_is_transrelon for relsep(X,\phi),X,Y
@@ -447,8 +447,8 @@ theorem transrelon_relsep_subset \forall X\forall^T\phi[2]\forall Y(transrelon(X
   }
 }
 
-theorem antisymrel_relsep_subset \forall X\forall^T\phi[2]\forall Y(antisymrel(relsep(X,\phi))\wedge subset(Y,X)\to antisymrel(relsep(Y,\phi))) {
-  any X, template \phi[2], Y {
+theorem antisymrel_relsep_subset \forall X\forall^P\phi[2]\forall Y(antisymrel(relsep(X,\phi))\wedge subset(Y,X)\to antisymrel(relsep(Y,\phi))) {
+  any X, predicate \phi[2], Y {
     assume antisymrel(relsep(X,\phi))\wedge subset(Y,X) {
       split antisymrel(relsep(X,\phi))\wedge subset(Y,X)
       apply invoke res_of_antisymrel_is_antisymrel for relsep(X,\phi),Y
@@ -458,8 +458,8 @@ theorem antisymrel_relsep_subset \forall X\forall^T\phi[2]\forall Y(antisymrel(r
   }
 }
 
-theorem antisymrelon_relsep_subset \forall X\forall^T\phi[2]\forall Y(antisymrelon(X,relsep(X,\phi))\wedge subset(Y,X)\to antisymrelon(Y,relsep(Y,\phi))) {
-  any X, template \phi[2], Y {
+theorem antisymrelon_relsep_subset \forall X\forall^P\phi[2]\forall Y(antisymrelon(X,relsep(X,\phi))\wedge subset(Y,X)\to antisymrelon(Y,relsep(Y,\phi))) {
+  any X, predicate \phi[2], Y {
     assume antisymrelon(X,relsep(X,\phi))\wedge subset(Y,X) {
       split antisymrelon(X,relsep(X,\phi))\wedge subset(Y,X)
       apply invoke res_of_antisymrelon_is_antisymrelon for relsep(X,\phi),X,Y
@@ -469,8 +469,8 @@ theorem antisymrelon_relsep_subset \forall X\forall^T\phi[2]\forall Y(antisymrel
   }
 }
 
-theorem order_relsep_subset \forall X\forall^T\phi[2]\forall Y(order(relsep(X,\phi))\wedge subset(Y,X)\to order(relsep(Y,\phi))) {
-  any X, template \phi[2], Y {
+theorem order_relsep_subset \forall X\forall^P\phi[2]\forall Y(order(relsep(X,\phi))\wedge subset(Y,X)\to order(relsep(Y,\phi))) {
+  any X, predicate \phi[2], Y {
     assume order(relsep(X,\phi))\wedge subset(Y,X) {
       split order(relsep(X,\phi))\wedge subset(Y,X)
       expand order(relsep(X,\phi)) for order
@@ -485,8 +485,8 @@ theorem order_relsep_subset \forall X\forall^T\phi[2]\forall Y(order(relsep(X,\p
   }
 }
 
-theorem orderon_relsep_subset \forall X\forall^T\phi[2]\forall Y(orderon(X,relsep(X,\phi))\wedge subset(Y,X)\to orderon(Y,relsep(Y,\phi))) {
-  any X, template \phi[2], Y {
+theorem orderon_relsep_subset \forall X\forall^P\phi[2]\forall Y(orderon(X,relsep(X,\phi))\wedge subset(Y,X)\to orderon(Y,relsep(Y,\phi))) {
+  any X, predicate \phi[2], Y {
     assume orderon(X,relsep(X,\phi))\wedge subset(Y,X) {
       split orderon(X,relsep(X,\phi))\wedge subset(Y,X)
       apply invoke res_of_orderon_is_orderon for relsep(X,\phi),X,Y
@@ -496,8 +496,8 @@ theorem orderon_relsep_subset \forall X\forall^T\phi[2]\forall Y(orderon(X,relse
   }
 }
 
-theorem irrefrel_relsep_subset \forall X\forall^T\phi[2]\forall Y(irrefrel(relsep(X,\phi))\wedge subset(Y,X)\to irrefrel(relsep(Y,\phi))) {
-  any X, template \phi[2], Y {
+theorem irrefrel_relsep_subset \forall X\forall^P\phi[2]\forall Y(irrefrel(relsep(X,\phi))\wedge subset(Y,X)\to irrefrel(relsep(Y,\phi))) {
+  any X, predicate \phi[2], Y {
     assume irrefrel(relsep(X,\phi))\wedge subset(Y,X) {
       split irrefrel(relsep(X,\phi))\wedge subset(Y,X)
       apply invoke res_of_irrefrel_is_irrefrel for relsep(X,\phi),Y
@@ -507,8 +507,8 @@ theorem irrefrel_relsep_subset \forall X\forall^T\phi[2]\forall Y(irrefrel(relse
   }
 }
 
-theorem irrefrelon_relsep_subset \forall X\forall^T\phi[2]\forall Y(irrefrelon(X,relsep(X,\phi))\wedge subset(Y,X)\to irrefrelon(Y,relsep(Y,\phi))) {
-  any X, template \phi[2], Y {
+theorem irrefrelon_relsep_subset \forall X\forall^P\phi[2]\forall Y(irrefrelon(X,relsep(X,\phi))\wedge subset(Y,X)\to irrefrelon(Y,relsep(Y,\phi))) {
+  any X, predicate \phi[2], Y {
     assume irrefrelon(X,relsep(X,\phi))\wedge subset(Y,X) {
       split irrefrelon(X,relsep(X,\phi))\wedge subset(Y,X)
       apply invoke res_of_irrefrelon_is_irrefrelon for relsep(X,\phi),X,Y
@@ -518,8 +518,8 @@ theorem irrefrelon_relsep_subset \forall X\forall^T\phi[2]\forall Y(irrefrelon(X
   }
 }
 
-theorem wellorder_relsep_subset \forall X\forall^T\phi[2]\forall Y(wellorder(X,relsep(X,\phi))\wedge subset(Y,X)\to wellorder(Y,relsep(Y,\phi))) {
-  any X, template \phi[2], Y {
+theorem wellorder_relsep_subset \forall X\forall^P\phi[2]\forall Y(wellorder(X,relsep(X,\phi))\wedge subset(Y,X)\to wellorder(Y,relsep(Y,\phi))) {
+  any X, predicate \phi[2], Y {
     assume wellorder(X,relsep(X,\phi))\wedge subset(Y,X) {
       split wellorder(X,relsep(X,\phi))\wedge subset(Y,X)
       apply invoke res_of_wellorder_is_wellorder for relsep(X,\phi),X,Y

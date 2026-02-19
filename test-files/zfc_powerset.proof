@@ -19,7 +19,7 @@ theorem powerset_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightar
             }
             connect in(z,y')\leftrightarrow in(z,y)
           }
-          fold for equal conclude equal(y',y)
+          apply invoke axiom_of_extensionality for y', y
         }
       }
       connect \forall z(in(z,y)\leftrightarrow subset(z,x))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow subset(z,x))\to equal(y',y))
@@ -54,5 +54,5 @@ theorem powerset_cor2 equal(powerset(emptyset),singleton(emptyset)) {
     }
     connect in(x,powerset(emptyset))\leftrightarrow in(x,singleton(emptyset))
   }
-  fold for equal conclude equal(powerset(emptyset),singleton(emptyset))
+  apply invoke axiom_of_extensionality for powerset(emptyset), singleton(emptyset)
 }

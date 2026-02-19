@@ -1,7 +1,7 @@
 include "zfc_separation.proof"
 include "zfc_powerset.proof"
 
-definition function cartprod(X,Y) as sep(powerset(powerset(cup(X,Y))), lambda z. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))) tex "","\times",""
+definition function cartprod(X,Y) as sep(powerset(powerset(cup(X,Y))), \lambda^P z. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))) tex "","\times",""
 
 theorem cartprod_lem1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)\to in(op(x,y),powerset(powerset(cup(X,Y))))) {
   any X,Y,x,y {
@@ -26,7 +26,7 @@ theorem cartprod_characterization \forall X\forall Y\forall z(in(z,cartprod(X,Y)
   any X,Y,z {
     assume in(z,cartprod(X,Y)) {
       expand in(z,cartprod(X,Y)) for cartprod
-      apply invoke rightward sep_existence for powerset(powerset(cup(X,Y))),lambda z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))),z
+      apply invoke rightward sep_existence for powerset(powerset(cup(X,Y))),\lambda^P z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))),z
       split in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
     }
     assume \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y))) {
@@ -36,7 +36,7 @@ theorem cartprod_characterization \forall X\forall Y\forall z(in(z,cartprod(X,Y)
         apply invoke cartprod_lem1 for X,Y,x,y
         substitute in(op(x,y),powerset(powerset(cup(X,Y)))) for op(x,y):z
         connect in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
-        apply invoke leftward sep_existence for powerset(powerset(cup(X,Y))),lambda z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))),z
+        apply invoke leftward sep_existence for powerset(powerset(cup(X,Y))),\lambda^P z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))),z
         fold for cartprod conclude in(z,cartprod(X,Y))
       }
     }

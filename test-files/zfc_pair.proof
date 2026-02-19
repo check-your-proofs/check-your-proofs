@@ -19,7 +19,7 @@ theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftri
             }
             connect in(w,z')\leftrightarrow in(w,z)
           }
-          fold for equal conclude equal(z',z)
+          apply invoke axiom_of_extensionality for z', z
         }
       }
       connect \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z))

@@ -69,16 +69,16 @@ theorem emptyset_is_trans trans(emptyset) {
   fold for trans conclude trans(emptyset)
 }
 
-definition function mem(X) as relsep(X,lambda x,y.in(x,y))
+definition function mem(X) as relsep(X,\lambda^P x,y.in(x,y))
 
 theorem mem_characterization \forall X\forall z(in(z,mem(X))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y))) {
   any X,z {
     assume in(z,mem(X)) {
       expand in(z,mem(X)) for mem
-      apply invoke rightward relsep_characterization for X,lambda x,y.in(x,y),z
+      apply invoke rightward relsep_characterization for X,\lambda^P x,y.in(x,y),z
     }
     assume \exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y)) {
-      apply invoke leftward relsep_characterization for X,lambda x,y.in(x,y),z
+      apply invoke leftward relsep_characterization for X,\lambda^P x,y.in(x,y),z
       fold for mem conclude in(z,mem(X))
     }
     connect in(z,mem(X))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y))
@@ -111,7 +111,7 @@ theorem mem_characterization_op \forall X\forall x\forall y(in(op(x,y),mem(X))\l
 
 theorem mem_relon \forall X(relon(X,mem(X))) {
   any X {
-    apply relsep_relon for X,lambda x,y.in(x,y)
+    apply relsep_relon for X,\lambda^P x,y.in(x,y)
     fold for mem conclude relon(X,mem(X))
   }
 }
@@ -119,7 +119,7 @@ theorem mem_relon \forall X(relon(X,mem(X))) {
 theorem mem_res \forall X\forall Y(subset(Y,X)\to equal(mem(Y),res(mem(X),Y))) {
   any X,Y {
     assume subset(Y,X) {
-      apply invoke relsep_res for X,lambda x,y.in(x,y),Y
+      apply invoke relsep_res for X,\lambda^P x,y.in(x,y),Y
       fold for mem conclude equal(mem(Y),res(mem(X),Y))
     }
   }
@@ -130,8 +130,8 @@ theorem mem_trasnrel_subset \forall X\forall Y(transrel(mem(X))\wedge subset(Y,X
     assume transrel(mem(X))\wedge subset(Y,X) {
       split transrel(mem(X))\wedge subset(Y,X)
       expand transrel(mem(X)) for mem
-      connect transrel(relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
-      apply invoke transrel_relsep_subset for X,lambda x,y.in(x,y),Y
+      connect transrel(relsep(X,\lambda^P x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke transrel_relsep_subset for X,\lambda^P x,y.in(x,y),Y
       fold for mem conclude transrel(mem(Y))
     }
   }
@@ -142,8 +142,8 @@ theorem mem_trasnrelon_subset \forall X\forall Y(transrelon(X,mem(X))\wedge subs
     assume transrelon(X,mem(X))\wedge subset(Y,X) {
       split transrelon(X,mem(X))\wedge subset(Y,X)
       expand transrelon(X,mem(X)) for mem
-      connect transrelon(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
-      apply invoke transrelon_relsep_subset for X,lambda x,y.in(x,y),Y
+      connect transrelon(X,relsep(X,\lambda^P x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke transrelon_relsep_subset for X,\lambda^P x,y.in(x,y),Y
       fold for mem conclude transrelon(Y,mem(Y))
     }
   }
@@ -154,8 +154,8 @@ theorem mem_antisymrel_subset \forall X\forall Y(antisymrel(mem(X))\wedge subset
     assume antisymrel(mem(X))\wedge subset(Y,X) {
       split antisymrel(mem(X))\wedge subset(Y,X)
       expand antisymrel(mem(X)) for mem
-      connect antisymrel(relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
-      apply invoke antisymrel_relsep_subset for X,lambda x,y.in(x,y),Y
+      connect antisymrel(relsep(X,\lambda^P x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke antisymrel_relsep_subset for X,\lambda^P x,y.in(x,y),Y
       fold for mem conclude antisymrel(mem(Y))
     }
   }
@@ -166,8 +166,8 @@ theorem mem_antisymrelon_subset \forall X\forall Y(antisymrelon(X,mem(X))\wedge 
     assume antisymrelon(X,mem(X))\wedge subset(Y,X) {
       split antisymrelon(X,mem(X))\wedge subset(Y,X)
       expand antisymrelon(X,mem(X)) for mem
-      connect antisymrelon(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
-      apply invoke antisymrelon_relsep_subset for X,lambda x,y.in(x,y),Y
+      connect antisymrelon(X,relsep(X,\lambda^P x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke antisymrelon_relsep_subset for X,\lambda^P x,y.in(x,y),Y
       fold for mem conclude antisymrelon(Y,mem(Y))
     }
   }
@@ -178,8 +178,8 @@ theorem mem_order_subset \forall X\forall Y(order(mem(X))\wedge subset(Y,X)\to o
     assume order(mem(X))\wedge subset(Y,X) {
       split order(mem(X))\wedge subset(Y,X)
       expand order(mem(X)) for mem
-      connect order(relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
-      apply invoke order_relsep_subset for X,lambda x,y.in(x,y),Y
+      connect order(relsep(X,\lambda^P x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke order_relsep_subset for X,\lambda^P x,y.in(x,y),Y
       fold for mem conclude order(mem(Y))
     }
   }
@@ -190,8 +190,8 @@ theorem mem_orderon_subset \forall X\forall Y(orderon(X,mem(X))\wedge subset(Y,X
     assume orderon(X,mem(X))\wedge subset(Y,X) {
       split orderon(X,mem(X))\wedge subset(Y,X)
       expand orderon(X,mem(X)) for mem
-      connect orderon(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
-      apply invoke orderon_relsep_subset for X,lambda x,y.in(x,y),Y
+      connect orderon(X,relsep(X,\lambda^P x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke orderon_relsep_subset for X,\lambda^P x,y.in(x,y),Y
       fold for mem conclude orderon(Y,mem(Y))
     }
   }
@@ -202,8 +202,8 @@ theorem mem_irrefrel_subset \forall X\forall Y(irrefrel(mem(X))\wedge subset(Y,X
     assume irrefrel(mem(X))\wedge subset(Y,X) {
       split irrefrel(mem(X))\wedge subset(Y,X)
       expand irrefrel(mem(X)) for mem
-      connect irrefrel(relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
-      apply invoke irrefrel_relsep_subset for X,lambda x,y.in(x,y),Y
+      connect irrefrel(relsep(X,\lambda^P x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke irrefrel_relsep_subset for X,\lambda^P x,y.in(x,y),Y
       fold for mem conclude irrefrel(mem(Y))
     }
   }
@@ -214,8 +214,8 @@ theorem mem_irrefrelon_subset \forall X\forall Y(irrefrelon(X,mem(X))\wedge subs
     assume irrefrelon(X,mem(X))\wedge subset(Y,X) {
       split irrefrelon(X,mem(X))\wedge subset(Y,X)
       expand irrefrelon(X,mem(X)) for mem
-      connect irrefrelon(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
-      apply invoke irrefrelon_relsep_subset for X,lambda x,y.in(x,y),Y
+      connect irrefrelon(X,relsep(X,\lambda^P x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke irrefrelon_relsep_subset for X,\lambda^P x,y.in(x,y),Y
       fold for mem conclude irrefrelon(Y,mem(Y))
     }
   }
@@ -226,8 +226,8 @@ theorem mem_wellorder_subset \forall X\forall Y(wellorder(X,mem(X))\wedge subset
     assume wellorder(X,mem(X))\wedge subset(Y,X) {
       split wellorder(X,mem(X))\wedge subset(Y,X)
       expand wellorder(X,mem(X)) for mem
-      connect wellorder(X,relsep(X,lambda x,y.in(x,y)))\wedge subset(Y,X)
-      apply invoke wellorder_relsep_subset for X,lambda x,y.in(x,y),Y
+      connect wellorder(X,relsep(X,\lambda^P x,y.in(x,y)))\wedge subset(Y,X)
+      apply invoke wellorder_relsep_subset for X,\lambda^P x,y.in(x,y),Y
       fold for mem conclude wellorder(Y,mem(Y))
     }
   }
@@ -376,7 +376,7 @@ theorem ordinal_seg \forall\alpha(ordinal(\alpha)\to\forall\beta(in(\beta,\alpha
             }
             connect in(\gamma,seg(\alpha,mem(\alpha),\beta))\leftrightarrow in(\gamma,\beta)
           }
-          fold for equal conclude equal(seg(\alpha,mem(\alpha),\beta),\beta)
+          apply invoke axiom_of_extensionality for seg(\alpha, mem(\alpha), \beta), \beta
         }
       }
     }
@@ -515,7 +515,7 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to
               }
               connect in(\delta,\gamma)\leftrightarrow in(\delta,\beta)
             }
-            fold for equal conclude equal(\gamma,\beta)
+            apply invoke axiom_of_extensionality for \gamma, \beta
             substitute in(\gamma,\alpha) for \gamma:\beta
           }
         }
@@ -577,7 +577,7 @@ theorem ordinals_comparable_subset \forall\alpha\forall\beta(ordinal(\alpha)\wed
     assume ordinal(\alpha)\wedge ordinal(\beta) {
       split ordinal(\alpha)\wedge ordinal(\beta)
       deny \neg(subset(\alpha,\beta)\vee subset(\beta,\alpha)) {
-        apply invoke rightward neg_or for lambda.subset(\alpha,\beta),lambda.subset(\beta,\alpha)
+        apply invoke rightward neg_or for \lambda^P.subset(\alpha,\beta),\lambda^P.subset(\beta,\alpha)
         split \neg(subset(\alpha,\beta))\wedge\neg(subset(\beta,\alpha))
         apply invoke cap_of_ordinals_is_ordinal for \alpha,\beta
         apply invoke leftward cap_subsetneq_iff_neg_subset for \alpha,\beta

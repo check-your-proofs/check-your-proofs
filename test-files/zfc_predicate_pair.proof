@@ -65,7 +65,7 @@ theorem pair_commutativity \forall x\forall y\forall z\forall z'(pair(x,y,z)\wed
         }
         connect in(w,z)\leftrightarrow in(w,z')
       }
-      fold for equal conclude equal(z,z')
+      apply invoke axiom_of_extensionality for z, z'
     }
   }
 }

@@ -1,9 +1,9 @@
 include "zfc_union.proof"
 
-axiom axiom_schema_of_separation \forall x\forall^T\phi[1]\exists y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z))
+axiom axiom_schema_of_separation \forall x\forall^P\phi[1]\exists y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z))
 
-theorem separation_is_unique \forall x\forall^T\phi[1]\exists!y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) {
-  any x, template \phi[1] {
+theorem separation_is_unique \forall x\forall^P\phi[1]\exists!y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) {
+  any x, predicate \phi[1] {
     apply axiom_schema_of_separation for x, \phi
     some y such \exists y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) {
       any y' {
@@ -19,7 +19,7 @@ theorem separation_is_unique \forall x\forall^T\phi[1]\exists!y\forall z(in(z,y)
             }
             connect in(z,y')\leftrightarrow in(z,y)
           }
-          fold for equal conclude equal(y',y)
+          apply invoke axiom_of_extensionality for y', y
         }
       }
       connect \forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z))\to equal(y',y))
@@ -29,11 +29,11 @@ theorem separation_is_unique \forall x\forall^T\phi[1]\exists!y\forall z(in(z,y)
 }
 
 definition function sep by separation_is_unique
-existence sep_existence \forall x\forall^T\phi[1]\forall z(in(z,sep(x,\phi))\leftrightarrow in(z,x)\wedge\phi(z)) by sep
-uniqueness sep_uniqueness \forall x\forall^T\phi[1]\forall y(\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z))\to equal(y,sep(x,\phi))) by sep
+existence sep_existence \forall x\forall^P\phi[1]\forall z(in(z,sep(x,\phi))\leftrightarrow in(z,x)\wedge\phi(z)) by sep
+uniqueness sep_uniqueness \forall x\forall^P\phi[1]\forall y(\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z))\to equal(y,sep(x,\phi))) by sep
 
-theorem sep_cor1 \forall x\forall^T\phi[1](subset(sep(x,\phi),x)) {
-  any x, template \phi[1] {
+theorem sep_cor1 \forall x\forall^P\phi[1](subset(sep(x,\phi),x)) {
+  any x, predicate \phi[1] {
     any z {
       assume in(z,sep(x,\phi)) {
         apply invoke rightward sep_existence for x, \phi, z
@@ -44,8 +44,8 @@ theorem sep_cor1 \forall x\forall^T\phi[1](subset(sep(x,\phi),x)) {
   }
 }
 
-theorem sep_cor2 \forall x\forall^T\phi[1]\forall z(in(z,sep(x,\phi))\to\phi(z)) {
-  any x, template \phi[1], z {
+theorem sep_cor2 \forall x\forall^P\phi[1]\forall z(in(z,sep(x,\phi))\to\phi(z)) {
+  any x, predicate \phi[1], z {
     assume in(z,sep(x,\phi)) {
       apply invoke rightward sep_existence for x,\phi,z
       split 2 in(z,x)\wedge\phi(z)
@@ -53,16 +53,16 @@ theorem sep_cor2 \forall x\forall^T\phi[1]\forall z(in(z,sep(x,\phi))\to\phi(z))
   }
 }
 
-definition function bigcap(u) as sep(bigcup(u), lambda z. \forall w(in(w,u)\to in(z,w))) tex "\bigcap",""
+definition function bigcap(u) as sep(bigcup(u), \lambda^P z. \forall w(in(w,u)\to in(z,w))) tex "\bigcap",""
 
 theorem bigcap_characterization \forall u\forall z(in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))) {
   any u, z {
     assume in(z,bigcap(u)) {
       expand in(z,bigcap(u)) for bigcap
-      apply invoke rightward sep_existence for bigcup(u),lambda z'. \forall w(in(w,u)\to in(z',w)),z
+      apply invoke rightward sep_existence for bigcup(u),\lambda^P z'. \forall w(in(w,u)\to in(z',w)),z
     }
     assume in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w)) {
-      apply invoke leftward sep_existence for bigcup(u),lambda z'. \forall w(in(w,u)\to in(z',w)),z
+      apply invoke leftward sep_existence for bigcup(u),\lambda^P z'. \forall w(in(w,u)\to in(z',w)),z
       fold for bigcap conclude in(z,bigcap(u))
     }
     connect in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
@@ -70,7 +70,7 @@ theorem bigcap_characterization \forall u\forall z(in(z,bigcap(u))\leftrightarro
 }
 
 theorem bigcap_cor1 equal(bigcap(emptyset),emptyset) {
-  apply sep_cor1 for bigcup(emptyset), lambda z. \forall w(in(w,emptyset)\to in(z,w))
+  apply sep_cor1 for bigcup(emptyset), \lambda^P z. \forall w(in(w,emptyset)\to in(z,w))
   fold for bigcap conclude subset(bigcap(emptyset),bigcup(emptyset))
   assert bigcup_cor2
   substitute subset(bigcap(emptyset),bigcup(emptyset)) for bigcup(emptyset):emptyset
@@ -166,7 +166,7 @@ theorem cap_commutatvity \forall x\forall y(equal(cap(x,y),cap(y,x))) {
       }
       connect in(z,cap(x,y))\leftrightarrow in(z,cap(y,x))
     }
-    fold for equal conclude equal(cap(x,y),cap(y,x))
+    apply invoke axiom_of_extensionality for cap(x, y), cap(y, x)
   }
 }
 
@@ -220,7 +220,7 @@ theorem cap_iff_subset \forall x\forall y(equal(cap(x,y),x)\leftrightarrow subse
         }
         connect in(z,cap(x,y))\leftrightarrow in(z,x)
       }
-      fold for equal conclude equal(cap(x,y),x)
+      apply invoke axiom_of_extensionality for cap(x, y), x
     }
     connect equal(cap(x,y),x)\leftrightarrow subset(x,y)
   }
@@ -229,7 +229,7 @@ theorem cap_iff_subset \forall x\forall y(equal(cap(x,y),x)\leftrightarrow subse
 theorem neq_cap_iff_neg_subset \forall x\forall y(neq(cap(x,y),x)\leftrightarrow\neg(subset(x,y))) {
   any x,y {
     apply cap_iff_subset for x,y
-    apply invoke neg_iff for lambda.equal(cap(x,y),x),lambda.subset(x,y)
+    apply invoke neg_iff for \lambda^P.equal(cap(x,y),x),\lambda^P.subset(x,y)
   }
 }
 
@@ -262,16 +262,16 @@ theorem cap_subsetneq_iff_neg_subset \forall x\forall y(subsetneq(cap(x,y),x)\le
   }
 }
 
-definition function setminus(x,y) as sep(x,lambda z.notin(z,y)) tex "","\setminus",""
+definition function setminus(x,y) as sep(x,\lambda^P z.notin(z,y)) tex "","\setminus",""
 
 theorem setminus_characterization \forall x\forall y\forall z(in(z,setminus(x,y))\leftrightarrow in(z,x)\wedge notin(z,y)) {
   any x,y,z {
     assume in(z,setminus(x,y)) {
       expand in(z,setminus(x,y)) for setminus
-      apply invoke rightward sep_existence for x,lambda z.notin(z,y),z
+      apply invoke rightward sep_existence for x,\lambda^P z.notin(z,y),z
     }
     assume in(z,x)\wedge notin(z,y) {
-      apply invoke leftward sep_existence for x,lambda z.notin(z,y),z
+      apply invoke leftward sep_existence for x,\lambda^P z.notin(z,y),z
       fold for setminus conclude in(z,setminus(x,y))
     }
     connect in(z,setminus(x,y))\leftrightarrow in(z,x)\wedge notin(z,y)
@@ -301,9 +301,9 @@ theorem setminus_of_set_and_subsetneq \forall x\forall y(subsetneq(y,x)\to neq(s
         apply invoke rightward subset_antisymmetry for x,y
         contradict equal(x,y)
       }
-      apply invoke leftward exist_neg_leftrightarrow_neg_forall for lambda z.in(z,x)\to in(z,y)
+      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P z.in(z,x)\to in(z,y)
       some z such \exists z(\neg(in(z,x)\to in(z,y))) {
-        apply invoke rightward neg_implication for lambda.in(z,x),lambda.in(z,y)
+        apply invoke rightward neg_implication for \lambda^P.in(z,x),\lambda^P.in(z,y)
         apply invoke leftward setminus_characterization for x,y,z
         lift for z conclude \exists z(in(z,setminus(x,y)))
       }

@@ -23,7 +23,7 @@ theorem emptyset_is_unique \forall x\forall x'(emptyset(x)\wedge emptyset(x')\to
         }
         connect in(y,x)\leftrightarrow in(y,x')
       }
-      fold for equal conclude equal(x,x')
+      apply invoke axiom_of_extensionality for x, x'
     }
   }
 }

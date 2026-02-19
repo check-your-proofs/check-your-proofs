@@ -2,64 +2,12 @@ include "logic.proof"
 
 primitive predicate in arity 2 tex "","\in",""
 
-definition predicate equal(x,y) as \forall z(in(z,x)\leftrightarrow in(z,y)) tex "","=",""
-
-theorem equal_reflection \forall x(equal(x,x)) {
-  any x {
-    any y {
-      assume in(y,x) {}
-      connect in(y,x)\leftrightarrow in(y,x)
-    }
-    fold for equal conclude equal(x,x)
-  }
-}
-
-theorem equal_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge equal(u,v)\to(equal(x,u)\to equal(y,v))) {
-  any x,y,u,v {
-    assume equal(x,y)\wedge equal(u,v) {
-      assume equal(x,u) {
-        any p {
-          assume in(p,y) {
-            split equal(x,y)\wedge equal(u,v)
-            apply invoke leftward equal(x,y) for p
-            apply invoke rightward equal(x,u) for p
-            apply invoke rightward equal(u,v) for p
-          }
-          assume in(p,v) {
-            split equal(x,y)\wedge equal(u,v)
-            apply invoke leftward equal(u,v) for p
-            apply invoke leftward equal(x,u) for p
-            apply invoke rightward equal(x,y) for p
-          }
-          connect in(p,y)\leftrightarrow in(p,v)
-        }
-        fold for equal conclude equal(y,v)
-      }
-    }
-  }
-}
-
-axiom axiom_of_equal \forall x\forall y(equal(x,y)\to\forall z(in(x,z)\to in(y,z)))
-
-theorem in_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge equal(u,v)\to(in(x,u)\to in(y,v))) {
-  any x,y,u,v {
-    assume equal(x,y)\wedge equal(u,v) {
-      assume in(x,u) {
-        split equal(x,y)\wedge equal(u,v)
-        apply invoke axiom_of_equal for x,y
-        apply invoke \forall z(in(x,z)\to in(y,z)) for u
-        apply invoke rightward equal(u,v) for y
-      }
-    }
-  }
-}
-
 equality equal
-  reflection equal_reflection
-  replacement equal: equal_replacement, in: in_replacement
 
-theorem set_is_unique_for_each_predicate \forall^T\phi[1]\forall x\forall x'(\forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y))\to equal(x,x')) {
-  any template \phi[1], x, x' {
+axiom axiom_of_extensionality \forall x \forall y (\forall z (in(z, x) \leftrightarrow in(z, y)) \to equal(x, y))
+
+theorem set_is_unique_for_each_predicate \forall^P\phi[1]\forall x\forall x'(\forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y))\to equal(x,x')) {
+  any predicate \phi[1], x, x' {
     assume \forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y)) {
       split \forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y))
       any y {
@@ -73,7 +21,7 @@ theorem set_is_unique_for_each_predicate \forall^T\phi[1]\forall x\forall x'(\fo
         }
         connect in(y,x)\leftrightarrow in(y,x')
       }
-      fold for equal conclude equal(x,x')
+      apply invoke axiom_of_extensionality for x, x'
     }
   }
 }
@@ -86,7 +34,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
   any x, y {
     assume neq(x,y) {
       deny \forall z(in(z,x)\leftrightarrow in(z,y)) {
-        fold for equal conclude equal(x,y)
+        apply invoke axiom_of_extensionality for x, y
         contradict equal(x,y)
       }
       deny \neg(\exists z(\neg(in(z,x)\leftrightarrow in(z,y)))) {
@@ -150,12 +98,12 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
           divide (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
             case in(z,x)\wedge notin(z,y) {
               split in(z,x)\wedge notin(z,y)
-              apply invoke rightward equal(x,y) for z
+              substitute in(z, x) for x: y
               contradict in(z,y)
             }
             case notin(z,x)\wedge in(z,y) {
               split notin(z,x)\wedge in(z,y)
-              apply invoke leftward equal(x,y) for z
+              substitute in(z, y) for y: x
               contradict in(z,x)
             }
         }
@@ -192,18 +140,18 @@ theorem subset_antisymmetry \forall x\forall y(subset(x,y)\wedge subset(y,x)\lef
         }
         connect in(z,x)\leftrightarrow in(z,y)
       }
-      fold for equal conclude equal(x,y)
+      apply invoke axiom_of_extensionality for x, y
     }
     assume equal(x,y) {
       any z {
         assume in(z,x) {
-          apply invoke rightward equal(x,y) for z
+          substitute in(z, x) for x: y
         }
       }
       fold for subset conclude subset(x,y)
       any z {
         assume in(z,y) {
-          apply invoke leftward equal(x,y) for z
+          substitute in(z, y) for y: x
         }
       }
       fold for subset conclude subset(y,x)
@@ -234,18 +182,18 @@ theorem neg_subset \forall x\forall y(\neg(subset(x,y))\leftrightarrow\exists z(
   any x,y {
     assume \neg(subset(x,y)) {
       expand \neg(subset(x,y)) for subset
-      apply invoke leftward exist_neg_leftrightarrow_neg_forall for lambda z.in(z,x)\to in(z,y)
+      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P z.in(z,x)\to in(z,y)
       some z such \exists z(\neg(in(z,x)\to in(z,y))) {
-        apply invoke rightward neg_implication for lambda.in(z,x),lambda.in(z,y)
+        apply invoke rightward neg_implication for \lambda^P.in(z,x),\lambda^P.in(z,y)
         lift for z conclude \exists z(in(z,x)\wedge notin(z,y))
       }
     }
     assume \exists z(in(z,x)\wedge notin(z,y)) {
       some z such \exists z(in(z,x)\wedge notin(z,y)) {
-        apply invoke leftward neg_implication for lambda.in(z,x),lambda.in(z,y)
+        apply invoke leftward neg_implication for \lambda^P.in(z,x),\lambda^P.in(z,y)
         lift for z conclude \exists z(\neg(in(z,x)\to in(z,y)))
       }
-      apply invoke rightward exist_neg_leftrightarrow_neg_forall for lambda z.in(z,x)\to in(z,y)
+      apply invoke rightward exist_neg_leftrightarrow_neg_forall for \lambda^P z.in(z,x)\to in(z,y)
       fold for subset conclude \neg(subset(x,y))
     }
     connect \neg(subset(x,y))\leftrightarrow\exists z(in(z,x)\wedge notin(z,y))
@@ -255,13 +203,13 @@ theorem neg_subset \forall x\forall y(\neg(subset(x,y))\leftrightarrow\exists z(
 theorem neq_iff_subset \forall x\forall y(neq(x,y)\leftrightarrow\neg(subset(x,y))\vee\neg(subset(y,x))) {
   any x,y {
     apply subset_antisymmetry for x,y
-    apply invoke neg_iff for lambda.subset(x,y)\wedge subset(y,x),lambda.equal(x,y)
+    apply invoke neg_iff for \lambda^P.subset(x,y)\wedge subset(y,x),\lambda^P.equal(x,y)
     assume neq(x,y) {
       invoke leftward \neg(subset(x,y)\wedge subset(y,x))\leftrightarrow neq(x,y)
-      apply invoke rightward neg_and for lambda.subset(x,y),lambda.subset(y,x)
+      apply invoke rightward neg_and for \lambda^P.subset(x,y),\lambda^P.subset(y,x)
     }
     assume \neg(subset(x,y))\vee\neg(subset(y,x)) {
-      apply invoke leftward neg_and for lambda.subset(x,y),lambda.subset(y,x)
+      apply invoke leftward neg_and for \lambda^P.subset(x,y),\lambda^P.subset(y,x)
       invoke rightward \neg(subset(x,y)\wedge subset(y,x))\leftrightarrow neq(x,y)
     }
     connect neq(x,y)\leftrightarrow\neg(subset(x,y))\vee\neg(subset(y,x))
@@ -294,7 +242,7 @@ theorem subsetneq_implies_exist \forall x\forall y(subsetneq(x,y)\to\exists z(in
 theorem subset_subsetneq \forall x\forall y(subset(x,y)\leftrightarrow subsetneq(x,y)\vee equal(x,y)) {
   any x,y {
     assume subset(x,y) {
-      apply law_of_excluded_middle for lambda.equal(x,y)
+      apply law_of_excluded_middle for \lambda^P.equal(x,y)
       divide equal(x,y)\vee neq(x,y)
         case equal(x,y) {
           pad equal(x,y) conclude subsetneq(x,y)\vee equal(x,y)

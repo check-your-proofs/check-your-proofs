@@ -19,7 +19,7 @@ theorem union_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightarrow
             }
             connect in(z,y')\leftrightarrow in(z,y)
           }
-          fold for equal conclude equal(y',y)
+          apply invoke axiom_of_extensionality for y', y
         }
       }
       connect \forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\to equal(y',y))
@@ -143,7 +143,7 @@ theorem cup_cor1 \forall x(equal(cup(x,emptyset),x)) {
       }
       connect in(y,cup(x,emptyset))\leftrightarrow in(y,x)
     }
-    fold for equal conclude equal(cup(x,emptyset),x)
+    apply invoke axiom_of_extensionality for cup(x, emptyset), x
   }
 }
 

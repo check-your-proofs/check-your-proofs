@@ -69,7 +69,7 @@ theorem emptyset_is_trans trans(emptyset) {
   fold for trans conclude trans(emptyset)
 }
 
-definition predicate ordinal(\alpha) as trans(\alpha)\wedge irrefrelon(\alpha,lambda x,y.in(x,y))\wedge wellorder(\alpha,lambda x,y.in(x,y))
+definition predicate ordinal(\alpha) as trans(\alpha)\wedge irrefrelon(\alpha, in)\wedge wellorder(\alpha, in)
 
 theorem emptyset_is_ordinal ordinal(emptyset) {
   assert emptyset_is_trans
@@ -182,7 +182,7 @@ theorem ordinal_seg \forall\alpha(ordinal(\alpha)\to\forall\beta(in(\beta,\alpha
             }
             connect in(\gamma,seg(\alpha,in,\beta))\leftrightarrow in(\gamma,\beta)
           }
-          fold for equal conclude equal(seg(\alpha,in,\beta),\beta)
+          apply invoke axiom_of_extensionality for seg(\alpha, in, \beta), \beta
         }
       }
     }
@@ -312,7 +312,7 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to
               }
               connect in(\delta,\gamma)\leftrightarrow in(\delta,\beta)
             }
-            fold for equal conclude equal(\gamma,\beta)
+            apply invoke axiom_of_extensionality for \gamma, \beta
             substitute in(\gamma,\alpha) for \gamma:\beta
           }
         }
@@ -374,7 +374,7 @@ theorem ordinals_comparable_subset \forall\alpha\forall\beta(ordinal(\alpha)\wed
     assume ordinal(\alpha)\wedge ordinal(\beta) {
       split ordinal(\alpha)\wedge ordinal(\beta)
       deny \neg(subset(\alpha,\beta)\vee subset(\beta,\alpha)) {
-        apply invoke rightward neg_or for lambda.subset(\alpha,\beta),lambda.subset(\beta,\alpha)
+        apply invoke rightward neg_or for \lambda^P.subset(\alpha,\beta),\lambda^P.subset(\beta,\alpha)
         split \neg(subset(\alpha,\beta))\wedge\neg(subset(\beta,\alpha))
         apply invoke cap_of_ordinals_is_ordinal for \alpha,\beta
         apply invoke leftward cap_subsetneq_iff_neg_subset for \alpha,\beta
