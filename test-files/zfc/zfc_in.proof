@@ -1,4 +1,4 @@
-include "logic.proof"
+include "..\logic\logic.proof"
 
 primitive predicate in arity 2 tex "","\in",""
 
