@@ -3,32 +3,40 @@
 	"name": "Proof",
 	"patterns": [
 		{
-			"include": "#keywords"
+			"include": "#declarations"
 		},
 		{
-			"include": "#definitions"
+			"include": "#controls"
+		},
+		{
+			"include": "#formulas"
+		},
+		{
+			"include": "#numbers"
 		},
 		{
 			"include": "#strings"
+		},
+		{
+			"include": "#comments"
 		}
 	],
 	"repository": {
-		"keywords": {
-			"patterns": [{
-				"name": "keyword.control.proof",
-				"match": "\\b(any|assume|conclude|divide|case|some|such|deny|contradict|explode|apply|for|with|lift|predicate|arity|invoke|expand|constant|by|pad|split|connect|autoexpand|function|reflection|replacement|substitute|characterize|show|tex|as|leftward|rightward|include|assert|fold)\\b"
-			}]
+		"declarations": {
+			"name": "keyword.declaration.proof",
+			"match": "\\b(primitive|axiom|theorem|definition|equality|existence|uniqueness)\\b"
 		},
-		"definitions": {
-			"patterns": [
-				{
-					"match": "\\b(primitive|axiom|theorem|definition|equality|existence|uniqueness)\\s+(\\w+)",
-					"captures": {
-						"1": { "name": "keyword.declaration.proof"},
-						"2": { "name": "entity.name.function.proof" }
-					}
-				}
-			]
+		"controls": {
+			"name": "keyword.control.proof",
+			"match": "\\b(any|assume|conclude|divide|case|some|such|deny|contradict|explode|apply|for|with|lift|predicate|arity|invoke|expand|constant|by|pad|split|connect|autoexpand|function|reflection|replacement|substitute|characterize|show|tex|as|leftward|rightward|include|assert|fold)\\b"
+		},
+		"formulas": {
+			"name": "constant.numeric.proof",
+			"match": "\\\\exists!|\\\\(lambda\\^P|lambda\\^F|forall\\^P|forall\\^F|forall|exists|wedge|vee|neg|to|leftrightarrow|bot)\\b"
+		},
+		"numbers": {
+			"name": "constant.numeric.proof",
+			"match": "\\b\\d+\\b"
 		},
 		"strings": {
 			"name": "string.quoted.double.proof",
@@ -38,6 +46,15 @@
 				{
 					"name": "constant.character.escape.proof",
 					"match": "\\\\."
+				}
+			]
+		},
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.block.proof",
+					"begin": "/\\*",
+					"end": "\\*/"
 				}
 			]
 		}
