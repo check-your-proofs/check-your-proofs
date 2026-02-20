@@ -200,6 +200,7 @@ class ProofLanguageServer(LanguageServer):
             return
         self.analyze(path)
         self.analysis_timer = None
+        self.protocol.send_request("workspace/semanticTokens/refresh")
         self.update_panel()
         if save_html:
             self.to_html()
@@ -291,8 +292,11 @@ class ProofLanguageServer(LanguageServer):
 
         self.updated_files.clear()
 
+    def did_open(self, params: lsp.DidOpenTextDocumentParams) -> None:
+        self.run_analysis(params.text_document.uri, False)
+
     def did_save(self, params: lsp.DidSaveTextDocumentParams) -> None:
-        self.run_analysis(params.text_document.uri, True)
+        self.run_analysis(params.text_document.uri, False)
 
     def did_change(self, params: lsp.DidChangeTextDocumentParams) -> None:
         if self.analysis_timer is not None:
@@ -508,12 +512,7 @@ def lsp_initialize(ls: ProofLanguageServer, params: lsp.InitializeParams) -> Non
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_OPEN)
 def did_open(ls: ProofLanguageServer, params: lsp.DidOpenTextDocumentParams) -> None:
-    ls.window_show_message(
-        lsp.ShowMessageParams(
-            type=lsp.MessageType.Info,
-            message=f"Open file: {os.path.basename(params.text_document.uri)}"
-        )
-    )
+    ls.did_open(params)
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_SAVE)
 def did_save(ls: ProofLanguageServer, params: lsp.DidSaveTextDocumentParams) -> None:
