@@ -54,7 +54,11 @@
     "semanticTokenTypes": [
       {
         "id": "function",
-        "description": "global names"
+        "description": "global theorems"
+      },
+      {
+        "id": "constant",
+        "description": "global terms"
       },
       {
         "id": "variable",
@@ -66,6 +70,7 @@
         "language": "proof",
         "scopes": {
           "function": ["entity.name.function.proof"],
+          "constant": ["variable.other.constant.proof"],
           "variable": ["variable.proof"]
         }
       }

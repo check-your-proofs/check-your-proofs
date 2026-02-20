@@ -471,8 +471,10 @@ class ProofLanguageServer(LanguageServer):
         for unit in self.old_workspace.file_units[path]:
             for index, node in unit.token_to_node.items():
                 token = unit.tokens[index]
-                if isinstance(node, (RefFact, RefEquality, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm)):
+                if isinstance(node, RefFact):
                     t_type = TokenType.FUNCTION
+                elif isinstance(node, (RefEquality, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm)):
+                    t_type = TokenType.CONSTANT
                 elif isinstance(node, Term):
                     t_type = TokenType.VARIABLE
                 else:
@@ -547,7 +549,8 @@ def move_cursor(ls: ProofLanguageServer, params: CursorState) -> None:
 
 class TokenType(IntEnum):
     FUNCTION = 0
-    VARIABLE = 1
+    CONSTANT = 1
+    VARIABLE = 2
 
 SEMANTIC_LEGEND = lsp.SemanticTokensLegend(
     token_types=[t.name.lower() for t in TokenType],
