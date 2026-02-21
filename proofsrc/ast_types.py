@@ -396,7 +396,7 @@ class DefFun(Declaration):
     ref: RefDefFun
     args: list[Var | PredTemplate | FunTemplate]
     returned: Var | PredTemplate
-    theorem: str
+    ref_theorem: RefTheorem
     tex: list[str]
 
 @dataclass

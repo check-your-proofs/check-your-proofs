@@ -188,13 +188,13 @@ class Checker:
 
     def check_deffun(self, node: DefFun, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        logger.debug(f"{debug_prefix}name: {node.name}, theorem: {node.theorem}")
+        logger.debug(f"{debug_prefix}name: {node.name}, theorem: {node.ref_theorem.name}")
         context.add_decl(node)
 
     def check_deffunexist(self, node: DefFunExist, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.fun_name}")
-        args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion)
+        args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].ref_theorem.name].conclusion)
         if isinstance(body, ExistsUniq):
             existence_formula = Substitutor(({body.var: Compound(RefDefFun(node.fun_name), tuple(args))}, {}, {}), context).substitute_formula(body.body)
         elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
@@ -215,7 +215,7 @@ class Checker:
         if context.decl.equality is None:
             msg = "equality has not been declared yet"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
-        args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion)
+        args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].ref_theorem.name].conclusion)
         if isinstance(body, ExistsUniq):
             uniqueness_formula = Forall(body.var, Implies(body.body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (Var(body.var.name), Compound(RefDefFun(node.fun_name), tuple(args))))))
         elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):

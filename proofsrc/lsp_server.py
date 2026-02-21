@@ -88,7 +88,7 @@ local_conclusions: {local_conclusions}
         elif isinstance(node, FunTerm):
             if isinstance(node, RefDefFun):
                 deffun = context.decl.deffuns[node.name]
-                return f"{node.__class__.__name__}\n```proof\ndefinition function {deffun.name} by {deffun.theorem}\n```"
+                return f"{node.__class__.__name__}\n```proof\ndefinition function {deffun.name} by {deffun.ref_theorem.name}\n```"
             elif isinstance(node, RefDefFunTerm):
                 deffunterm = context.decl.deffunterms[node.name]
                 return f"{node.__class__.__name__}\n```proof\ndefinition function {deffunterm.name}({", ".join(ExprFormatter(context).pretty_expr(arg) for arg in deffunterm.args)}) as {ExprFormatter(context).pretty_expr(deffunterm.varterm)}"

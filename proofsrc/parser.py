@@ -233,24 +233,27 @@ class Parser:
         ref = RefDefFun(name)
         self.add_node_to_token(ref, name_token, name_token)
         self.stream.consume("BY")
-        theorem = self.stream.consume("IDENT").value
-        if theorem not in context.decl.theorems:
-            msg = f"{theorem} is not in context.decl.theorems"
+        theorem_token = self.stream.consume("IDENT")
+        theorem_name = theorem_token.value
+        if theorem_name not in context.decl.theorems:
+            msg = f"{theorem_name} is not in context.decl.theorems"
             raise ParseError(start_token, msg)
-        vars_, body = strip_forall_vars(context.decl.theorems[theorem].conclusion)
+        ref_theorem = RefTheorem(theorem_name)
+        self.add_node_to_token(ref_theorem, theorem_token, theorem_token)
+        vars_, body = strip_forall_vars(context.decl.theorems[theorem_name].conclusion)
         if isinstance(body, ExistsUniq):
             existsuniq = body
         elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
             existsuniq = body.right
         else:
-            msg = f"conclusion of {theorem} cannot be used for function definition"
+            msg = f"conclusion of {theorem_name} cannot be used for function definition"
             raise ParseError(start_token, msg)
         arity = len(vars_)
         tex = self.parse_or_create_tex(name, arity)
         if len(tex) != arity + 1:
             msg = f"arity or {name} is {arity}, but length of tex is {len(tex)}"
             raise ParseError(start_token, msg)
-        deffun = DefFun(name=name, ref=ref, args=vars_, returned=existsuniq.var, theorem=theorem, tex=tex)
+        deffun = DefFun(name=name, ref=ref, args=vars_, returned=existsuniq.var, ref_theorem=ref_theorem, tex=tex)
         self.add_node_to_token(deffun, start_token, self.stream.last_token)
         # context.add_decl(deffun)
         logger.debug(f"[deffun] {name}")
