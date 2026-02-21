@@ -1,9 +1,10 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality, RefPrimPred, RefDefCon, RefDefFun
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from logic_utils import ExprFormatter
+from lexer import DECLARATIONS, CONTROLS
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -72,14 +73,22 @@ class Renderer:
         self.toggle = "<button class='toggle'>▼</button>"
 
     def render_keyword(self, keyword: str) -> str:
-        return f"<span class='keyword'>{keyword}</span>"
+        if keyword in DECLARATIONS:
+            return f"<span class='syntax-declarations'>{keyword}</span>"
+        elif keyword in CONTROLS:
+            return f"<span class='syntax-controls'>{keyword}</span>"
+        else:
+            return keyword
 
-    def render_identifier(self, name: str) -> str:
-        return f"<span class='identifier'>{escape(name)}</span>"
+    def render_identifier(self, ref: RefFact | RefEquality | RefPrimPred | RefDefPred | RefDefCon | RefDefFun | RefDefFunTerm) -> str:
+        if isinstance(ref, RefFact):
+            return f"<span class='semantic-function'>{escape(ref.name)}</span>"
+        else:
+            return f"<span class='semantic-constant'>{escape(ref.name)}</span>"
 
     def render_expr_mathjax(self, node: RefFact | Bottom | Formula | Term) -> str:
         if isinstance(node, RefFact):
-            return self.render_identifier(node.name)
+            return self.render_identifier(node)
         else:
             return escape(f"\\({ExprFormatter(self.context, "tex").pretty_expr(node)}\\)")
 
@@ -100,7 +109,7 @@ class Renderer:
 
     def render_expr_svg(self, node: RefFact | Bottom | Formula | Term) -> str:
         if isinstance(node, RefFact):
-            return self.render_identifier(node.name)
+            return self.render_identifier(node)
         else:
             latex_code = ExprFormatter(self.context, "tex").pretty_expr(node)
             svg_path = output_svg(latex_code)
@@ -129,14 +138,15 @@ class Renderer:
 
     def render_primpred(self, node: PrimPred):
         header_parts = [self.bullet,
-                        self.render_keyword("primitive predicate"),
-                        self.render_identifier(node.name),
+                        self.render_keyword("primitive"),
+                        self.render_keyword("predicate"),
+                        self.render_identifier(node.ref),
                         self.render_tex(node.tex),
                         self.render_keyword("arity"),
                         f"{str(node.arity)}"]
         header_parts_jp = [self.bullet,
                            self.render_keyword("原始述語記号"),
-                           self.render_identifier(node.name),
+                           self.render_identifier(node.ref),
                            self.render_tex(node.tex),
                            self.render_keyword("arity"),
                            str(node.arity)]
@@ -145,38 +155,39 @@ class Renderer:
     def render_axiom(self, node: Axiom):
         header_parts = [self.bullet,
                         self.render_keyword("axiom"),
-                        self.render_identifier(node.name),
+                        self.render_identifier(node.ref),
                         self.render_expr(node.conclusion)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("公理"),
-                           self.render_identifier(node.name),
+                           self.render_identifier(node.ref),
                            self.render_expr(node.conclusion)]
         return header_parts, header_parts_jp, ""
 
     def render_theorem(self, node: Theorem):
         header_parts = [self.toggle,
                         self.render_keyword("theorem"),
-                        self.render_identifier(node.name),
+                        self.render_identifier(node.ref),
                         self.render_expr(node.conclusion)]
         header_parts_jp = [self.toggle,
                            self.render_keyword("定理"),
-                           self.render_identifier(node.name),
+                           self.render_identifier(node.ref),
                            self.render_expr(node.conclusion)]
         body_html = "".join(self.render_node(s) for s in node.proof)
         return header_parts, header_parts_jp, body_html
 
     def render_defpred(self, node: DefPred):
         header_parts = [self.bullet,
-                        self.render_keyword("definition predicate"),
+                        self.render_keyword("definition"),
+                        self.render_keyword("predicate"),
                         self.render_keyword("autoexpand") if node.autoexpand else "",
-                        self.render_identifier(node.name),
+                        self.render_identifier(node.ref),
                         self.render_expr(AtomicFormula(RefDefPred(node.name), tuple(node.args))),
                         self.render_keyword("as"),
                         self.render_expr(node.formula)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("述語記号定義"),
                            self.render_keyword("autoexpand") if node.autoexpand else "",
-                           self.render_identifier(node.name),
+                           self.render_identifier(node.ref),
                            self.render_expr(AtomicFormula(RefDefPred(node.name), tuple(node.args))),
                            "を",
                            self.render_expr(node.formula),
@@ -185,106 +196,109 @@ class Renderer:
 
     def render_defcon(self, node: DefCon):
         header_parts = [self.bullet,
-                        self.render_keyword("definition constant"),
-                        self.render_identifier(node.name),
+                        self.render_keyword("definition"),
+                        self.render_keyword("constant"),
+                        self.render_identifier(node.ref),
                         self.render_tex(node.tex),
                         self.render_keyword("by"),
-                        self.render_identifier(node.ref_theorem.name)]
+                        self.render_identifier(node.ref_theorem)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("定数記号定義"),
-                           self.render_identifier(node.name),
+                           self.render_identifier(node.ref),
                            self.render_tex(node.tex),
                            "存在と一意性は",
-                           self.render_identifier(node.ref_theorem.name),
+                           self.render_identifier(node.ref_theorem),
                            "により示された。"]
         return header_parts, header_parts_jp, ""
 
     def render_defconexist(self, node: DefConExist):
         header_parts = [self.bullet,
                         self.render_keyword("existence"),
-                        self.render_identifier(node.name),
+                        self.render_identifier(node.ref),
                         self.render_expr(node.formula),
                         self.render_keyword("by"),
-                        self.render_identifier(node.ref_con.name)]
+                        self.render_identifier(node.ref_con)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("存在"),
-                           self.render_identifier(node.name),
+                           self.render_identifier(node.ref),
                            self.render_expr(node.formula),
-                           self.render_identifier(node.ref_con.name),
+                           self.render_identifier(node.ref_con),
                            "の定義による。"]
         return header_parts, header_parts_jp, ""
     
     def render_defconuniq(self, node: DefConUniq):
         header_parts = [self.bullet,
                         self.render_keyword("uniqueness"),
-                        self.render_identifier(node.name),
+                        self.render_identifier(node.ref),
                         self.render_expr(node.formula),
                         self.render_keyword("by"),
-                        self.render_identifier(node.ref_con.name)]
+                        self.render_identifier(node.ref_con)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("一意性"),
-                           self.render_identifier(node.name),
+                           self.render_identifier(node.ref),
                            self.render_expr(node.formula),
-                           self.render_identifier(node.ref_con.name),
+                           self.render_identifier(node.ref_con),
                            "の定義による。"]
         return header_parts, header_parts_jp, ""
 
     def render_deffun(self, node: DefFun):
         header_parts = [self.bullet,
-                        self.render_keyword("definition function"),
-                        self.render_identifier(node.name),
+                        self.render_keyword("definition"),
+                        self.render_keyword("function"),
+                        self.render_identifier(node.ref),
                         self.render_tex(node.tex),
                         self.render_keyword("by"),
-                        self.render_identifier(node.ref_theorem.name)]
+                        self.render_identifier(node.ref_theorem)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("関数記号定義"),
-                           self.render_identifier(node.name),
+                           self.render_identifier(node.ref),
                            self.render_tex(node.tex),
                            "存在と一意性は",
-                           self.render_identifier(node.ref_theorem.name),
+                           self.render_identifier(node.ref_theorem),
                            "により示された。"]
         return header_parts, header_parts_jp, ""
 
     def render_deffunexist(self, node: DefFunExist):
         header_parts = [self.bullet,
                         self.render_keyword("existence"),
-                        self.render_identifier(node.name),
+                        self.render_identifier(node.ref),
                         self.render_expr(node.formula),
                         self.render_keyword("by"),
-                        self.render_identifier(node.ref_fun.name)]
+                        self.render_identifier(node.ref_fun)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("存在"),
-                           self.render_identifier(node.name),
+                           self.render_identifier(node.ref),
                            self.render_expr(node.formula),
-                           self.render_identifier(node.ref_fun.name),
+                           self.render_identifier(node.ref_fun),
                            "の定義による。"]
         return header_parts, header_parts_jp, ""
 
     def render_deffununiq(self, node: DefFunUniq):
         header_parts = [self.bullet,
                         self.render_keyword("uniqueness"),
-                        self.render_identifier(node.name),
+                        self.render_identifier(node.ref),
                         self.render_expr(node.formula),
                         self.render_keyword("by"),
-                        self.render_identifier(node.ref_fun.name)]
+                        self.render_identifier(node.ref_fun)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("一意性"),
-                           self.render_identifier(node.name),
+                           self.render_identifier(node.ref),
                            self.render_expr(node.formula),
-                           self.render_identifier(node.ref_fun.name),
+                           self.render_identifier(node.ref_fun),
                            "の定義による。"]
         return header_parts, header_parts_jp, ""
 
     def render_deffunterm(self, node: DefFunTerm):
         header_parts = [self.bullet,
-                        self.render_keyword("definition function"),
-                        self.render_identifier(node.name),
+                        self.render_keyword("definition"),
+                        self.render_keyword("function"),
+                        self.render_identifier(node.ref),
                         self.render_expr(Compound(RefDefFunTerm(node.name), tuple(node.args))),
                         self.render_keyword("as"),
                         self.render_expr(node.varterm)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("関数記号定義"),
-                           self.render_identifier(node.name),
+                           self.render_identifier(node.ref),
                            self.render_expr(Compound(RefDefFunTerm(node.name), tuple(node.args))),
                            "を",
                            self.render_expr(node.varterm),
@@ -294,11 +308,11 @@ class Renderer:
     def render_equality(self, node: Equality):
         header_parts = [self.toggle,
                         self.render_keyword("equality"),
-                        self.render_identifier(node.ref.name),
+                        self.render_identifier(node.ref),
                         self.render_tex(node.tex)]
         header_parts_jp = [self.toggle,
                         self.render_keyword("等号宣言"),
-                        self.render_identifier(node.ref.name),
+                        self.render_identifier(node.ref),
                         self.render_tex(node.tex)]
         return header_parts, header_parts_jp, ""
 
@@ -371,7 +385,7 @@ class Renderer:
         return header_parts, header_parts_jp, ""
 
     def render_expand(self, node: Expand):
-        defs = ",".join([self.render_identifier(ref.name) for ref in node.refs])
+        defs = ",".join([self.render_identifier(ref) for ref in node.refs])
         header_parts = [self.bullet,
                         self.render_keyword("expand"),
                         self.render_expr(node.fact),
@@ -383,7 +397,7 @@ class Renderer:
         return header_parts, header_parts_jp, ""
 
     def render_fold(self, node: Fold):
-        defs = ",".join([self.render_identifier(ref.name) for ref in node.refs])
+        defs = ",".join([self.render_identifier(ref) for ref in node.refs])
         header_parts = [self.bullet,
                         self.render_keyword("fold"),
                         self.render_keyword("for"),

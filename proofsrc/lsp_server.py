@@ -23,6 +23,10 @@ HTML_TEMPLATE = """<!doctype html>
 <script id="MathJax-script" async
   src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
+    .syntax-declarations {{ color: #569CD6; }}
+    .syntax-controls {{ color: #C586C0; }}
+    .semantic-function {{ color: #DCDCAA; }}
+    .semantic-constant {{ color: #4FC1FF; }}
     .statement {{ min-height: 1.5em; }}
     .status-icon {{ display: inline-block; min-width: 100px; background: rgba(128, 128, 128, 0.5); border-radius: 12px; text-align: center; }}
     table {{ width: 100%; }}

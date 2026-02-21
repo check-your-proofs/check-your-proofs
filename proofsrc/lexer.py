@@ -16,7 +16,11 @@ class Token:
     def info(self):
         return f"[{self.file}:{self.line}:{self.column}]"
 
-KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "lift", "primitive", "predicate", "arity", "axiom", "invoke", "expand", "constant", "by", "pad", "split", "connect", "existence", "uniqueness", "autoexpand", "function", "equality", "reflection", "replacement", "substitute", "characterize", "show", "tex", "as", "template", "leftward", "rightward", "include", "assert", "fold", "infix"}
+DECLARATIONS = {"primitive", "axiom", "theorem", "definition", "equality", "existence", "uniqueness"}
+
+CONTROLS = {"any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "lift", "predicate", "arity", "invoke", "expand", "constant", "by", "pad", "split", "connect", "autoexpand", "function", "substitute", "characterize", "show", "tex", "as", "leftward", "rightward", "include", "assert", "fold", "infix"}
+
+KEYWORDS = DECLARATIONS | CONTROLS
 
 SYMBOLS = {
     "{": "LBRACE",

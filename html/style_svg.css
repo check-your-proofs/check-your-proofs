@@ -13,8 +13,10 @@ header { font-size: 0.9em; color: gray; margin-left: 1em; }
 .block-content {}
 .toggle { all: unset; width:1.2em; display:inline-block; background:none; border:none; cursor:pointer; color:#446; font-size:0.9em; text-align:center; }
 .bullet { all: unset; display:inline-block; width:1.2em; text-align:center; color:#888; }
-.keyword { color:#c41a16; margin-right:0.3rem; font-size: 1.0em; line-height: 2.0em; }
-.identifier { color:#1e7f68; margin-right:0.4rem; font-size: 1.0em; line-height: 2.0em; }
+.syntax-declarations { color:#c41a16; margin-right:0.3rem; font-size: 1.0em; line-height: 2.0em; }
+.syntax-controls { color:#c41a16; margin-right:0.3rem; font-size: 1.0em; line-height: 2.0em; }
+.semantic-function { color:#1e7f68; margin-right:0.4rem; font-size: 1.0em; line-height: 2.0em; }
+.semantic-constant { color:#1e7f68; margin-right:0.4rem; font-size: 1.0em; line-height: 2.0em; }
 #infoPanel img { vertical-align: middle; }
 .collapsed { display:none; }
 .jp-view { display: none; font-size: 0.95em; }
