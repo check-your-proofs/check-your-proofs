@@ -251,12 +251,12 @@ class Renderer:
                         self.render_identifier(node.name),
                         self.render_expr(node.formula),
                         self.render_keyword("by"),
-                        self.render_identifier(node.fun_name)]
+                        self.render_identifier(node.ref_fun.name)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("存在"),
                            self.render_identifier(node.name),
                            self.render_expr(node.formula),
-                           self.render_identifier(node.fun_name),
+                           self.render_identifier(node.ref_fun.name),
                            "の定義による。"]
         return header_parts, header_parts_jp, ""
 
@@ -266,12 +266,12 @@ class Renderer:
                         self.render_identifier(node.name),
                         self.render_expr(node.formula),
                         self.render_keyword("by"),
-                        self.render_identifier(node.fun_name)]
+                        self.render_identifier(node.ref_fun.name)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("一意性"),
                            self.render_identifier(node.name),
                            self.render_expr(node.formula),
-                           self.render_identifier(node.fun_name),
+                           self.render_identifier(node.ref_fun.name),
                            "の定義による。"]
         return header_parts, header_parts_jp, ""
 

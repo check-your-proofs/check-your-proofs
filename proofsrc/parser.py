@@ -297,8 +297,10 @@ class Parser:
             return defconexist
         elif name in context.decl.deffuns:
             ref = RefDefFunExist(existence_name)
+            ref_fun = RefDefFun(name)
             self.add_node_to_token(ref, existence_name_token, existence_name_token)
-            deffunexist = DefFunExist(name=existence_name, ref=ref, formula=existence_formula, fun_name=name)
+            self.add_node_to_token(ref_fun, name_token, name_token)
+            deffunexist = DefFunExist(name=existence_name, ref=ref, formula=existence_formula, ref_fun=ref_fun)
             self.add_node_to_token(deffunexist, start_token, self.stream.last_token)
             # context.add_decl(deffunexist)
             return deffunexist
@@ -325,8 +327,10 @@ class Parser:
             return defconuniq
         elif name in context.decl.deffuns:
             ref = RefDefFunUniq(uniqueness_name)
+            ref_fun = RefDefFun(name)
             self.add_node_to_token(ref, uniqueness_name_token, uniqueness_name_token)
-            deffununiq = DefFunUniq(name=uniqueness_name, ref=ref, formula=uniqueness_formula, fun_name=name)
+            self.add_node_to_token(ref_fun, name_token, name_token)
+            deffununiq = DefFunUniq(name=uniqueness_name, ref=ref, formula=uniqueness_formula, ref_fun=ref_fun)
             self.add_node_to_token(deffununiq, start_token, self.stream.last_token)
             # context.add_decl(deffununiq)
             return deffununiq

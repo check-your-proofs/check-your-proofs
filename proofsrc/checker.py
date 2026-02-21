@@ -193,12 +193,12 @@ class Checker:
 
     def check_deffunexist(self, node: DefFunExist, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.fun_name}")
-        args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].ref_theorem.name].conclusion)
+        logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.ref_fun.name}")
+        args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.ref_fun.name].ref_theorem.name].conclusion)
         if isinstance(body, ExistsUniq):
-            existence_formula = Substitutor(({body.var: Compound(RefDefFun(node.fun_name), tuple(args))}, {}, {}), context).substitute_formula(body.body)
+            existence_formula = Substitutor(({body.var: Compound(RefDefFun(node.ref_fun.name), tuple(args))}, {}, {}), context).substitute_formula(body.body)
         elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
-            existence_formula = Implies(body.left, Substitutor(({body.right.var: Compound(RefDefFun(node.fun_name), tuple(args))}, {}, {}), context).substitute_formula(body.right.body))
+            existence_formula = Implies(body.left, Substitutor(({body.right.var: Compound(RefDefFun(node.ref_fun.name), tuple(args))}, {}, {}), context).substitute_formula(body.right.body))
         else:
             msg = f"Unexpected formula: {ExprFormatter(context).pretty_expr(body)}"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
@@ -211,15 +211,15 @@ class Checker:
 
     def check_deffununiq(self, node: DefFunUniq, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.fun_name}")
+        logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.ref_fun.name}")
         if context.decl.equality is None:
             msg = "equality has not been declared yet"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
-        args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].ref_theorem.name].conclusion)
+        args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.ref_fun.name].ref_theorem.name].conclusion)
         if isinstance(body, ExistsUniq):
-            uniqueness_formula = Forall(body.var, Implies(body.body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (Var(body.var.name), Compound(RefDefFun(node.fun_name), tuple(args))))))
+            uniqueness_formula = Forall(body.var, Implies(body.body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (Var(body.var.name), Compound(RefDefFun(node.ref_fun.name), tuple(args))))))
         elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
-            uniqueness_formula = Implies(body.left, Forall(body.right.var, Implies(body.right.body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (Var(body.right.var.name), Compound(RefDefFun(node.fun_name), tuple(args)))))))
+            uniqueness_formula = Implies(body.left, Forall(body.right.var, Implies(body.right.body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (Var(body.right.var.name), Compound(RefDefFun(node.ref_fun.name), tuple(args)))))))
         else:
             msg = f"Unexpected formula: {ExprFormatter(context).pretty_expr(body)}"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)

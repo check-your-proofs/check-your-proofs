@@ -111,10 +111,10 @@ local_conclusions: {local_conclusions}
             return f"{node.__class__.__name__}\n```proof\nuniqueness {defconuniq.name} {ExprFormatter(context).pretty_expr(defconuniq.formula)} by {defconuniq.ref_con.name}\n```"
         elif isinstance(node, RefDefFunExist):
             deffunexist = context.decl.deffunexists[node.name]
-            return f"{node.__class__.__name__}\n```proof\nexistence {deffunexist.name} {ExprFormatter(context).pretty_expr(deffunexist.formula)} by {deffunexist.fun_name}"
+            return f"{node.__class__.__name__}\n```proof\nexistence {deffunexist.name} {ExprFormatter(context).pretty_expr(deffunexist.formula)} by {deffunexist.ref_fun.name}"
         elif isinstance(node, RefDefFunUniq):
             deffununiq = context.decl.deffununiqs[node.name]
-            return f"{node.__class__.__name__}\n```proof\nuniqueness {deffununiq.name} {ExprFormatter(context).pretty_expr(deffununiq.formula)} by {deffununiq.fun_name}"
+            return f"{node.__class__.__name__}\n```proof\nuniqueness {deffununiq.name} {ExprFormatter(context).pretty_expr(deffununiq.formula)} by {deffununiq.ref_fun.name}"
         else:
             return f"{node.__class__.__name__}: Unknown"
     else:

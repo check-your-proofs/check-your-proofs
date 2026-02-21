@@ -383,13 +383,13 @@ class DefCon(Declaration):
 class DefFunExist(Declaration):
     ref: RefDefFunExist
     formula: Formula
-    fun_name: str
+    ref_fun: RefDefFun
 
 @dataclass
 class DefFunUniq(Declaration):
     ref: RefDefFunUniq
     formula: Formula
-    fun_name: str
+    ref_fun: RefDefFun
 
 @dataclass
 class DefFun(Declaration):
