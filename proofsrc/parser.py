@@ -573,56 +573,18 @@ class Parser:
         start_token = self.stream.consume("EXPAND")
         fact = self.parse_formula(context)
         self.stream.consume("FOR")
-        defs: list[str] = []
-        indexes: dict[str, list[int]] = {}
-        while True:
-            definition = self.stream.consume("IDENT").value
-            defs.append(definition)
-            if self.stream.peek().type == "LBRACKET":
-                self.stream.consume("LBRACKET")
-                indexes_: list[int] = []
-                while True:
-                    indexes_.append(int(self.stream.consume("NUMBER").value))
-                    if self.stream.peek().type == "COMMA":
-                        self.stream.consume("COMMA")
-                    else:
-                        break
-                self.stream.consume("RBRACKET")
-                indexes[definition] = indexes_
-            if self.stream.peek().type == "COMMA":
-                self.stream.consume("COMMA")
-            else:
-                break
-        node = Expand(fact=fact, defs=defs, indexes=indexes)
+        refs, indexes = self.parse_refs_indexes(context)
+        node = Expand(fact=fact, refs=refs, indexes=indexes)
         self.add_node_to_token(node, start_token, self.stream.last_token)
         return node
 
     def parse_fold(self, context: Context) -> Fold:
         start_token = self.stream.consume("FOLD")
         self.stream.consume("FOR")
-        defs: list[str] = []
-        indexes: dict[str, list[int]] = {}
-        while True:
-            definition = self.stream.consume("IDENT").value
-            defs.append(definition)
-            if self.stream.peek().type == "LBRACKET":
-                self.stream.consume("LBRACKET")
-                indexes_: list[int] = []
-                while True:
-                    indexes_.append(int(self.stream.consume("NUMBER").value))
-                    if self.stream.peek().type == "COMMA":
-                        self.stream.consume("COMMA")
-                    else:
-                        break
-                self.stream.consume("RBRACKET")
-                indexes[definition] = indexes_
-            if self.stream.peek().type == "COMMA":
-                self.stream.consume("COMMA")
-            else:
-                break
+        refs, indexes = self.parse_refs_indexes(context)
         self.stream.consume("CONCLUDE")
         conclusion = self.parse_formula(context)
-        node = Fold(defs=defs, indexes=indexes, conclusion=conclusion)
+        node = Fold(refs=refs, indexes=indexes, conclusion=conclusion)
         self.add_node_to_token(node, start_token, self.stream.last_token)
         return node
 
@@ -1134,6 +1096,38 @@ class Parser:
         self.add_node_to_token(fun, tok, self.stream.last_token)
         self.add_ctrl_defs_refs(fun, fun)
         return fun
+
+    def parse_refs_indexes(self, context: Context) -> tuple[list[RefDefFunTerm | RefDefPred], dict[RefDefFunTerm | RefDefPred, list[int]]]:
+        refs: list[RefDefFunTerm | RefDefPred] = []
+        indexes: dict[RefDefFunTerm | RefDefPred, list[int]] = {}
+        while True:
+            ref_token = self.stream.consume("IDENT")
+            ref_name = ref_token.value
+            if ref_name in context.decl.deffunterms:
+                ref = RefDefFunTerm(ref_name)
+            elif ref_name in context.decl.defpreds:
+                ref = RefDefPred(ref_name)
+            else:
+                msg = f"{ref_name} is not in deffunterms or defpreds"
+                raise ParseError(ref_token, msg)
+            self.add_node_to_token(ref, ref_token, ref_token)
+            refs.append(ref)
+            if self.stream.peek().type == "LBRACKET":
+                self.stream.consume("LBRACKET")
+                indexes_: list[int] = []
+                while True:
+                    indexes_.append(int(self.stream.consume("NUMBER").value))
+                    if self.stream.peek().type == "COMMA":
+                        self.stream.consume("COMMA")
+                    else:
+                        break
+                self.stream.consume("RBRACKET")
+                indexes[ref] = indexes_
+            if self.stream.peek().type == "COMMA":
+                self.stream.consume("COMMA")
+            else:
+                break
+        return refs, indexes
 
     def match_args(self, defargs: Sequence[Var | PredTemplate | FunTemplate], subargs: Sequence[Term], context: Context, tok: Token) -> list[Term]:
         if len(defargs) != len(subargs):

@@ -289,13 +289,13 @@ class Invoke(Control):
 @dataclass
 class Expand(Control):
     fact: RefFact | Formula
-    defs: list[str]
-    indexes: dict[str, list[int]]
+    refs: list[RefDefFunTerm | RefDefPred]
+    indexes: dict[RefDefFunTerm | RefDefPred, list[int]]
 
 @dataclass
 class Fold(Control):
-    defs: list[str]
-    indexes: dict[str, list[int]]
+    refs: list[RefDefFunTerm | RefDefPred]
+    indexes: dict[RefDefFunTerm | RefDefPred, list[int]]
     conclusion: Formula
 
 @dataclass

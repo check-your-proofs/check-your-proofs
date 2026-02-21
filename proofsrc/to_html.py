@@ -370,7 +370,7 @@ class Renderer:
         return header_parts, header_parts_jp, ""
 
     def render_expand(self, node: Expand):
-        defs = ",".join([self.render_identifier(definition) for definition in node.defs])
+        defs = ",".join([self.render_identifier(ref.name) for ref in node.refs])
         header_parts = [self.bullet,
                         self.render_keyword("expand"),
                         self.render_expr(node.fact),
@@ -382,7 +382,7 @@ class Renderer:
         return header_parts, header_parts_jp, ""
 
     def render_fold(self, node: Fold):
-        defs = ",".join([self.render_identifier(definition) for definition in node.defs])
+        defs = ",".join([self.render_identifier(ref.name) for ref in node.refs])
         header_parts = [self.bullet,
                         self.render_keyword("fold"),
                         self.render_keyword("for"),

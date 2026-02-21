@@ -315,21 +315,21 @@ def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bpt
 def expr_in_context(expr: Bottom | Formula, context: Context) -> bool:
     return any(alpha_equiv_with_defs(expr, f, context) for f in context.ctrl.formulas)
 
-def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, context: Context, defs: list[str] | None = None) -> bool:
-    if defs is None:
-        defs = []
+def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, context: Context, refs: list[RefDefFunTerm | RefDefPred] | None = None) -> bool:
+    if refs is None:
+        refs = []
     if isinstance(e1, Bottom) or isinstance(e2, Bottom):
         return isinstance(e1, Bottom) and isinstance(e2, Bottom)
     else:
-        e1_exp = normalize_neg(DefExpander(defs).expand_defs_formula(e1, context))
-        e2_exp = normalize_neg(DefExpander(defs).expand_defs_formula(e2, context))
+        e1_exp = normalize_neg(DefExpander(refs).expand_defs_formula(e1, context))
+        e2_exp = normalize_neg(DefExpander(refs).expand_defs_formula(e2, context))
         return AlphaEquiv(context).alpha_equiv(e1_exp, e2_exp)
 
 @dataclass
 class DefExpander:
-    defs: list[str]
-    indexes: dict[str, list[int]] = field(default_factory=dict[str, list[int]])
-    counter: dict[str, int] = field(init=False, default_factory=dict[str, int])
+    refs: list[RefDefFunTerm | RefDefPred]
+    indexes: dict[RefDefFunTerm | RefDefPred, list[int]] = field(default_factory=dict[RefDefFunTerm | RefDefPred, list[int]])
+    counter: dict[RefDefFunTerm | RefDefPred, int] = field(init=False, default_factory=dict[RefDefFunTerm | RefDefPred, int])
 
     def expand_defs_var_term(self, expr: VarTerm, context: Context) -> VarTerm:
         if isinstance(expr, (Var, RefDefCon)):
@@ -338,12 +338,12 @@ class DefExpander:
             if isinstance(expr.fun, RefDefFunTerm):
                 deffunterm = context.decl.deffunterms[expr.fun.name]
                 should_expand = False
-                if expr.fun.name in self.defs:
-                    target_indexes = self.indexes.get(expr.fun.name, [])
-                    self.counter[expr.fun.name] = self.counter.get(expr.fun.name, 0) + 1
+                if expr.fun in self.refs:
+                    target_indexes = self.indexes.get(expr.fun, [])
+                    self.counter[expr.fun] = self.counter.get(expr.fun, 0) + 1
                     if not target_indexes:
                         should_expand = True
-                    elif self.counter[expr.fun.name] in target_indexes:
+                    elif self.counter[expr.fun] in target_indexes:
                         should_expand = True
                 if should_expand:
                     renamed_term, renamed_mapping = alpha_safe_var_term(deffunterm.varterm, dict(zip(deffunterm.args, expr.args)), context)
@@ -388,14 +388,14 @@ class DefExpander:
             if isinstance(expr.pred, RefDefPred):
                 defpred = context.decl.defpreds[expr.pred.name]
                 should_expand = False
-                if len(self.defs) == 0 and defpred.autoexpand:
+                if len(self.refs) == 0 and defpred.autoexpand:
                     should_expand = True
-                elif expr.pred.name in self.defs:
-                    target_indexes = self.indexes.get(expr.pred.name, [])
-                    self.counter[expr.pred.name] = self.counter.get(expr.pred.name, 0) + 1
+                elif expr.pred in self.refs:
+                    target_indexes = self.indexes.get(expr.pred, [])
+                    self.counter[expr.pred] = self.counter.get(expr.pred, 0) + 1
                     if not target_indexes:
                         should_expand = True
-                    elif self.counter[expr.pred.name] in target_indexes:
+                    elif self.counter[expr.pred] in target_indexes:
                         should_expand = True
                 if should_expand:
                     renamed_formula, renamed_mapping = alpha_safe_formula(defpred.formula, dict(zip(defpred.args, expr.args)), context)

@@ -25,7 +25,7 @@ def get_fact(fact: RefFact | Formula, context: Context, token: Token, expand_sym
     elif not isinstance(fact, Formula):
         raise Exception(f"Unexpected type {type(fact)}")
     if expand_symbol and isinstance(fact, AtomicFormula) and isinstance(fact.pred, RefDefPred):
-        fact = DefExpander([fact.pred.name], {fact.pred.name: [1]}).expand_defs_formula(fact, context)
+        fact = DefExpander([fact.pred], {fact.pred: [1]}).expand_defs_formula(fact, context)
     return fact
 
 def add_conclusion(context: Context, conclusion: Bottom | Formula) -> None:
@@ -699,7 +699,7 @@ class Checker:
                 raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
             logger.debug(f"{debug_prefix}fact: {ExprFormatter(context).pretty_expr(node.fact)}")
         fact = get_fact(node.fact, context, self.unit.tokens[self.unit.node_to_token[id(node)][0]])
-        conclusion = DefExpander(node.defs, node.indexes).expand_defs_formula(fact, context)
+        conclusion = DefExpander(node.refs, node.indexes).expand_defs_formula(fact, context)
         node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [conclusion]
         add_conclusion(context, conclusion)
@@ -707,7 +707,7 @@ class Checker:
 
     def check_fold(self, node: Fold, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        fact = DefExpander(node.defs, node.indexes).expand_defs_formula(node.conclusion, context)
+        fact = DefExpander(node.refs, node.indexes).expand_defs_formula(node.conclusion, context)
         if not goal_in_context(fact, context):
             msg = f"Not fact: {ExprFormatter(context).pretty_expr(fact)}"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
@@ -779,7 +779,7 @@ class Checker:
         if isinstance(node.conclusion, AtomicFormula):
             if not isinstance(node.conclusion.pred, RefDefPred):
                 raise Exception(f"Unexpected type: {type(node.conclusion.pred)}")
-            conclusion = DefExpander([node.conclusion.pred.name]).expand_defs_formula(node.conclusion, context)
+            conclusion = DefExpander([node.conclusion.pred]).expand_defs_formula(node.conclusion, context)
         else:
             conclusion = node.conclusion
         if isinstance(conclusion, And):
