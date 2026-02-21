@@ -39,6 +39,8 @@ class Parser:
     def add_node_to_token(self, node: Include | Declaration | Control | Formula | Term | RefFact, start_token: Token, end_token: Token):
         self.unit.node_to_token[id(node)] = (start_token.index, end_token.index)
         self.unit.nodes.append(node)
+        if isinstance(node, (RefFact, RefEquality, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm)):
+            self.add_decl_ref(node.name, start_token)
 
     def add_decl_ref(self, name: str, token: Token) -> None:
         if name not in self.unit.decl_refs:
@@ -683,7 +685,6 @@ class Parser:
             elif name in context.decl.deffununiqs:
                 ref = RefDefFunUniq
             if ref is not None:
-                self.add_decl_ref(name, token)
                 self.stream.consume(token.type)
                 node = ref(name)
                 self.add_node_to_token(node, token, token)
@@ -747,17 +748,14 @@ class Parser:
                 self.add_ctrl_defs_refs(def_pred_tmpl, pred)
                 defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
             elif context.decl.equality is not None and name == context.decl.equality.ref.name:
-                self.add_decl_ref(name, tok)
                 pred = RefEquality(name)
                 self.add_node_to_token(pred, tok, tok)
                 defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(2)]
             elif name in context.decl.primpreds:
-                self.add_decl_ref(name, tok)
                 pred = RefPrimPred(name)
                 self.add_node_to_token(pred, tok, tok)
                 defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
             elif name in context.decl.defpreds:
-                self.add_decl_ref(name, tok)
                 pred = RefDefPred(name)
                 self.add_node_to_token(pred, tok, tok)
                 defargs = context.decl.defpreds[name].args
@@ -909,18 +907,15 @@ class Parser:
                 self.add_ctrl_defs_refs(def_pred_tmpl, ref_pred_tmpl)
                 return ref_pred_tmpl
             elif name in context.decl.defcons:
-                self.add_decl_ref(name, tok)
                 ref = RefDefCon(name)
                 self.add_node_to_token(ref, tok, tok)
                 return ref
             elif name in context.decl.deffuns or name in context.decl.deffunterms or any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.fun_tmpls):
                 if name in context.decl.deffuns:
-                    self.add_decl_ref(name, tok)
                     fun = RefDefFun(name)
                     self.add_node_to_token(fun, tok, tok)
                     defargs = context.decl.deffuns[name].args
                 elif name in context.decl.deffunterms:
-                    self.add_decl_ref(name, tok)
                     fun = RefDefFunTerm(name)
                     self.add_node_to_token(fun, tok, tok)
                     defargs = context.decl.deffunterms[name].args
@@ -947,12 +942,10 @@ class Parser:
                 else:
                     return fun
             elif name in context.decl.primpreds:
-                self.add_decl_ref(name, tok)
                 ref = RefPrimPred(name)
                 self.add_node_to_token(ref, tok, tok)
                 return ref
             elif name in context.decl.defpreds:
-                self.add_decl_ref(name, tok)
                 ref = RefDefPred(name)
                 self.add_node_to_token(ref, tok, tok)
                 return ref
