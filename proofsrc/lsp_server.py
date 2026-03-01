@@ -214,7 +214,7 @@ class ProofLanguageServer(LanguageServer):
             self.resolver.diagnostics = {}
         self.resolver.dependencies.pop(path, None)
         self.resolver.resolve(path, self)
-        resolved_files, tokens_cache = self.resolver.get_result()
+        resolved_files, tokens_cache = self.resolver.get_result(path)
         workspace = split(resolved_files, tokens_cache, self.resolver.source_cache)
 
         all_units: list[DeclarationUnit] = []

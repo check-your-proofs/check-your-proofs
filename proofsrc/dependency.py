@@ -89,17 +89,11 @@ class DependencyResolver:
         self.dependencies[path] = dependency
         # print(f"Resolved {path}")
 
-    def get_result(self) -> tuple[list[str], dict[str, list[Token]]]:
-        return self.get_combined_order(), self.tokens_cache
-
-    def get_combined_order(self) -> list[str]:
-        all_roots = self.find_all_roots()
-        print(f"all_roots: {', '.join(os.path.basename(root) for root in all_roots)}", file=sys.stderr)
+    def get_result(self, path: str) -> tuple[list[str], dict[str, list[Token]]]:
         order: list[str] = []
         visited: set[str] = set()
-        for root in all_roots:
-            self.walk(root, visited, order)
-        return order
+        self.walk(path, visited, order)
+        return order, self.tokens_cache
 
     def find_all_roots(self) -> list[str]:
         all_files = set(self.dependencies.keys())
@@ -123,6 +117,6 @@ if __name__ == "__main__":
     path = sys.argv[1]
     resolver = DependencyResolver()
     resolver.resolve(path)
-    resolved_files, tokens_cache = resolver.get_result()
+    resolved_files, tokens_cache = resolver.get_result(path)
     for file in resolved_files:
         print(f"file: {file}, length of tokens: {len(tokens_cache[file])}")
