@@ -205,6 +205,29 @@ class ProofLanguageServer(LanguageServer):
         self.protocol.send_request("workspace/semanticTokens/refresh")
         self.update_panel()
 
+    def restore_cache(self, all_units: list[DeclarationUnit], old_all_units: list[DeclarationUnit], context: Context) -> tuple[Context, int]:
+        start_index = 0
+        for i in range(min(len(all_units), len(old_all_units))):
+            if all_units[i].hash == old_all_units[i].hash:
+                all_units[i].restore_from(old_all_units[i])
+                context = all_units[i].context
+                start_index = i + 1
+            else:
+                break
+        return context, start_index
+
+    def analyze_diff(self, all_units: list[DeclarationUnit], start_index: int, context: Context) -> Context | None:
+        for i in range(start_index, len(all_units)):
+            if self.cancel_analysis.is_set():
+                return None
+            unit = all_units[i]
+            working_context = context.copy()
+            Parser(unit).parse_unit(working_context)
+            if Checker(unit).check_unit(working_context):
+                context = working_context
+            unit.context = context.copy()
+        return context
+
     def analyze(self, path: str) -> None:
         self.cancel_analysis.clear()
 
@@ -227,24 +250,10 @@ class ProofLanguageServer(LanguageServer):
                 old_all_units.extend(self.old_workspace.file_units[file])
 
         context = Context.init()
-        start_index = 0
-        for i in range(min(len(all_units), len(old_all_units))):
-            if all_units[i].hash == old_all_units[i].hash:
-                all_units[i].restore_from(old_all_units[i])
-                context = all_units[i].context
-                start_index = i + 1
-            else:
-                break
-
-        for i in range(start_index, len(all_units)):
-            if self.cancel_analysis.is_set():
-                return
-            unit = all_units[i]
-            working_context = context.copy()
-            Parser(unit).parse_unit(working_context)
-            if Checker(unit).check_unit(working_context):
-                context = working_context
-            unit.context = context.copy()
+        context, start_index = self.restore_cache(all_units, old_all_units, context)
+        context = self.analyze_diff(all_units, start_index, context)
+        if context is None:
+            return None
 
         workspace.build_token_to_node()
 
