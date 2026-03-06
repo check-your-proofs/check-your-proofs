@@ -89,6 +89,36 @@ class DependencyResolver:
         self.dependencies[path] = dependency
         # print(f"Resolved {path}")
 
+    def create_reverse_deps(self) -> dict[str, set[str]]:
+        reverse_dependencies: dict[str, set[str]] = {}
+        for parent, children in self.dependencies.items():
+            for child in children:
+                if child not in reverse_dependencies:
+                    reverse_dependencies[child] = set()
+                reverse_dependencies[child].add(parent)
+        return reverse_dependencies
+
+    def get_affected_files(self, start_path: str) -> set[str]:
+        reverse_dependencies = self.create_reverse_deps()
+        affected = {start_path}
+        queue = [start_path]
+        while queue:
+            current = queue.pop(0)
+            parents = reverse_dependencies.get(current, set())
+            for p in parents:
+                if p not in affected:
+                    affected.add(p)
+                    queue.append(p)
+        return affected
+
+    def get_order(self) -> list[str]:
+        order: list[str] = []
+        visited: set[str] = set()
+        all_roots = self.find_all_roots()
+        for root in all_roots:
+            self.walk(root, visited, order)
+        return order
+
     def get_result(self, path: str) -> tuple[list[str], dict[str, list[Token]]]:
         order: list[str] = []
         visited: set[str] = set()

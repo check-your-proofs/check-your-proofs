@@ -228,17 +228,14 @@ class ProofLanguageServer(LanguageServer):
             unit.context = context.copy()
         return context
 
-    def prepare_context(self, file: str, resolver: DependencyResolver, file_final_contexts: dict[str, Context], newly_analyzed: set[str]) -> tuple[Context, bool]:
+    def prepare_context(self, file: str, resolver: DependencyResolver, file_final_contexts: dict[str, Context]) -> Context:
         context = Context.init()
         processed_files: set[str] = set() # avoid diamond dependency
-        dependency_changed = False
         for dep in resolver.dependencies[file]:
             if dep not in processed_files:
                 context.merge(file_final_contexts[dep])
                 processed_files.add(dep)
-                if dep in newly_analyzed:
-                    dependency_changed = True
-        return context, dependency_changed
+        return context
 
     def analyze(self, path: str) -> None:
         self.cancel_analysis.clear()
@@ -249,13 +246,21 @@ class ProofLanguageServer(LanguageServer):
             self.resolver.diagnostics = {}
         self.resolver.dependencies.pop(path, None)
         self.resolver.resolve(path, self)
-        resolved_files, tokens_cache = self.resolver.get_result(path)
-        workspace = split(resolved_files, tokens_cache, self.resolver.source_cache)
+        affected_files = self.resolver.get_affected_files(path)
+        order = self.resolver.get_order()
+        workspace = split(order, self.resolver.tokens_cache, self.resolver.source_cache)
 
         file_final_contexts: dict[str, Context] = {}
         newly_analyzed: set[str] = set()
         for file in workspace.resolved_files:
-            context, dependency_changed = self.prepare_context(file, self.resolver, file_final_contexts, newly_analyzed)
+            is_affected = file in affected_files
+            dependency_changed = any(dep in newly_analyzed for dep in self.resolver.dependencies.get(file, []))
+            if not is_affected and not dependency_changed:
+                if self.old_workspace is not None and file in self.old_workspace.file_units:
+                    workspace.file_units[file] = self.old_workspace.file_units[file]
+                    file_final_contexts[file] = workspace.file_units[file][-1].context.copy()
+                    continue
+            context = self.prepare_context(file, self.resolver, file_final_contexts)
             all_units = workspace.file_units[file]
             old_all_units = [] if self.old_workspace is None or dependency_changed else self.old_workspace.file_units.get(file, [])
             context, start_index = self.restore_cache(all_units, old_all_units, context)
