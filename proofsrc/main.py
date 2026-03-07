@@ -30,19 +30,21 @@ logger.addHandler(file_handler)
 from dependency import DependencyResolver
 resolver = DependencyResolver()
 resolver.resolve(path)
-resolved_files = resolver.get_dependent_order(path)
+order = resolver.get_dependent_order(path)
 from splitter import split
-workspace = split(resolved_files, resolver.tokens_cache, resolver.source_cache)
-from ast_types import Context
+from ast_types import Context, DeclarationUnit
 context = Context.init()
 from parser import Parser
 from checker import Checker
-for file in workspace.resolved_files:
-    for unit in workspace.file_units[file]:
+file_units: dict[str, list[DeclarationUnit]] = {}
+for file in order:
+    all_units = split(file, resolver.tokens_cache[file], resolver.source_cache[file])
+    file_units[file] = all_units
+    for unit in all_units:
         working_context = context.copy()
         Parser(unit).parse_unit(working_context)
         if Checker(unit).check_unit(working_context):
             context = working_context
         unit.context = context.copy()
-total_errors = sum(len(unit.diagnostics) for file in workspace.file_units.values() for unit in file)
+total_errors = sum(len(unit.diagnostics) for file in file_units.values() for unit in file)
 print(f"tota_errors: {total_errors}")

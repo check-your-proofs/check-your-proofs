@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality, RefPrimPred, RefDefCon, RefDefFun
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality, RefPrimPred, RefDefCon, RefDefFun, DeclarationUnit
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from logic_utils import ExprFormatter
@@ -761,28 +761,30 @@ if __name__ == "__main__":
     from dependency import DependencyResolver
     resolver = DependencyResolver()
     resolver.resolve(path)
-    resolved_files = resolver.get_dependent_order(path)
+    order = resolver.get_dependent_order(path)
     from splitter import split
-    workspace = split(resolved_files, resolver.tokens_cache, resolver.source_cache)
     context = Context.init()
     from parser import Parser
     from checker import Checker
-    for file in workspace.resolved_files:
+    file_units: dict[str, list[DeclarationUnit]] = {}
+    for file in order:
         print(file)
+        all_units = split(file, resolver.tokens_cache[file], resolver.source_cache[file])
+        file_units[file] = all_units
         import os
         name = os.path.splitext(os.path.basename(file))[0]
-        for unit in workspace.file_units[file]:
+        for unit in all_units:
             working_context = context.copy()
             Parser(unit).parse_unit(working_context)
             if Checker(unit).check_unit(working_context):
                 context = working_context
             unit.context = context.copy()
         title = f"{name}_checker_{mode}"
-        checker_html, error_found = to_html([unit.ast for unit in workspace.file_units[file] if unit.ast is not None], context, title, mode)
+        checker_html, error_found = to_html([unit.ast for unit in all_units if unit.ast is not None], context, title, mode)
         f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
         f.write(checker_html)
         f.close()
         if error_found:
             break
-    total_errors = sum(len(unit.diagnostics) for file in workspace.file_units.values() for unit in file)
+    total_errors = sum(len(unit.diagnostics) for file in file_units.values() for unit in file)
     print(f"tota_errors: {total_errors}")
