@@ -111,7 +111,7 @@ class DependencyResolver:
                     queue.append(p)
         return affected
 
-    def get_order(self) -> list[str]:
+    def get_full_order(self) -> list[str]:
         order: list[str] = []
         visited: set[str] = set()
         all_roots = self.find_all_roots()
@@ -119,11 +119,11 @@ class DependencyResolver:
             self.walk(root, visited, order)
         return order
 
-    def get_result(self, path: str) -> tuple[list[str], dict[str, list[Token]]]:
+    def get_dependent_order(self, path: str) -> list[str]:
         order: list[str] = []
         visited: set[str] = set()
         self.walk(path, visited, order)
-        return order, self.tokens_cache
+        return order
 
     def find_all_roots(self) -> list[str]:
         all_files = set(self.dependencies.keys())
@@ -147,6 +147,6 @@ if __name__ == "__main__":
     path = sys.argv[1]
     resolver = DependencyResolver()
     resolver.resolve(path)
-    resolved_files, tokens_cache = resolver.get_result(path)
+    resolved_files = resolver.get_dependent_order(path)
     for file in resolved_files:
-        print(f"file: {file}, length of tokens: {len(tokens_cache[file])}")
+        print(f"file: {file}, length of tokens: {len(resolver.tokens_cache[file])}")

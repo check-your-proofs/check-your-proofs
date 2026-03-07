@@ -248,7 +248,7 @@ class ProofLanguageServer(LanguageServer):
         self.resolver.dependencies.pop(path, None)
         self.resolver.resolve(path, self)
         affected_files = self.resolver.get_affected_files(path)
-        order = self.resolver.get_order()
+        order = self.resolver.get_full_order()
         workspace = split(order, self.resolver.tokens_cache, self.resolver.source_cache)
 
         file_final_contexts: dict[str, Context] = {}
@@ -323,7 +323,7 @@ class ProofLanguageServer(LanguageServer):
             return None
         if self.resolver is None:
             return None
-        order, _ = self.resolver.get_result(unit.file)
+        order = self.resolver.get_dependent_order(unit.file)
         decl_def_token = self.old_workspace.get_decl_def(ref_name, order)
         if decl_def_token is None:
             return None
@@ -367,7 +367,7 @@ class ProofLanguageServer(LanguageServer):
         if self.old_workspace is not None and self.resolver is not None:
             current_unit = self.get_unit_at(params.text_document.uri, params.position)
             if current_unit is not None:
-                order, _ = self.resolver.get_result(current_unit.file)
+                order = self.resolver.get_dependent_order(current_unit.file)
                 for path in order:
                     for unit in self.old_workspace.file_units[path]:
                         if isinstance(unit.ast, Declaration):
