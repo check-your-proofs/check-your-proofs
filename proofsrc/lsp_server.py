@@ -349,7 +349,7 @@ class ProofLanguageServer(LanguageServer):
         decl_ref_tokens = self.old_workspace.get_all_decl_refs(ref_name, affected_files)
         return tokens_to_locations(decl_ref_tokens)
 
-    def get_completion(self) -> list[lsp.CompletionItem]:
+    def get_completion(self, params: lsp.CompletionParams) -> list[lsp.CompletionItem]:
         items: list[lsp.CompletionItem] = []
         for keyword in KEYWORDS:
             items.append(
@@ -365,15 +365,19 @@ class ProofLanguageServer(LanguageServer):
                     kind=lsp.CompletionItemKind.Operator
                 )
             )
-        if self.old_workspace:
-            for unit in self.old_workspace.get_all_units():
-                if isinstance(unit.ast, Declaration):
-                    items.append(
-                        lsp.CompletionItem(
-                            label=unit.ast.name,
-                            kind=lsp.CompletionItemKind.Function
-                        )
-                    )
+        if self.old_workspace is not None and self.resolver is not None:
+            current_unit = self.get_unit_at(params.text_document.uri, params.position)
+            if current_unit is not None:
+                order, _ = self.resolver.get_result(current_unit.file)
+                for path in order:
+                    for unit in self.old_workspace.file_units[path]:
+                        if isinstance(unit.ast, Declaration):
+                            items.append(
+                                lsp.CompletionItem(
+                                    label=unit.ast.name,
+                                    kind=lsp.CompletionItemKind.Function
+                                )
+                            )
         return items
 
     @staticmethod
@@ -534,7 +538,7 @@ def lsp_definition(ls: ProofLanguageServer, params: lsp.DefinitionParams) -> lsp
 
 @server.feature(lsp.TEXT_DOCUMENT_COMPLETION)
 def lsp_completion(ls: ProofLanguageServer, params: lsp.CompletionParams):
-    items = ls.get_completion()
+    items = ls.get_completion(params)
     return lsp.CompletionList(is_incomplete=False, items=items)
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_CHANGE)
