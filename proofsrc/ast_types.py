@@ -573,6 +573,7 @@ class DeclarationUnit:
         self.node_to_token = old.node_to_token
         self.nodes = old.nodes
         self.token_to_node = old.token_to_node
+        self.token_to_control = old.token_to_control
         self.context = old.context
         self.diagnostics = old.diagnostics
         self.decl_refs = old.decl_refs
@@ -601,6 +602,17 @@ class DeclarationUnit:
             ref_tokens.append(ref_token)
         return ref_tokens
 
+    def build_token_to_node(self):
+        for node in reversed(self.nodes):
+            start, end = self.node_to_token[id(node)]
+            for index in range(start, end + 1):
+                self.token_to_node[index] = node
+        for node in reversed(self.nodes):
+            if isinstance(node, Control):
+                start, end = self.node_to_token[id(node)]
+                for index in range(start, end + 1):
+                    self.token_to_control[index] = node
+
 class Workspace:
     def __init__(self, resolved_files: list[str], file_units: dict[str, list[DeclarationUnit]]):
         self.resolved_files: list[str] = resolved_files
@@ -626,18 +638,6 @@ class Workspace:
                 if name in unit.decl_refs:
                     all_decl_refs.extend(unit.decl_refs[name])
         return all_decl_refs
-
-    def build_token_to_node(self):
-        for unit in self.get_all_units():
-            for node in reversed(unit.nodes):
-                start, end = unit.node_to_token[id(node)]
-                for index in range(start, end + 1):
-                    unit.token_to_node[index] = node
-            for node in reversed(unit.nodes):
-                if isinstance(node, Control):
-                    start, end = unit.node_to_token[id(node)]
-                    for index in range(start, end + 1):
-                        unit.token_to_control[index] = node
 
     def merge(self, new: "Workspace") -> None:
         for file in new.resolved_files:

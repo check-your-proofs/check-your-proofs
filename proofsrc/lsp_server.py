@@ -226,6 +226,7 @@ class ProofLanguageServer(LanguageServer):
             if Checker(unit).check_unit(working_context):
                 context = working_context
             unit.context = context.copy()
+            unit.build_token_to_node()
         return context
 
     def prepare_context(self, file: str, resolver: DependencyResolver, file_final_contexts: dict[str, Context]) -> Context:
@@ -270,8 +271,6 @@ class ProofLanguageServer(LanguageServer):
             if context is None:
                 return None
             file_final_contexts[file] = context.copy()
-
-        workspace.build_token_to_node()
 
         if self.old_workspace is None:
             self.old_workspace = workspace
