@@ -249,20 +249,21 @@ class ProofLanguageServer(LanguageServer):
         self.resolver.resolve(path, self)
         affected_files = self.resolver.get_affected_files(path)
         order = self.resolver.get_full_order()
-        workspace = split(order, self.resolver.tokens_cache, self.resolver.source_cache)
 
+        file_units: dict[str, list[DeclarationUnit]] = {}
         file_final_contexts: dict[str, Context] = {}
         newly_analyzed: set[str] = set()
-        for file in workspace.resolved_files:
+        for file in order:
             is_affected = file in affected_files
             dependency_changed = any(dep in newly_analyzed for dep in self.resolver.dependencies.get(file, []))
             if not is_affected and not dependency_changed:
-                if self.old_workspace is not None and file in self.old_workspace.file_units:
-                    workspace.file_units[file] = self.old_workspace.file_units[file]
-                    file_final_contexts[file] = workspace.file_units[file][-1].context.copy()
+                if self.old_workspace is not None and file in self.old_workspace.file_units and len(self.old_workspace.file_units[file]) > 0:
+                    file_units[file] = self.old_workspace.file_units[file]
+                    file_final_contexts[file] = file_units[file][-1].context.copy()
                     continue
+            all_units = split(file, self.resolver.tokens_cache[file], self.resolver.source_cache[file])
+            file_units[file] = all_units
             context = self.prepare_context(file, self.resolver, file_final_contexts)
-            all_units = workspace.file_units[file]
             old_all_units = [] if self.old_workspace is None or dependency_changed else self.old_workspace.file_units.get(file, [])
             context, start_index = self.restore_cache(all_units, old_all_units, context)
             if start_index < len(all_units):
@@ -271,6 +272,8 @@ class ProofLanguageServer(LanguageServer):
             if context is None:
                 return None
             file_final_contexts[file] = context.copy()
+
+        workspace = Workspace(order, file_units)
 
         if self.old_workspace is None:
             self.old_workspace = workspace
