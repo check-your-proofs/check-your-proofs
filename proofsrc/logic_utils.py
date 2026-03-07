@@ -787,7 +787,7 @@ class ExprFormatter:
             else:
                 return f"\\mathrm{{{expr.name}}}"
         elif isinstance(expr, (PredTemplate, FunTemplate)):
-            return f"{expr.name}[{str(expr.arity)}]"
+            return expr.name
         elif isinstance(expr, RefDefCon):
             fragments = self.context.decl.defcons[expr.name].tex
             if len(fragments) != 1:
