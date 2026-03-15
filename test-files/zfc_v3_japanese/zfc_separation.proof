@@ -1,0 +1,26 @@
+include "zfc_op.proof"
+
+axiom axiom_of_separation \forall x \forall^P \phi[1] \exists y \forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))
+
+theorem separation_exists_uniquely \forall x \forall^P \phi[1] \exists! y \forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z)) {
+  any x, predicate \phi[1] {
+    apply axiom_of_separation for x, \phi
+    apply invoke set_exists_implies_set_exists_uniquely for \lambda^P z. in(z, x) \wedge \phi(z)
+  }
+}
+
+definition function sep by separation_exists_uniquely
+existence sep_existence \forall x \forall^P \phi[1] \forall z (in(z, sep(x, \phi)) \leftrightarrow in(z, x) \wedge \phi(z)) by sep
+uniqueness sep_uniqueness \forall x \forall^P \phi[1] \forall y (\forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z)) \to equal(y, sep(x, \phi))) by sep
+
+theorem sep_is_subset \forall x \forall^P \phi[1] (subset(sep(x, \phi), x)) {
+  any x, predicate \phi[1] {
+    any z {
+      assume in(z, sep(x, \phi)) {
+        apply invoke rightward sep_existence for x, \phi, z
+        split 1 in(z, x) \wedge \phi(z)
+      }
+    }
+    fold for subset conclude subset(sep(x, \phi), x)
+  }
+}

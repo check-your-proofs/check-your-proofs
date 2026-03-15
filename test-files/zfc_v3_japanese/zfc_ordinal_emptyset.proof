@@ -1,0 +1,82 @@
+include "zfc_ordinal.proof"
+
+theorem emptyset_is_trans trans(emptyset) {
+  any n, m {
+    assume in(m, n) \wedge in(n, emptyset) {
+      split 2 in(m, n) \wedge in(n, emptyset)
+      apply emptyset_existence for n
+      contradict in(n, emptyset)
+      explode in(m, emptyset)
+    }
+  }
+  fold for trans conclude trans(emptyset)
+}
+
+theorem emptyset_is_irrefrel irrefrel(emptyset, in) {
+  any n {
+    assume in(n, emptyset) {
+      apply emptyset_existence for n
+      contradict in(n, emptyset)
+      explode notin(n, n)
+    }
+  }
+  fold for irrefrel conclude irrefrel(emptyset, in)
+}
+
+theorem emptyset_is_wellfounded wellfounded(emptyset, in) {
+  any A {
+    assume subset(A, emptyset) \wedge neq(A, emptyset) {
+      split subset(A, emptyset) \wedge neq(A, emptyset)
+      apply invoke subset_of_emptyset_is_emptyset for A
+      contradict equal(A, emptyset)
+      explode \exists a (minimal(in, A, a))
+    }
+  }
+  fold for wellfounded conclude wellfounded(emptyset, in)
+}
+
+theorem emptyset_is_transrel transrel(emptyset, in) {
+  any n, m, l {
+    assume in(n, emptyset) \wedge in(m, emptyset) \wedge in(l, emptyset) \wedge in(n, m) \wedge in(m, l) {
+      split 1 in(n, emptyset) \wedge in(m, emptyset) \wedge in(l, emptyset) \wedge in(n, m) \wedge in(m, l)
+      apply emptyset_existence for n
+      contradict in(n, emptyset)
+      explode in(n, l)
+    }
+  }
+  fold for transrel conclude transrel(emptyset, in)
+}
+
+theorem emptyset_is_order order(emptyset, in) {
+  assert emptyset_is_irrefrel
+  assert emptyset_is_transrel
+  connect irrefrel(emptyset, in) \wedge transrel(emptyset, in)
+  apply invoke irrefrel_and_transrel_implies_order for emptyset, in
+}
+
+theorem emptyset_is_linorder linorder(emptyset, in) {
+  assert emptyset_is_order
+  any n, m {
+    assume in(n, emptyset) \wedge in(m, emptyset) {
+      split 1 in(n, emptyset) \wedge in(m, emptyset)
+      apply emptyset_existence for n
+      contradict in(n, emptyset)
+      explode in(n, m) \vee equal(n, m) \vee in(m, n)
+    }
+  }
+  fold for linorder_core conclude linorder_core(emptyset, in)
+  connect linorder(emptyset, in)
+}
+
+theorem emptyset_is_wellorder wellorder(emptyset, in) {
+  assert emptyset_is_wellfounded
+  assert emptyset_is_linorder
+  connect wellorder(emptyset, in)
+}
+
+theorem emptyset_is_ordinal ordinal(emptyset) {
+  assert emptyset_is_trans
+  assert emptyset_is_irrefrel
+  assert emptyset_is_wellorder
+  connect ordinal(emptyset)
+}

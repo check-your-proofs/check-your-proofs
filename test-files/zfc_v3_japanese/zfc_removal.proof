@@ -1,0 +1,127 @@
+include "zfc_separation.proof"
+
+definition function rem(x, y) as sep(x, \lambda^P z. neq(z, y)) 
+
+theorem rem_existence \forall x \forall y \forall w (in(w, rem(x, y)) \leftrightarrow in(w, x) \wedge neq(w, y)) {
+  any x, y, w {
+    assume in(w, rem(x, y)) {
+      expand in(w, rem(x, y)) for rem
+      apply invoke rightward sep_existence for x, \lambda^P z. neq(z, y), w
+    }
+    assume in(w, x) \wedge neq(w, y) {
+      apply invoke leftward sep_existence for x, \lambda^P z. neq(z, y), w
+      fold for rem conclude in(w, rem(x, y))
+    }
+    connect in(w, rem(x, y)) \leftrightarrow in(w, x) \wedge neq(w, y)
+  }
+}
+
+theorem rem_emptyset_implies_singleton \forall x \forall y (equal(rem(x, y), emptyset) \wedge neq(x, emptyset) \to equal(x, singleton(y))) {
+  any x, y {
+    assume equal(rem(x, y), emptyset) \wedge neq(x, emptyset) {
+      split equal(rem(x, y), emptyset) \wedge neq(x, emptyset)
+      any z {
+        assume in(z, x) {
+          deny neq(z, y) {
+            connect in(z, x) \wedge neq(z, y)
+            apply invoke leftward rem_existence for x, y, z
+            substitute in(z, rem(x, y)) for rem(x, y): emptyset
+            apply emptyset_existence for z
+            contradict in(z, emptyset)
+          }
+        }
+      }
+      apply invoke not_emptyset_has_a_member for x
+      some z such \exists z (in(z, x)) {
+        apply invoke \forall z (in(z, x) \to equal(z, y)) for z
+        substitute in(z, x) for z: y
+      }
+      any z {
+        assume in(z, x) {
+          apply invoke \forall z (in(z, x) \to equal(z, y)) for z
+        }
+        assume equal(z, y) {
+          substitute in(y, x) for y: z
+        }
+        connect in(z, x) \leftrightarrow equal(z, y)
+      }
+      apply invoke singleton_uniqueness for y, x
+    }
+  }
+}
+
+theorem neq_singleton_implies_rem_neq_emptyset \forall x \forall y (neq(x, singleton(y)) \wedge neq(x, emptyset) \to neq(rem(x, y), emptyset)) {
+  any x, y {
+    assume neq(x, singleton(y)) \wedge neq(x, emptyset) {
+      split neq(x, singleton(y)) \wedge neq(x, emptyset)
+      deny equal(rem(x, y), emptyset) {
+        connect equal(rem(x, y), emptyset) \wedge neq(x, emptyset)
+        apply invoke rem_emptyset_implies_singleton for x, y
+        contradict equal(x, singleton(y))
+      }
+    }
+  }
+}
+
+theorem subset_adj_implies_subset_rem \forall x \forall y \forall z (subset(x, adj(y, z)) \to subset(rem(x, z), y)) {
+  any x, y, z {
+    assume subset(x, adj(y, z)) {
+      any w {
+        assume in(w, rem(x, z)) {
+          apply invoke rightward rem_existence for x, z, w
+          split in(w, x) \wedge neq(w, z)
+          apply invoke subset(x, adj(y, z)) for w
+          apply invoke rightward adj_existence for y, z, w
+          divide in(w, y) \vee equal(w, z)
+            case in(w, y) {}
+            case equal(w, z) {
+              contradict equal(w, z)
+              explode in(w, y)
+            }
+        }
+      }
+      fold for subset conclude subset(rem(x, z), y)
+    }
+  }
+}
+
+theorem subset_suc_implies_subset_rem \forall x \forall y (subset(x, suc(y)) \to subset(rem(x, y), y)) {
+  any x, y {
+    assume subset(x, suc(y)) {
+      expand subset(x, suc(y)) for suc
+      apply invoke subset_adj_implies_subset_rem for x, y, y
+    }
+  }
+}
+
+theorem rem_suc \forall x (notin(x, x) \to equal(rem(suc(x), x), x)) {
+  any x {
+    assume notin(x, x) {
+      any y {
+        assume in(y, rem(suc(x), x)) {
+          apply invoke rightward rem_existence for suc(x), x, y
+          split in(y, suc(x)) \wedge neq(y, x)
+          apply invoke rightward suc_characterization for x, y
+          divide in(y, x) \vee equal(y, x)
+            case in(y, x) {}
+            case equal(y, x) {
+              contradict equal(y, x)
+              explode in(y, x)
+            }
+        }
+        assume in(y, x) {
+          pad in(y, x) conclude in(y, x) \vee equal(y, x)
+          apply invoke leftward suc_characterization for x, y
+          deny equal(y, x) {
+            substitute in(y, x) for y: x
+            contradict in(x, x)
+          }
+          connect in(y, suc(x)) \wedge neq(y, x)
+          apply invoke leftward rem_existence for suc(x), x, y
+        }
+        connect in(y, rem(suc(x), x)) \leftrightarrow in(y, x)
+      }
+      apply invoke axiom_of_extensionality for rem(suc(x), x), x
+    }
+  }
+}

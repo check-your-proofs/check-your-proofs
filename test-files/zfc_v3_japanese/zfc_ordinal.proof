@@ -1,0 +1,81 @@
+include "zfc_removal.proof"
+
+definition predicate trans(x) as \forall y \forall z (in(z, y) \wedge in(y, x) \to in(z, x))
+
+definition predicate irrefrel(X, predicate \psi[2]) as \forall x (in(x, X) \to \neg(\psi(x, x)))
+
+definition predicate minimal_core(predicate \psi[2], A, a) as \forall x (in(x, A) \wedge neq(x, a) \to \neg(\psi(x, a)))
+
+definition predicate minimal(predicate \psi[2], A, a) as in(a, A) \wedge minimal_core(\psi, A, a)
+
+definition predicate wellfounded(X, predicate \psi[2]) as \forall A (subset(A, X) \wedge neq(A, emptyset) \to \exists a (minimal(\psi, A, a)))
+
+definition predicate transrel(X, predicate \psi[2]) as \forall x \forall y \forall z (in(x, X) \wedge in(y, X) \wedge in(z, X) \wedge \psi(x, y) \wedge \psi(y, z) \to \psi(x, z))
+
+definition predicate antisymrel(X, predicate \psi[2]) as \forall x \forall y (in(x, X) \wedge in(y, X) \wedge \psi(x, y) \wedge \psi(y, x) \to equal(x, y))
+
+definition predicate order(X, predicate \psi[2]) as transrel(X, \psi) \wedge antisymrel(X, \psi)
+
+definition predicate linorder_core(X, predicate \psi[2]) as \forall x \forall y (in(x, X) \wedge in(y, X) \to \psi(x, y) \vee equal(x, y) \vee \psi(y, x))
+
+definition predicate linorder(X, predicate \psi[2]) as order(X, \psi) \wedge linorder_core(X, \psi)
+
+definition predicate wellorder(X, predicate \psi[2]) as wellfounded(X, \psi) \wedge linorder(X, \psi)
+
+definition predicate ordinal(\alpha) as trans(\alpha) \wedge irrefrel(\alpha, in) \wedge wellorder(\alpha, in)
+
+theorem irrefrel_and_transrel_implies_antisymrel \forall X \forall^P \psi[2] (irrefrel(X, \psi) \wedge transrel(X, \psi) \to antisymrel(X, \psi)) {
+  any X, predicate \psi[2] {
+    assume irrefrel(X, \psi) \wedge transrel(X, \psi) {
+      split irrefrel(X, \psi) \wedge transrel(X, \psi)
+      any x, y {
+        assume in(x, X) \wedge in(y, X) \wedge \psi(x, y) \wedge \psi(y, x) {
+          split in(x, X) \wedge in(y, X) \wedge \psi(x, y) \wedge \psi(y, x)
+          connect in(x, X) \wedge in(y, X) \wedge in(x, X) \wedge \psi(x, y) \wedge \psi(y, x)
+          apply invoke transrel(X, \psi) for x, y, x
+          apply invoke irrefrel(X, \psi) for x
+          contradict \psi(x, x)
+          explode equal(x, y)
+        }
+      }
+      fold for antisymrel conclude antisymrel(X, \psi)
+    }
+  }
+}
+
+theorem irrefrel_and_transrel_implies_order \forall X \forall^P \psi[2] (irrefrel(X, \psi)\wedge transrel(X, \psi)\to order(X, \psi)) {
+  any X, predicate \psi[2] {
+    assume irrefrel(X, \psi) \wedge transrel(X, \psi) {
+      split irrefrel(X, \psi) \wedge transrel(X, \psi)
+      apply invoke irrefrel_and_transrel_implies_antisymrel for X, \psi
+      connect order(X, \psi)
+    }
+  }
+}
+
+theorem irrefrel_not_contain_itself \forall x (irrefrel(x, in) \to notin(x, x)) {
+  any x {
+    assume irrefrel(x, in) {
+      deny in(x, x) {
+        apply invoke irrefrel(x, in) for x
+        contradict in(x, x)
+      }
+    }
+  }
+}
+
+theorem element_is_minimal_in_its_singleton \forall x (minimal(in, singleton(x), x)) {
+  any x {
+    apply singleton_cor1 for x
+    any y {
+      assume in(y, singleton(x)) \wedge neq(y, x) {
+        split in(y, singleton(x)) \wedge neq(y, x)
+        apply invoke rightward singleton_characterization for x, y
+        contradict equal(y, x)
+        explode notin(y, x)
+      }
+    }
+    fold for minimal_core conclude minimal_core(in, singleton(x), x)
+    connect minimal(in, singleton(x), x)
+  }
+}

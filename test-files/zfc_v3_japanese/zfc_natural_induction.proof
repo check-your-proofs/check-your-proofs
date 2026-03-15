@@ -1,0 +1,75 @@
+include "zfc_natural.proof"
+
+theorem natural_induction \forall^P \chi[1] (\chi(emptyset) \wedge \forall n (natural(n) \to (\chi(n) \to \chi(suc(n)))) \to \forall n (natural(n) \to \chi(n))) {
+  any predicate \chi[1] {
+    assume \chi(emptyset) \wedge \forall n (natural(n) \to (\chi(n) \to \chi(suc(n)))) {
+      split \chi(emptyset) \wedge \forall n (natural(n) \to (\chi(n) \to \chi(suc(n))))
+      deny \neg(\forall n (natural(n) \to \chi(n))) {
+        apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P n. natural(n) \to \chi(n)
+        some n such \exists n (\neg(natural(n) \to \chi(n))) {
+          apply invoke rightward neg_implication for \lambda^P. natural(n), \lambda^P. \chi(n)
+          split natural(n) \wedge \neg(\chi(n))
+          apply sep_is_subset for suc(n), \lambda^P m. \neg(\chi(m))
+          apply in_suc for n
+          connect in(n, suc(n)) \wedge \neg(\chi(n))
+          apply invoke leftward sep_existence for suc(n), \lambda^P m. \neg(\chi(m)), n
+          lift for n conclude \exists l (in(l, sep(suc(n), \lambda^P m. \neg(\chi(m)))))
+          apply invoke has_a_member_not_emptyset for sep(suc(n), \lambda^P m. \neg(\chi(m)))
+          connect subset(sep(suc(n), \lambda^P m. \neg(\chi(m))), suc(n)) \wedge neq(sep(suc(n), \lambda^P m. \neg(\chi(m))), emptyset)
+          apply invoke suc_of_natural_is_natural for n
+          apply invoke natural_is_ordinal for suc(n)
+          split ordinal(suc(n))
+          split wellorder(suc(n), in)
+          apply invoke wellfounded(suc(n), in) for sep(suc(n), \lambda^P m. \neg(\chi(m)))
+          some l such \exists l (minimal(in, sep(suc(n), \lambda^P m. \neg(\chi(m))), l)) {
+            split minimal(in, sep(suc(n), \lambda^P m. \neg(\chi(m))), l)
+            apply invoke rightward sep_existence for suc(n), \lambda^P m. \neg(\chi(m)), l
+            split in(l, suc(n)) \wedge \neg(\chi(l))
+            apply suc_is_not_emptyset for n
+            divide natural(suc(n))
+              case equal(suc(n), emptyset) {
+                contradict equal(suc(n), emptyset)
+                explode equal(l, emptyset) \vee sucordinal(l)
+              }
+              case sucordinal(suc(n)) \wedge \forall k (in(k, suc(n)) \to equal(k, emptyset) \vee sucordinal(k)) {
+                split sucordinal(suc(n)) \wedge \forall k (in(k, suc(n)) \to equal(k, emptyset) \vee sucordinal(k)) 
+                apply invoke \forall k (in(k, suc(n)) \to equal(k, emptyset) \vee sucordinal(k)) for l
+              }
+            divide equal(l, emptyset) \vee sucordinal(l)
+              case equal(l, emptyset) {
+                substitute \neg(\chi(l)) for l: emptyset
+                contradict \chi(emptyset)
+              }
+              case sucordinal(l) {
+                split 2 sucordinal(l)
+                some j such \exists j (equal(l, suc(j))) {
+                  apply in_suc for j
+                  substitute in(j, suc(j)) for suc(j): l
+                  connect in(j, l) \wedge in(l, suc(n))
+                  apply invoke  trans(suc(n)) for l, j
+                  deny equal(j, l) {
+                    substitute in(j, l) for j: l
+                    apply invoke irrefrel(suc(n), in) for l
+                    contradict in(l, l)
+                  }
+                  deny \neg(\chi(j)) {
+                    connect in(j, suc(n)) \wedge \neg(\chi(j))
+                    apply invoke leftward sep_existence for suc(n), \lambda^P m. \neg(\chi(m)), j
+                    connect in(j, sep(suc(n), \lambda^P m. \neg(\chi(m)))) \wedge neq(j, l)
+                    apply invoke minimal_core(in, sep(suc(n), \lambda^P m. \neg(\chi(m))), l) for j
+                    contradict in(j, l)
+                  }
+                  connect in(j, suc(n)) \wedge natural(suc(n))
+                  apply invoke element_of_natural_is_natural for suc(n), j
+                  apply invoke \forall n (natural(n) \to (\chi(n) \to \chi(suc(n)))) for j
+                  invoke \chi(j) \to \chi(suc(j))
+                  substitute \chi(suc(j)) for suc(j): l
+                  contradict \chi(l)
+                }
+              }
+          }
+        }
+      }
+    }
+  }
+}
