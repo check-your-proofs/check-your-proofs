@@ -1,8 +1,5 @@
 import sys
 path = sys.argv[1]
-f = open(path)
-src = f.read()
-f.close()
 
 import os
 import logging

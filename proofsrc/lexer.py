@@ -11,7 +11,7 @@ class Token:
     column: int
     end_line: int
     end_column: int
-    index: int = field(init=False)
+    index: int = field(init=False, default=-1)
 
     def info(self):
         return f"[{self.file}:{self.line}:{self.column}]"
@@ -52,11 +52,7 @@ STRINGS = {
     "\\bot":      "BOT",
 }
 
-def lex(path: str, src: str | None = None) -> tuple[list[Token], str]:
-    if src is None:
-        f = open(path)
-        src = f.read()
-        f.close()
+def lex(path: str, src: str) -> tuple[list[Token], str]:
     tokens: list[Token] = []
     i = 0
     line = 1
@@ -169,6 +165,9 @@ if __name__ == "__main__":
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
-    tokens, _ = lex(path)
+    f = open(path, encoding="utf-8")
+    src = f.read()
+    f.close()
+    tokens, _ = lex(path, src)
     for t in tokens:
         logger.debug(t)

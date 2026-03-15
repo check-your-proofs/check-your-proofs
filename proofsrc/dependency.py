@@ -48,7 +48,7 @@ class DependencyResolver:
         if target_path in self.source_cache:
             print(f"resolver cache: {os.path.basename(target_path)}", file=sys.stderr)
             return self.source_cache[target_path], self.tokens_cache[target_path]
-        f = open(target_path)
+        f = open(target_path, encoding="utf-8")
         src = f.read()
         f.close()
         tokens, _ = lex(target_path, src)
