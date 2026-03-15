@@ -15,7 +15,6 @@ class ParseError(Exception):
         self.token = token
         self.msg = msg
 
-# === パーサー本体 ===
 class Parser:
     def __init__(self, unit: DeclarationUnit):
         self.unit = unit
@@ -124,7 +123,6 @@ class Parser:
             raise ParseError(start_token, msg)
         primpred = PrimPred(name=name, ref=ref, arity=arity, tex=tex)
         self.add_node_to_token(primpred, start_token, self.stream.last_token)
-        # context.add_decl(primpred)
         logger.debug(f"[primpred] {name}")
         return primpred
 
@@ -137,7 +135,6 @@ class Parser:
         conclusion = self.parse_formula(context)
         axiom = Axiom(name=name, ref=ref, conclusion=conclusion)
         self.add_node_to_token(axiom, start_token, self.stream.last_token)
-        # context.add_decl(axiom)
         logger.debug(f"[axiom] {name}")
         return axiom
 
@@ -153,7 +150,6 @@ class Parser:
         self.stream.consume("RBRACE")
         theorem = Theorem(name=name, ref=ref, conclusion=conclusion, proof=proof)
         self.add_node_to_token(theorem, start_token, self.stream.last_token)
-        # context.add_decl(theorem)
         logger.debug(f"[theorem] {name}")
         return theorem
 
@@ -192,7 +188,6 @@ class Parser:
             raise ParseError(start_token, msg)
         defpred = DefPred(name=name, ref=ref, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
         self.add_node_to_token(defpred, start_token, self.stream.last_token)
-        # context.add_decl(defpred)
         logger.debug(f"[defpred] {name}")
         return defpred
 
@@ -216,7 +211,6 @@ class Parser:
             raise ParseError(start_token, msg)
         defcon = DefCon(name=name, ref=ref, ref_theorem=ref_theorem, tex=tex)
         self.add_node_to_token(defcon, start_token, self.stream.last_token)
-        # context.add_decl(defcon)
         logger.debug(f"[defcon] {name}")
         return defcon
 
@@ -255,7 +249,6 @@ class Parser:
             raise ParseError(start_token, msg)
         deffun = DefFun(name=name, ref=ref, args=vars_, returned=existsuniq.var, ref_theorem=ref_theorem, tex=tex)
         self.add_node_to_token(deffun, start_token, self.stream.last_token)
-        # context.add_decl(deffun)
         logger.debug(f"[deffun] {name}")
         return deffun
 
@@ -274,7 +267,6 @@ class Parser:
             raise ParseError(start_token, msg)
         deffunterm = DefFunTerm(name=name, ref=ref, args=args, varterm=term, tex=tex)
         self.add_node_to_token(deffunterm, start_token, self.stream.last_token)
-        # context.add_decl(deffunterm)
         logger.debug(f"[deffunterm] {name}")
         return deffunterm
 
@@ -293,7 +285,6 @@ class Parser:
             self.add_node_to_token(ref_con, name_token, name_token)
             defconexist = DefConExist(name=existence_name, ref=ref, formula=existence_formula, ref_con=ref_con)
             self.add_node_to_token(defconexist, start_token, self.stream.last_token)
-            # context.add_decl(defconexist)
             return defconexist
         elif name in context.decl.deffuns:
             ref = RefDefFunExist(existence_name)
@@ -302,7 +293,6 @@ class Parser:
             self.add_node_to_token(ref_fun, name_token, name_token)
             deffunexist = DefFunExist(name=existence_name, ref=ref, formula=existence_formula, ref_fun=ref_fun)
             self.add_node_to_token(deffunexist, start_token, self.stream.last_token)
-            # context.add_decl(deffunexist)
             return deffunexist
         else:
             msg = f"defcon or deffun is required, but {name} is unknown"
@@ -323,7 +313,6 @@ class Parser:
             self.add_node_to_token(ref_con, name_token, name_token)
             defconuniq = DefConUniq(name=uniqueness_name, ref=ref, formula=uniqueness_formula, ref_con=ref_con)
             self.add_node_to_token(defconuniq, start_token, self.stream.last_token)
-            # context.add_decl(defconuniq)
             return defconuniq
         elif name in context.decl.deffuns:
             ref = RefDefFunUniq(uniqueness_name)
@@ -332,7 +321,6 @@ class Parser:
             self.add_node_to_token(ref_fun, name_token, name_token)
             deffununiq = DefFunUniq(name=uniqueness_name, ref=ref, formula=uniqueness_formula, ref_fun=ref_fun)
             self.add_node_to_token(deffununiq, start_token, self.stream.last_token)
-            # context.add_decl(deffununiq)
             return deffununiq
         else:
             msg = f"defcon or deffun is required, but {name} is unknown"

@@ -57,10 +57,8 @@ class DependencyResolver:
 
     def resolve(self, path: str, ls: "ProofLanguageServer | None" = None):
         if path in self.dependencies:
-            # print(f"Skipping {path}")
             return
         self.visiting_files.add(path)
-        # print(f"Visiting {path}")
         src, tokens = self.get_content(path, ls)
         self.tokens_cache[path] = tokens
         self.source_cache[path] = src
@@ -87,7 +85,6 @@ class DependencyResolver:
                 stream.consume(token.type)
         self.visiting_files.remove(path)
         self.dependencies[path] = dependency
-        # print(f"Resolved {path}")
 
     def create_reverse_deps(self) -> dict[str, set[str]]:
         reverse_dependencies: dict[str, set[str]] = {}

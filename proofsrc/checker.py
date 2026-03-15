@@ -68,7 +68,6 @@ class Checker:
     def check_ast(self, ast: list[Include | Declaration], context: Context) -> tuple[bool, list[Include | Declaration], Context]:
         return all(self.check_declaration(node, context) for node in ast if isinstance(node, Declaration)), ast, context
 
-    # === 証明チェッカー ===
     def check_declaration(self, node: Declaration, context: Context, indent: int = 0) -> bool:
 
         node.proofinfo.ctrl_ctx = deepcopy(context.ctrl)
@@ -889,20 +888,16 @@ if __name__ == "__main__":
     logger = logging.getLogger("proof")
     logger.setLevel(logging.DEBUG)
 
-    # 標準出力用ハンドラ
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.DEBUG)
 
-    # ファイル出力用ハンドラ
     file_handler = logging.FileHandler(os.path.join("logs", os.path.basename(path).replace(".proof", "_checker.log")), mode='w', encoding='utf-8')
     file_handler.setLevel(logging.DEBUG)
 
-    # 共通フォーマット
     formatter = logging.Formatter("[%(filename)s] %(message)s")
     console_handler.setFormatter(formatter)
     file_handler.setFormatter(formatter)
 
-    # ハンドラ登録
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 

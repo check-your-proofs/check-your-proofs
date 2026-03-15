@@ -311,7 +311,6 @@ def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bpt
     else:
         raise Exception(f"Unexpected type {type(expr)}")
 
-# === コンテキスト中の式検索 ===
 def expr_in_context(expr: Bottom | Formula, context: Context) -> bool:
     return any(alpha_equiv_with_defs(expr, f, context) for f in context.ctrl.formulas)
 
