@@ -613,6 +613,9 @@ class DeclarationUnit:
                 for index in range(start, end + 1):
                     self.token_to_control[index] = node
 
+    def get_node_token(self, node: Declaration | Control) -> Token:
+        return self.tokens[self.node_to_token[id(node)][0]]
+
 class Workspace:
     def __init__(self, resolved_files: list[str], file_units: dict[str, list[DeclarationUnit]]):
         self.resolved_files: list[str] = resolved_files
