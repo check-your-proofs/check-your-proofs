@@ -610,7 +610,11 @@ class Checker:
     def check_lift(self, node: Lift, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}Target conclusion: {ExprFormatter(context).pretty_expr(node.conclusion)}")
-        items, body = strip_exists_vars(node.conclusion, Exists)
+        conclusion = expand_if_atomic(node.conclusion, context, node)
+        if not isinstance(conclusion, Exists):
+            msg = f"Expected Exists, got {type(conclusion)}"
+            raise CheckError(node, msg)
+        items, body = strip_exists_vars(conclusion, Exists)
         body = make_exists_vars(body, Exists, [item for item, term in zip(items, node.varterms) if term is None])
         mapping: dict[Term, Term] = {item: term for item, term in zip(items, node.varterms) if term is not None}
         renamed_body, renamed_mapping = alpha_safe_formula(body, mapping, context)

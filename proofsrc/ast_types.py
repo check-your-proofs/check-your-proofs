@@ -274,7 +274,7 @@ class Apply(Control):
 @dataclass
 class Lift(Control):
     varterms: list[VarTerm | None]
-    conclusion: Exists
+    conclusion: Formula
 
 @dataclass
 class Characterize(Control):

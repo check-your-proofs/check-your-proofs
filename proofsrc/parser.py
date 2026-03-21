@@ -535,9 +535,6 @@ class Parser:
         varterms = self.parse_var_terms_or_none(context)
         self.stream.consume("CONCLUDE")
         conclusion = self.parse_formula(context)
-        if not isinstance(conclusion, Exists):
-            msg = "Exists object is required"
-            raise ParseError(start_token, msg)
         node = Lift(varterms=varterms, conclusion=conclusion)
         self.add_node_to_token(node, start_token, self.stream.last_token)
         return node
