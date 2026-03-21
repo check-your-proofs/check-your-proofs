@@ -439,13 +439,12 @@ class DeclarationContext:
         if isinstance(declaration, Equality):
             if self.equality is not None:
                 msg = "equality is already declared"
-                raise Exception(msg)
+                raise ContextError(msg)
             self.equality = declaration
             return
         if declaration.name in self.used_names:
-            if not (isinstance(declaration, DefPred) and declaration.name in self.defpreds):
-                msg = f"{declaration.name} is already used"
-                raise Exception(msg)
+            msg = f"{declaration.name} is already used"
+            raise ContextError(msg)
         if isinstance(declaration, PrimPred):
             self.primpreds[declaration.name] = declaration
         elif isinstance(declaration, Axiom):
@@ -470,7 +469,7 @@ class DeclarationContext:
             self.deffunterms[declaration.name] = declaration
         else:
             msg = f"Unexpected type: {type(declaration)}"
-            raise Exception(msg)
+            raise ContextError(msg)
         self.used_names.add(declaration.name)
 
     def has_reference(self, name: str) -> bool:

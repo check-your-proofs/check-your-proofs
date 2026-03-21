@@ -119,12 +119,18 @@ class Checker:
     def check_primpred(self, node: PrimPred, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, arity: {node.arity}")
-        context.add_decl(node)
+        try:
+            context.add_decl(node)
+        except ContextError as e:
+            raise CheckError(node, e.msg)
 
     def check_axiom(self, node: Axiom, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, conclusion: {ExprFormatter(context).pretty_expr(node.conclusion)}")
-        context.add_decl(node)
+        try:
+            context.add_decl(node)
+        except ContextError as e:
+            raise CheckError(node, e.msg)
 
     def check_theorem(self, node: Theorem, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -134,7 +140,10 @@ class Checker:
             self.check_control(stmt, local_ctx, indent+1)
         if goal_in_context(node.conclusion, local_ctx):
             logger.debug(f"{debug_prefix}{node.name} proved: {ExprFormatter(context).pretty_expr(node.conclusion)}")
-            context.add_decl(node)
+            try:
+                context.add_decl(node)
+            except ContextError as e:
+                raise CheckError(node, e.msg)
         else:
             msg = f"{node.name} not proved: {ExprFormatter(context).pretty_expr(node.conclusion)}"
             raise CheckError(node, msg)
@@ -142,7 +151,10 @@ class Checker:
     def check_defpred(self, node: DefPred, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, args: {node.args}, formula: {ExprFormatter(context).pretty_expr(node.formula)}")
-        context.add_decl(node)
+        try:
+            context.add_decl(node)
+        except ContextError as e:
+            raise CheckError(node, e.msg)
 
     def check_defcon(self, node: DefCon, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -152,7 +164,10 @@ class Checker:
             msg = f"Not ExistsUniq object: {ExprFormatter(context).pretty_expr(existsuniq)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}ExistsUniq object: {ExprFormatter(context).pretty_expr(existsuniq)}")
-        context.add_decl(node)
+        try:
+            context.add_decl(node)
+        except ContextError as e:
+            raise CheckError(node, e.msg)
 
     def check_defconexist(self, node: DefConExist, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -167,7 +182,10 @@ class Checker:
             msg = f"existence_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}existence_formula is matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}")
-        context.add_decl(node)
+        try:
+            context.add_decl(node)
+        except ContextError as e:
+            raise CheckError(node, e.msg)
 
     def check_defconuniq(self, node: DefConUniq, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -188,12 +206,18 @@ class Checker:
             msg = f"uniqueness_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}uniqueness_formula is matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}")
-        context.add_decl(node)
+        try:
+            context.add_decl(node)
+        except ContextError as e:
+            raise CheckError(node, e.msg)
 
     def check_deffun(self, node: DefFun, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, theorem: {node.ref_theorem.name}")
-        context.add_decl(node)
+        try:
+            context.add_decl(node)
+        except ContextError as e:
+            raise CheckError(node, e.msg)
 
     def check_deffunexist(self, node: DefFunExist, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -211,7 +235,10 @@ class Checker:
             msg = f"existence_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}existence_formula is matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}")
-        context.add_decl(node)
+        try:
+            context.add_decl(node)
+        except ContextError as e:
+            raise CheckError(node, e.msg)
 
     def check_deffununiq(self, node: DefFunUniq, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -232,7 +259,10 @@ class Checker:
             msg = f"uniqueness_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}uniqueness_formula is matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}")
-        context.add_decl(node)
+        try:
+            context.add_decl(node)
+        except ContextError as e:
+            raise CheckError(node, e.msg)
 
     def check_deffunterm(self, node: DefFunTerm, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -242,12 +272,18 @@ class Checker:
             msg = f"args are not matched with free vars: {set(fv) | set(fpt) | set(fft)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}args are mathced with free vars of term: {set(fv) | set(fpt) | set(fft)}")
-        context.add_decl(node)
+        try:
+            context.add_decl(node)
+        except ContextError as e:
+            raise CheckError(node, e.msg)
 
     def check_equality(self, node: Equality, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.ref.name}")
-        context.add_decl(node)
+        try:
+            context.add_decl(node)
+        except ContextError as e:
+            raise CheckError(node, e.msg)
         logger.debug(f"{debug_prefix}{node.ref.name} is registered as equality")
 
     def check_control(self, node: Control, context: Context, indent: int) -> None:
