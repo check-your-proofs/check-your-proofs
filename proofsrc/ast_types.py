@@ -6,6 +6,10 @@ from typing import Sequence, Literal
 import logging
 logger = logging.getLogger("proof")
 
+class ContextError(Exception):
+    def __init__(self, msg: str) -> None:
+        self.msg = msg
+
 class CheckError(Exception):
     def __init__(self, node: "Declaration | Control", msg: str) -> None:
         self.node = node
@@ -103,7 +107,7 @@ class FormulaContext:
         for item in new_vars + new_pred_tmpls + new_fun_tmpls:
             if item.name in new_used_names:
                 msg = f"{item.name} is already used"
-                raise Exception(msg)
+                raise ContextError(msg)
             new_used_names.add(item.name)
         return FormulaContext(list(self.vars + new_vars), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), new_used_names)
 

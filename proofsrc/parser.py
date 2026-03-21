@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, DeclarationUnit, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, RefEquality
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, DeclarationUnit, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, RefEquality, ContextError
 from lexer import Token
 from token_stream import TokenStream, TokenStreamError
 from logic_utils import strip_forall_vars
@@ -181,7 +181,11 @@ class Parser:
         args, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        formula = self.parse_formula(context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls))
+        try:
+            local_ctx = context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls)
+        except ContextError as e:
+            raise ParseError(start_token, e.msg)
+        formula = self.parse_formula(local_ctx)
         tex = self.parse_or_create_tex(name, len(args))
         if len(tex) != len(args) + 1:
             msg = f"arity of {name} is {len(args)}, but length of tex is {len(tex)}"
@@ -260,7 +264,11 @@ class Parser:
         args, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        term = self.parse_var_term(context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls))
+        try:
+            local_ctx = context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls)
+        except ContextError as e:
+            raise ParseError(start_token, e.msg)
+        term = self.parse_var_term(local_ctx)
         tex = self.parse_or_create_tex(name, len(args))
         if len(tex) != len(args) + 1:
             msg = f"arity of {name} is {len(args)}, but length of tex is {len(tex)}"
@@ -812,7 +820,11 @@ class Parser:
                     local_bound_fun_tmpls.append(fun_tmpl)
                     tok = self.stream.peek()
             self.stream.consume("LPAREN")
-            body = self.parse_formula(context.add_form(local_bound_vars, local_bound_pred_tmpls, local_bound_fun_tmpls))
+            try:
+                local_ctx = context.add_form(local_bound_vars, local_bound_pred_tmpls, local_bound_fun_tmpls)
+            except ContextError as e:
+                raise ParseError(tok, e.msg)
+            body = self.parse_formula(local_ctx)
             self.stream.consume("RPAREN")
             for tok, item in reversed(quantified_pairs):
                 if tok.type in ("FORALL", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
@@ -960,7 +972,11 @@ class Parser:
             else:
                 vars = self.parse_vars()
             self.stream.consume("DOT")
-            formula = self.parse_formula(context.add_form(vars, [], []))
+            try:
+                local_ctx = context.add_form(vars, [], [])
+            except ContextError as e:
+                raise ParseError(tok, e.msg)
+            formula = self.parse_formula(local_ctx)
             term = PredLambda(tuple(vars), formula)
             self.add_node_to_token(term, tok, self.stream.last_token)
             return term
@@ -971,7 +987,11 @@ class Parser:
             else:
                 vars = self.parse_vars()
             self.stream.consume("DOT")
-            term = self.parse_var_term(context.add_form(vars, [], []))
+            try:
+                local_ctx = context.add_form(vars, [], [])
+            except ContextError as e:
+                raise ParseError(tok, e.msg)
+            term = self.parse_var_term(local_ctx)
             term = FunLambda(tuple(vars), term)
             self.add_node_to_token(term, tok, self.stream.last_token)
             return term
