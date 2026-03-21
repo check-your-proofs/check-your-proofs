@@ -1,5 +1,5 @@
 from lexer import Token
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, Include, Assert, Fold, VarTerm, FunTemplate, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, InvalidInclude, DeclarationUnit, RefFact, RefEquality, CheckError
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, Include, Assert, Fold, VarTerm, FunTemplate, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, InvalidInclude, DeclarationUnit, RefFact, RefEquality, CheckError, ContextError
 from logic_utils import Substitutor, DefExpander, ExprFormatter, expr_in_context, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, alpha_safe_formula
 from copy import deepcopy
 from lsprotocol import types as lsp
@@ -317,7 +317,10 @@ class Checker:
         local_vars = [item for item in node.items if isinstance(item, Var)]
         local_pred_tmpls = [item for item in node.items if isinstance(item, PredTemplate)]
         local_fun_tmpls = [item for item in node.items if isinstance(item, FunTemplate)]
-        local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls, node.items)
+        try:
+            local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls, node.items)
+        except ContextError as e:
+            raise CheckError(node, e.msg)
         for stmt in node.body:
             self.check_control(stmt, local_ctx, indent+1)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
@@ -466,7 +469,10 @@ class Checker:
         logger.debug(f"{debug_prefix}Taking {node.items}, premise={ExprFormatter(context).pretty_expr(existence)}")
         local_vars = [item for item in node.items if isinstance(item, Var)]
         local_symbols: list[Var | PredTemplate | FunTemplate] = list(local_vars)
-        local_ctx = context.add_ctrl(local_vars, premises, [], [], local_symbols)
+        try:
+            local_ctx = context.add_ctrl(local_vars, premises, [], [], local_symbols)
+        except ContextError as e:
+            raise CheckError(node, e.msg)
         for stmt in node.body:
             self.check_control(stmt, local_ctx, indent+1)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):

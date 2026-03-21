@@ -180,7 +180,7 @@ class ControlContext:
         for item in new_vars + new_pred_tmpls + new_fun_tmpls:
             if item.name in new_used_names:
                 msg = f"{item.name} is already used"
-                raise Exception(msg)
+                raise ContextError(msg)
             new_used_names.add(item.name)
         return ControlContext(list(self.vars + new_vars), list(self.formulas + new_formulas), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), list(self.symbols + new_symbols), new_used_names)
 
