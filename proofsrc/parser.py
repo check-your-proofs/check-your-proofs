@@ -82,6 +82,12 @@ class Parser:
             node = InvalidDeclaration("<invalid>")
             self.add_node_to_token(node, tok, self.stream.last_token)
             self.unit.ast = node
+        except ContextError as e:
+            msg = f"{e.__class__.__name__}: {e.msg}"
+            self.add_lsp_error(tok, msg, context)
+            node = InvalidDeclaration("<invalid>")
+            self.add_node_to_token(node, tok, self.stream.last_token)
+            self.unit.ast = node
 
     def parse_declaration(self, context: Context, tok: Token) -> Declaration:
         try:
@@ -104,6 +110,12 @@ class Parser:
                 raise ParseError(tok, msg)
         except (ParseError, TokenStreamError) as e:
             self.add_lsp_error(e.token, e.msg, context)
+            node = InvalidDeclaration("<invalid>")
+            self.add_node_to_token(node, tok, self.stream.last_token)
+            return node
+        except ContextError as e:
+            msg = f"{e.__class__.__name__}: {e.msg}"
+            self.add_lsp_error(tok, msg, context)
             node = InvalidDeclaration("<invalid>")
             self.add_node_to_token(node, tok, self.stream.last_token)
             return node
@@ -181,10 +193,7 @@ class Parser:
         args, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        try:
-            local_ctx = context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls)
-        except ContextError as e:
-            raise ParseError(start_token, e.msg)
+        local_ctx = context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls)
         formula = self.parse_formula(local_ctx)
         tex = self.parse_or_create_tex(name, len(args))
         if len(tex) != len(args) + 1:
@@ -264,10 +273,7 @@ class Parser:
         args, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        try:
-            local_ctx = context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls)
-        except ContextError as e:
-            raise ParseError(start_token, e.msg)
+        local_ctx = context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls)
         term = self.parse_var_term(local_ctx)
         tex = self.parse_or_create_tex(name, len(args))
         if len(tex) != len(args) + 1:
@@ -362,6 +368,12 @@ class Parser:
             node = InvalidInclude(file="<invalid>", token=start_token)
             self.add_node_to_token(node, start_token, self.stream.last_token)
             return node
+        except ContextError as e:
+            msg = f"{e.__class__.__name__}: {e.msg}"
+            self.add_lsp_error(start_token, msg, context)
+            node = InvalidInclude(file="<invalid>", token=start_token)
+            self.add_node_to_token(node, start_token, self.stream.last_token)
+            return node
 
     def parse_block(self, context: Context) -> list[Control]:
         body: list[Control] = []
@@ -425,15 +437,18 @@ class Parser:
             node = InvalidControl()
             self.add_node_to_token(node, tok, self.stream.last_token)
             return node
+        except ContextError as e:
+            msg = f"{e.__class__.__name__}: {e.msg}"
+            self.add_lsp_error(tok, msg, context)
+            node = InvalidControl()
+            self.add_node_to_token(node, tok, self.stream.last_token)
+            return node
 
     def parse_any(self, context: Context) -> Any:
         start_token = self.stream.consume("ANY")
         items, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("LBRACE")
-        try:
-            local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls, items)
-        except ContextError as e:
-            raise ParseError(start_token, e.msg)
+        local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls, items)
         body = self.parse_block(local_ctx)
         self.stream.consume("RBRACE")
         node = Any(items=items, body=body)
@@ -490,10 +505,7 @@ class Parser:
         self.stream.consume("LBRACE")
         local_vars = [item for item in items if isinstance(item, Var)]
         local_symbols: list[Var | PredTemplate | FunTemplate] = list(local_vars)
-        try:
-            local_ctx = context.add_ctrl(local_vars, [], [], [], local_symbols)
-        except ContextError as e:
-            raise ParseError(start_token, e.msg)
+        local_ctx = context.add_ctrl(local_vars, [], [], [], local_symbols)
         body = self.parse_block(local_ctx)
         self.stream.consume("RBRACE")
         node = Some(items=items, fact=fact, body=body)
@@ -828,10 +840,7 @@ class Parser:
                     local_bound_fun_tmpls.append(fun_tmpl)
                     tok = self.stream.peek()
             self.stream.consume("LPAREN")
-            try:
-                local_ctx = context.add_form(local_bound_vars, local_bound_pred_tmpls, local_bound_fun_tmpls)
-            except ContextError as e:
-                raise ParseError(tok, e.msg)
+            local_ctx = context.add_form(local_bound_vars, local_bound_pred_tmpls, local_bound_fun_tmpls)
             body = self.parse_formula(local_ctx)
             self.stream.consume("RPAREN")
             for tok, item in reversed(quantified_pairs):
@@ -980,10 +989,7 @@ class Parser:
             else:
                 vars = self.parse_vars()
             self.stream.consume("DOT")
-            try:
-                local_ctx = context.add_form(vars, [], [])
-            except ContextError as e:
-                raise ParseError(tok, e.msg)
+            local_ctx = context.add_form(vars, [], [])
             formula = self.parse_formula(local_ctx)
             term = PredLambda(tuple(vars), formula)
             self.add_node_to_token(term, tok, self.stream.last_token)
@@ -995,10 +1001,7 @@ class Parser:
             else:
                 vars = self.parse_vars()
             self.stream.consume("DOT")
-            try:
-                local_ctx = context.add_form(vars, [], [])
-            except ContextError as e:
-                raise ParseError(tok, e.msg)
+            local_ctx = context.add_form(vars, [], [])
             term = self.parse_var_term(local_ctx)
             term = FunLambda(tuple(vars), term)
             self.add_node_to_token(term, tok, self.stream.last_token)
