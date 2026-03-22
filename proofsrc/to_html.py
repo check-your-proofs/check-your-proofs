@@ -54,21 +54,18 @@ SVG_HEAD = """
 """
 
 class Renderer:
-    def __init__(self, context: Context, mode: str):
+    def __init__(self, context: Context, use_svg: bool = False):
         self.context = context
-        self.mode = mode
-        if mode == "mathjax":
-            self.render_expr = self.render_expr_mathjax
-            self.render_expr_list = self.render_expr_list_mathjax
-            self.render_expr_dict = self.render_expr_dict_mathjax
-            self.render_tex = self.render_tex_mathjax
-        elif mode == "svg":
+        if use_svg:
             self.render_expr = self.render_expr_svg
             self.render_expr_list = self.render_expr_list_svg
             self.render_expr_dict = self.render_expr_dict_svg
             self.render_tex = self.render_tex_svg
         else:
-            raise Exception(f"Unexpected mode: {mode}")
+            self.render_expr = self.render_expr_mathjax
+            self.render_expr_list = self.render_expr_list_mathjax
+            self.render_expr_dict = self.render_expr_dict_mathjax
+            self.render_tex = self.render_tex_mathjax
         self.bullet = "<button class='bullet'>•</button>"
         self.toggle = "<button class='toggle'>▼</button>"
 
@@ -730,30 +727,31 @@ class Renderer:
         content_html = f"<div class='block-content'>{body_html}</div>"
         return f"  <div class='block'>{header_html}{proofinfo_html}{content_html}</div>"
 
-def to_html(ast: list[Include | Declaration], context: Context, title: str, mode: str) -> tuple[str, bool]:
+def to_html(ast: list[Include | Declaration], context: Context, title: str, use_svg: bool) -> tuple[str, bool]:
     error_found = False
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     parts: list[str] = []
     for node in ast:
-        parts.append(Renderer(context, mode).render_node(node))
+        parts.append(Renderer(context, use_svg).render_node(node))
         if isinstance(node, Declaration) and node.proofinfo.status == "❌Failed":
             error_found = True
             break
     body_html = "\n".join(parts)
-    if mode == "mathjax":
-        extra_head = MATHJAX_HEAD.format()
-        header_right = MATHJAX_HEADER_RIGHT
-    elif mode == "svg":
+    if use_svg:
         extra_head = SVG_HEAD.format()
         header_right = ""
     else:
-        raise Exception(f"Unexpected mode: {mode}")
+        extra_head = MATHJAX_HEAD.format()
+        header_right = MATHJAX_HEADER_RIGHT
     return HTML_TEMPLATE.format(title=escape(title), now_str=now_str, extra_head=extra_head, body=body_html, header_right=header_right), error_found
 
 if __name__ == "__main__":
     import sys
     path = sys.argv[1]
-    mode = sys.argv[2]
+    if len(sys.argv) > 2:
+        mode = sys.argv[2]
+    else:
+        mode = "mathjax"
     from dependency import DependencyResolver
     resolver = DependencyResolver()
     resolver.resolve(path)
@@ -776,7 +774,7 @@ if __name__ == "__main__":
                 context = working_context
             unit.context = context.copy()
         title = f"{name}_checker_{mode}"
-        checker_html, error_found = to_html([unit.ast for unit in all_units if unit.ast is not None], context, title, mode)
+        checker_html, error_found = to_html([unit.ast for unit in all_units if unit.ast is not None], context, title, mode == "svg")
         f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
         f.write(checker_html)
         f.close()

@@ -150,7 +150,7 @@ local_conclusions: {local_conclusions}
         return node.__class__.__name__
 
 def render_statement(node: Declaration | Control, context: Context) -> str:
-    renderer = Renderer(context, "mathjax")
+    renderer = Renderer(context)
     method_name = f"render_{node.__class__.__name__.lower()}"
     renderer_method = getattr(renderer, method_name, None)
     if renderer_method is None:
@@ -168,7 +168,7 @@ def render_proofinfo(node: Include | Declaration | Control, context: Context) ->
 """
     elif isinstance(node, Control):
         statement = render_statement(node, context)
-        renderer = Renderer(context, "mathjax")
+        renderer = Renderer(context)
         context_symbols = renderer.render_expr_list(node.proofinfo.ctrl_ctx.symbols)
         context_formulas = renderer.render_expr_list(node.proofinfo.ctrl_ctx.formulas)
         premises = renderer.render_expr_list(node.proofinfo.premises)
