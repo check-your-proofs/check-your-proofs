@@ -497,7 +497,7 @@ class DeclarationContext:
     def has_reference(self, name: str) -> bool:
         return name in self.axioms or name in self.theorems or name in self.defconexists or name in self.defconuniqs or name in self.deffunexists or name in self.deffununiqs
 
-    def get_reference(self, ref: RefFact, node: Declaration | Control) -> Formula:
+    def get_reference(self, ref: RefFact) -> Formula:
         if isinstance(ref, RefAxiom):
             return self.axioms[ref.name].conclusion
         elif isinstance(ref, RefTheorem):
@@ -512,7 +512,7 @@ class DeclarationContext:
             return self.deffununiqs[ref.name].formula
         else:
             msg = f"Unexpected name: {ref}"
-            raise CheckError(node, msg)
+            raise ContextError(msg)
 
     def copy(self) -> "DeclarationContext":
         return DeclarationContext(self.primpreds.copy(), self.axioms.copy(), self.theorems.copy(), self.defpreds.copy(), self.defcons.copy(), self.defconexists.copy(), self.defconuniqs.copy(), self.deffuns.copy(), self.deffunexists.copy(), self.deffununiqs.copy(), self.deffunterms.copy(), self.equality, set(self.used_names))

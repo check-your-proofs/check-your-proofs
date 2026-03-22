@@ -17,7 +17,7 @@ def goal_in_context(goal: Bottom | Formula, context: Context) -> bool:
 
 def get_fact(fact: RefFact | Formula, context: Context, node: Declaration | Control, expand_symbol: bool = False) -> Formula:
     if isinstance(fact, RefFact):
-        fact = context.decl.get_reference(fact, node)
+        fact = context.decl.get_reference(fact)
     elif not isinstance(fact, Formula):
         msg = f"Expected Formula, got {type(fact)}"
         raise CheckError(node, msg)
