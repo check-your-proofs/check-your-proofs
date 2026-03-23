@@ -408,7 +408,7 @@ class Checker:
             if not alpha_equiv_with_defs(goals[i], goals[i + 1], context):
                 msg = f"Not matched: goals[{i}]: {ExprFormatter(context).pretty_expr(goals[i])}, goals[{i + 1}]: {ExprFormatter(context).pretty_expr(goals[i + 1])}"
                 raise CheckError(node, msg)
-        node.proofinfo.premises = [fact]
+        node.proofinfo.premises = [node.fact]
         node.proofinfo.conclusions = [goals[0]]
         node.proofinfo.local_vars = []
         node.proofinfo.local_premise = []
