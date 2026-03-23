@@ -600,7 +600,7 @@ class Parser:
 
     def parse_expand(self, context: Context) -> Expand:
         start_token = self.stream.consume("EXPAND")
-        fact = self.parse_formula(context)
+        fact = self.parse_reference_or_formula(context)
         self.stream.consume("FOR")
         refs, indexes = self.parse_refs_indexes(context)
         node = Expand(fact=fact, refs=refs, indexes=indexes)

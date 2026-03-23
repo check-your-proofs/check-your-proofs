@@ -724,7 +724,7 @@ class Checker:
             logger.debug(f"{debug_prefix}fact: {ExprFormatter(context).pretty_expr(node.fact)}")
         fact = get_fact(node.fact, context, node)
         conclusion = DefExpander(node.refs, node.indexes).expand_defs_formula(fact, context)
-        node.proofinfo.premises = [fact]
+        node.proofinfo.premises = [node.fact]
         node.proofinfo.conclusions = [conclusion]
         add_conclusion(context, conclusion)
         logger.debug(f"{debug_prefix}Added: {ExprFormatter(context).pretty_expr(conclusion)}")
