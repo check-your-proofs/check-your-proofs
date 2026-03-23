@@ -774,7 +774,7 @@ class Checker:
         if isinstance(fact, And):
             logger.debug(f"{debug_prefix}And object: {ExprFormatter(context).pretty_expr(fact)}")
             fact_parts = flatten_op(fact, And)
-            node.proofinfo.premises = [fact]
+            node.proofinfo.premises = [node.fact]
             if node.index is None:
                 node.proofinfo.conclusions = fact_parts
                 for f in fact_parts:
@@ -792,7 +792,7 @@ class Checker:
             logger.debug(f"{debug_prefix}Iff object: {ExprFormatter(context).pretty_expr(fact)}")
             implication_rightward = Implies(fact.left, fact.right)
             implication_leftward = Implies(fact.right, fact.left)
-            node.proofinfo.premises = [fact]
+            node.proofinfo.premises = [node.fact]
             node.proofinfo.conclusions = [implication_rightward, implication_leftward]
             add_conclusion(context, implication_rightward)
             add_conclusion(context, implication_leftward)
