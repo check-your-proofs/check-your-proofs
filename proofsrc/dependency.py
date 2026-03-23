@@ -10,6 +10,10 @@ if TYPE_CHECKING:
     from lsp_server import ProofLanguageServer
 
 import sys
+import threading
+
+from parser import Parser
+from checker import Checker
 
 class DependencyResolver:
     def __init__(self):
@@ -159,6 +163,19 @@ def restore_cache(all_units: list[DeclarationUnit], old_all_units: list[Declarat
         else:
             break
     return context, start_index
+
+def analyze_diff(all_units: list[DeclarationUnit], start_index: int, context: Context, cancel_analysis: threading.Event | None = None) -> Context | None:
+    for i in range(start_index, len(all_units)):
+        if cancel_analysis is not None and cancel_analysis.is_set():
+            return None
+        unit = all_units[i]
+        working_context = context.copy()
+        Parser(unit).parse_unit(working_context)
+        if Checker(unit).check_unit(working_context):
+            context = working_context
+        unit.context = context.copy()
+        unit.build_token_to_node()
+    return context
 
 if __name__ == "__main__":
     import sys

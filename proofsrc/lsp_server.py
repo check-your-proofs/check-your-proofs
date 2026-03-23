@@ -7,11 +7,9 @@ import sys
 from enum import IntEnum
 from typing import Sequence
 
-from dependency import DependencyResolver, prepare_context, restore_cache
+from dependency import DependencyResolver, prepare_context, restore_cache, analyze_diff
 from lexer import KEYWORDS, STRINGS, Token
 from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm, RefEquality, PredLambda, FunLambda, FormatError, RenderError, Bottom, ContextError
-from parser import Parser
-from checker import Checker
 from splitter import split
 from to_html import Renderer
 from formatter import ExprFormatter
@@ -220,19 +218,6 @@ class ProofLanguageServer(LanguageServer):
         self.protocol.send_request("workspace/semanticTokens/refresh")
         self.update_panel()
 
-    def analyze_diff(self, all_units: list[DeclarationUnit], start_index: int, context: Context) -> Context | None:
-        for i in range(start_index, len(all_units)):
-            if self.cancel_analysis.is_set():
-                return None
-            unit = all_units[i]
-            working_context = context.copy()
-            Parser(unit).parse_unit(working_context)
-            if Checker(unit).check_unit(working_context):
-                context = working_context
-            unit.context = context.copy()
-            unit.build_token_to_node()
-        return context
-
     def analyze(self, path: str) -> None:
         self.cancel_analysis.clear()
 
@@ -263,7 +248,7 @@ class ProofLanguageServer(LanguageServer):
             context, start_index = restore_cache(all_units, old_all_units, context)
             if start_index < len(all_units):
                 newly_analyzed.add(file)
-            context = self.analyze_diff(all_units, start_index, context)
+            context = analyze_diff(all_units, start_index, context, self.cancel_analysis)
             if context is None:
                 return None
             file_final_contexts[file] = context.copy()
