@@ -213,8 +213,7 @@ class Analyzer:
         if self.resolver is None:
             self.resolver = DependencyResolver()
         else:
-            self.resolver.diagnostics = {}
-        self.resolver.dependencies.pop(path, None)
+            self.resolver.prepare(path)
         self.resolver.resolve(path, editor_files)
         affected_files = self.resolver.get_affected_files(path)
         order = self.resolver.get_full_order()

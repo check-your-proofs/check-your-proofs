@@ -19,6 +19,13 @@ class DependencyResolver:
         self.visiting_files: set[str] = set()
         self.diagnostics: dict[str, list[lsp.Diagnostic]] = {}
 
+    def prepare(self, path: str):
+        self.dependencies.pop(path, None)
+        self.tokens_cache.pop(path, None)
+        self.source_cache.pop(path, None)
+        self.visiting_files = set()
+        self.diagnostics = {}
+
     def add_lsp_error(self, token: Token, message: str):
         uri = uris.from_fs_path(token.file)
         if uri is None:
