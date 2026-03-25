@@ -4,13 +4,11 @@ header { font-size: 0.9em; color: gray; margin-left: 1em; }
 .info-panel { height: 200px; border-top: 1px solid #aaa; padding: 0.5rem; }
 .hide-info { display: none; }
 .show-info { display: block; }
-.controls {}
 .block { margin-left: 1rem; padding-left: 0.8rem; }
 .block-header { display:flex; align-items:center; gap:0.5rem; cursor:pointer; }
 .block-header:hover { background:#f7f7f7; }
 .block-header.selected { background-color: rgb(190, 210, 255) !important; }
 .block-header.selectedblock { background-color: rgb(221, 238, 255); }
-.block-content {}
 .toggle { all: unset; width:1.2em; display:inline-block; background:none; border:none; cursor:pointer; color:#446; font-size:0.9em; text-align:center; }
 .bullet { all: unset; display:inline-block; width:1.2em; text-align:center; color:#888; }
 .syntax-declarations { color:#c41a16; margin-right:0.3rem; font-size: 1.0em; line-height: 2.0em; }
