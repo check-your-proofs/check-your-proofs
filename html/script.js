@@ -46,25 +46,25 @@ function updateInfoPanel(header) {
   let local_conclusion_label;
 
   if (currentView == "syntax") {
-    status_label = "status"
-    context_vars_label = "context_vars"
-    context_formulas_label = "context_formulas"
-    context_pred_tmpls_label = "context_pred_tmpls"
-    premises_label = "premises"
-    conclusions_label = "conclusions"
-    local_vars_label = "local_vars"
-    local_premise_label = "local_premise"
-    local_conclusion_label = "local_conclusion"
+    status_label = "status";
+    context_vars_label = "context_vars";
+    context_formulas_label = "context_formulas";
+    context_pred_tmpls_label = "context_pred_tmpls";
+    premises_label = "premises";
+    conclusions_label = "conclusions";
+    local_vars_label = "local_vars";
+    local_premise_label = "local_premise";
+    local_conclusion_label = "local_conclusion";
   } else {
-    status_label = "状態"
-    context_vars_label = "現在使える変数"
-    context_formulas_label = "現在使える論理式"
-    context_pred_tmpls_label = "現在使えるテンプレート"
-    premises_label = "この文の前提"
-    conclusions_label = "この文の結論"
-    local_vars_label = "この文のブロック内に追加する変数"
-    local_premise_label = "この文のブロック内に追加する前提"
-    local_conclusion_label = "この文のブロック内で導く結論"
+    status_label = "状態";
+    context_vars_label = "現在使える変数";
+    context_formulas_label = "現在使える論理式";
+    context_pred_tmpls_label = "現在使えるテンプレート";
+    premises_label = "この文の前提";
+    conclusions_label = "この文の結論";
+    local_vars_label = "この文のブロック内に追加する変数";
+    local_premise_label = "この文のブロック内に追加する前提";
+    local_conclusion_label = "この文のブロック内で導く結論";
   }
 
   const status = header.nextElementSibling;
@@ -248,14 +248,14 @@ toggleViewBtn.addEventListener('click', () => {
 toggleInfoPanelBtn.addEventListener('click', () => {
   const panel = document.querySelector('.info-panel');
   if (infoVisible) {
-    panel.classList.remove('show-info')
-    panel.classList.add('hide-info')
-    toggleInfoPanel.textContent = 'Show info (i)'
-    infoVisible = false
+    panel.classList.remove('show-info');
+    panel.classList.add('hide-info');
+    toggleInfoPanel.textContent = 'Show info (i)';
+    infoVisible = false;
   } else {
-    panel.classList.remove('hide-info')
-    panel.classList.add('show-info')
-    toggleInfoPanel.textContent = 'Hide info (i)'
-    infoVisible = true
+    panel.classList.remove('hide-info');
+    panel.classList.add('show-info');
+    toggleInfoPanel.textContent = 'Hide info (i)';
+    infoVisible = true;
   }
-})
+});
