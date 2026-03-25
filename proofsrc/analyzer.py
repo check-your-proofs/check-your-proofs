@@ -5,8 +5,6 @@ import threading
 import sys
 from enum import IntEnum
 from typing import Sequence
-import readline
-import glob
 
 from dependency import DependencyResolver, prepare_context, restore_cache, analyze_diff
 from lexer import KEYWORDS, STRINGS, Token
@@ -474,39 +472,14 @@ class Analyzer:
             print(f"[semantic_tokens_full] {data[5*i : 5*(i+1)]}", file=sys.stderr)
         return lsp.SemanticTokens(data=data)
 
-def complete(text: str, state: int) -> str | None:
-    matches = glob.glob(text + "*")
-    return matches[state] if state < len(matches) else None
-
-readline.set_completer_delims(" \t\n;") # type: ignore
-readline.parse_and_bind("tab: complete") # type: ignore
-readline.set_completer(complete) # type: ignore
-
-def run_debug_shell():
-    analyzer = Analyzer()
-    while True:
-        try:
-            path = input('Enter file path to analyze ("q" to quit)>')
-            if path == "q":
-                break
-            if path == "":
-                continue
-            diagnostics = analyzer.analyze(path)
-            print("\n-----Diagnostics-----")
-            total_errors = 0
-            for uri, diags in diagnostics.items():
-                count = len(diags)
-                if count > 0:
-                    print(f"[{uri}] ({count} errors)")
-                    path = uris.to_fs_path(uri)
-                    for diag in diags:
-                        print(f"❌ [{path}:{diag.range.start.line + 1}:{diag.range.start.character + 1}] [{diag.source}] {diag.message}")
-                    total_errors += count
-            print(f"({total_errors} total errors)")
-            print()
-        except Exception as e:
-            print(f"Exception: {e}")
-            print()
-
-if __name__ == "__main__":
-    run_debug_shell()
+def print_diags(diagnostics: dict[str, list[lsp.Diagnostic]]) -> None:
+    total_errors = 0
+    for uri, diags in diagnostics.items():
+        count = len(diags)
+        if count > 0:
+            print(f"[{uri}] ({count} errors)")
+            path = uris.to_fs_path(uri)
+            for diag in diags:
+                print(f"❌ [{path}:{diag.range.start.line + 1}:{diag.range.start.character + 1}] [{diag.source}] {diag.message}")
+            total_errors += count
+    print(f"({total_errors} total errors)")
