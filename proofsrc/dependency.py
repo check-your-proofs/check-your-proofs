@@ -3,13 +3,8 @@ from token_stream import TokenStream
 import os
 from lsprotocol import types as lsp
 from pygls import uris
-from ast_types import Context, DeclarationUnit
 
 import sys
-import threading
-
-from parser import Parser
-from checker import Checker
 
 class DependencyResolver:
     def __init__(self):
@@ -142,36 +137,6 @@ class DependencyResolver:
         for child in self.dependencies[path]:
             self.walk(child, visited, order)
         order.append(path)
-
-def prepare_context(file: str, resolver: DependencyResolver, file_final_contexts: dict[str, Context]) -> Context:
-    context = Context.init()
-    for dep in resolver.dependencies[file]:
-        context.merge(file_final_contexts[dep])
-    return context
-
-def restore_cache(all_units: list[DeclarationUnit], old_all_units: list[DeclarationUnit], context: Context) -> tuple[Context, int]:
-    start_index = 0
-    for i in range(min(len(all_units), len(old_all_units))):
-        if all_units[i].hash == old_all_units[i].hash:
-            all_units[i].restore_from(old_all_units[i])
-            context = all_units[i].context
-            start_index = i + 1
-        else:
-            break
-    return context, start_index
-
-def analyze_diff(all_units: list[DeclarationUnit], start_index: int, context: Context, cancel_analysis: threading.Event | None = None) -> Context | None:
-    for i in range(start_index, len(all_units)):
-        if cancel_analysis is not None and cancel_analysis.is_set():
-            return None
-        unit = all_units[i]
-        working_context = context.copy()
-        Parser(unit).parse_unit(working_context)
-        if Checker(unit).check_unit(working_context):
-            context = working_context
-        unit.context = context.copy()
-        unit.build_token_to_node()
-    return context
 
 if __name__ == "__main__":
     import sys

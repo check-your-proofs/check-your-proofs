@@ -6,12 +6,14 @@ import sys
 from enum import IntEnum
 from typing import Sequence
 
-from dependency import DependencyResolver, prepare_context, restore_cache, analyze_diff
+from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
 from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm, RefEquality, PredLambda, FunLambda, FormatError, RenderError, Bottom, ContextError
 from splitter import split
 from to_html import Renderer
 from formatter import ExprFormatter
+from parser import Parser
+from checker import Checker
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -203,6 +205,36 @@ def tokens_to_locations(tokens: list[Token]) -> list[lsp.Location]:
         if location is not None:
             locations.append(location)
     return locations
+
+def prepare_context(file: str, resolver: DependencyResolver, file_final_contexts: dict[str, Context]) -> Context:
+    context = Context.init()
+    for dep in resolver.dependencies[file]:
+        context.merge(file_final_contexts[dep])
+    return context
+
+def restore_cache(all_units: list[DeclarationUnit], old_all_units: list[DeclarationUnit], context: Context) -> tuple[Context, int]:
+    start_index = 0
+    for i in range(min(len(all_units), len(old_all_units))):
+        if all_units[i].hash == old_all_units[i].hash:
+            all_units[i].restore_from(old_all_units[i])
+            context = all_units[i].context
+            start_index = i + 1
+        else:
+            break
+    return context, start_index
+
+def analyze_diff(all_units: list[DeclarationUnit], start_index: int, context: Context, cancel_analysis: threading.Event | None = None) -> Context | None:
+    for i in range(start_index, len(all_units)):
+        if cancel_analysis is not None and cancel_analysis.is_set():
+            return None
+        unit = all_units[i]
+        working_context = context.copy()
+        Parser(unit).parse_unit(working_context)
+        if Checker(unit).check_unit(working_context):
+            context = working_context
+        unit.context = context.copy()
+        unit.build_token_to_node()
+    return context
 
 class Analyzer:
     def __init__(self):
