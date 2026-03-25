@@ -45,7 +45,7 @@ function updateInfoPanel(header) {
   let local_premise_label;
   let local_conclusion_label;
 
-  if (currentView == "syntax") {
+  if (currentView === "syntax") {
     status_label = "status";
     context_vars_label = "context_vars";
     context_formulas_label = "context_formulas";
