@@ -52,7 +52,7 @@ STRINGS = {
     "\\bot":      "BOT",
 }
 
-def lex(path: str, src: str) -> tuple[list[Token], str]:
+def lex(path: str, src: str) -> list[Token]:
     tokens: list[Token] = []
     i = 0
     line = 1
@@ -136,7 +136,7 @@ def lex(path: str, src: str) -> tuple[list[Token], str]:
         i += 1
     column = len(src) - line_start_pos + 1
     tokens.append(Token("EOF", "", path, i, line, column, line, column))
-    return tokens, src
+    return tokens
 
 if __name__ == "__main__":
     import sys
@@ -164,6 +164,6 @@ if __name__ == "__main__":
     f = open(path, encoding="utf-8")
     src = f.read()
     f.close()
-    tokens, _ = lex(path, src)
+    tokens = lex(path, src)
     for t in tokens:
         logger.debug(t)

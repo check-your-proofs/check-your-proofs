@@ -46,7 +46,7 @@ class DependencyResolver:
     def get_content(self, target_path: str, editor_files: dict[str, str] | None = None) -> tuple[str, list[Token]]:
         if editor_files is not None and target_path in editor_files:
             src = editor_files[target_path]
-            tokens, _ = lex(target_path, src)
+            tokens = lex(target_path, src)
             print(f"editor memory: {os.path.basename(target_path)}", file=sys.stderr)
             return src, tokens
         if target_path in self.source_cache:
@@ -55,7 +55,7 @@ class DependencyResolver:
         f = open(target_path, encoding="utf-8")
         src = f.read()
         f.close()
-        tokens, _ = lex(target_path, src)
+        tokens = lex(target_path, src)
         print(f"file content: {os.path.basename(target_path)}", file=sys.stderr)
         return src, tokens
 
