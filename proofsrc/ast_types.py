@@ -868,8 +868,7 @@ class DeclarationUnit:
         return self.tokens[self.node_to_token[id(node)][0]]
 
 class Workspace:
-    def __init__(self, resolved_files: list[str], file_units: dict[str, list[DeclarationUnit]]):
-        self.resolved_files: list[str] = resolved_files
+    def __init__(self, file_units: dict[str, list[DeclarationUnit]]):
         self.file_units: dict[str, list[DeclarationUnit]] = file_units
 
     def get_decl_def(self, name: str, order: list[str]) -> Token | None:
@@ -888,8 +887,5 @@ class Workspace:
         return all_decl_refs
 
     def merge(self, new: "Workspace") -> None:
-        for file in new.resolved_files:
-            if file not in self.resolved_files:
-                self.resolved_files.append(file)
         for file, units in new.file_units.items():
             self.file_units[file] = units

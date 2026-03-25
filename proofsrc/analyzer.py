@@ -273,7 +273,7 @@ class Analyzer:
                 return {}
             file_final_contexts[file] = context.copy()
 
-        workspace = Workspace(order, file_units)
+        workspace = Workspace(file_units)
 
         if self.old_workspace is None:
             self.old_workspace = workspace
@@ -281,7 +281,7 @@ class Analyzer:
             self.old_workspace.merge(workspace)
 
         final_diagnostics: dict[str, list[lsp.Diagnostic]] = {}
-        for file in workspace.resolved_files:
+        for file in workspace.file_units:
             uri = uris.from_fs_path(file)
             if uri is None:
                 continue
