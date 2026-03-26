@@ -458,16 +458,15 @@ class DeclarationContext:
         return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None, used_names=set())
 
     def add(self, declaration: Declaration):
+        if declaration.name in self.used_names:
+            msg = f"{declaration.name} is already used"
+            raise ContextError(msg)
         if isinstance(declaration, Equality):
             if self.equality is not None:
                 msg = "equality is already declared"
                 raise ContextError(msg)
             self.equality = declaration
-            return
-        if declaration.name in self.used_names:
-            msg = f"{declaration.name} is already used"
-            raise ContextError(msg)
-        if isinstance(declaration, PrimPred):
+        elif isinstance(declaration, PrimPred):
             self.primpreds[declaration.name] = declaration
         elif isinstance(declaration, Axiom):
             self.axioms[declaration.name] = declaration
