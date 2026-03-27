@@ -20,8 +20,7 @@ theorem natural_is_ordinal \forall n (natural(n) \to ordinal(n)) {
 }
 
 theorem emptyset_is_natural natural(emptyset) {
-  pad equal(emptyset, emptyset) conclude equal(emptyset, emptyset) \vee (sucordinal(emptyset) \wedge \forall m (in(m, emptyset) \to equal(m, emptyset) \vee sucordinal(m)))
-  fold for natural conclude natural(emptyset)
+  pad equal(emptyset, emptyset) conclude natural(emptyset)
 }
 
 theorem suc_of_natural_is_natural \forall n (natural(n) \to natural(suc(n))) {
@@ -62,8 +61,7 @@ theorem suc_of_natural_is_natural \forall n (natural(n) \to natural(suc(n))) {
         }
       }
       connect sucordinal(suc(n)) \wedge \forall m (in(m, suc(n)) \to equal(m, emptyset) \vee sucordinal(m))
-      pad sucordinal(suc(n)) \wedge \forall m (in(m, suc(n)) \to equal(m, emptyset) \vee sucordinal(m)) conclude equal(suc(n), emptyset) \vee (sucordinal(suc(n)) \wedge \forall m (in(m, suc(n)) \to equal(m, emptyset) \vee sucordinal(m)))
-      fold for natural conclude natural(suc(n))
+      pad sucordinal(suc(n)) \wedge \forall m (in(m, suc(n)) \to equal(m, emptyset) \vee sucordinal(m)) conclude natural(suc(n))
     }
   }
 }
@@ -97,8 +95,7 @@ theorem element_of_natural_is_natural \forall n \forall m (in(m, n) \wedge natur
                 }
               }
               connect sucordinal(m) \wedge \forall l (in(l, m) \to equal(l, emptyset) \vee sucordinal(l))
-              pad sucordinal(m) \wedge \forall l (in(l, m) \to equal(l, emptyset) \vee sucordinal(l)) conclude equal(m, emptyset) \vee (sucordinal(m) \wedge \forall l (in(l, m) \to equal(l, emptyset) \vee sucordinal(l)))
-              fold for natural conclude natural(m)
+              pad sucordinal(m) \wedge \forall l (in(l, m) \to equal(l, emptyset) \vee sucordinal(l)) conclude natural(m)
             }
         }
     }

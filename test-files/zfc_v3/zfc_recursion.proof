@@ -2,11 +2,10 @@ include "zfc_function.proof"
 
 definition predicate approx(g, n, a, function f[1]) as fun(g) \wedge dom(g, suc(n)) \wedge in(op(emptyset, a), g) \wedge \forall k (in(k, n) \to \exists p (in(op(k, p), g) \wedge in(op(suc(k), f(p)), g)))
 
-definition predicate recursion(a, function f[1], n, x) as natural(n) \wedge \exists g (approx(g, n, a, f) \wedge in(op(n, x), g))
+definition predicate recursion(a, function f[1], n, x) as \exists g (approx(g, n, a, f) \wedge in(op(n, x), g))
 
 theorem recursion_exists_base_step \forall c \forall^F f[1] (recursion(c, f, emptyset, c)) {
   any c, function f[1] {
-    assert emptyset_is_natural
     apply singleton_op_is_fun for emptyset, c
     apply singleton_op_dom for emptyset, c
     assert suc_emptyset_is_singleton_emptyset
@@ -21,9 +20,7 @@ theorem recursion_exists_base_step \forall c \forall^F f[1] (recursion(c, f, emp
     }
     connect approx(singleton(op(emptyset, c)), emptyset, c, f)
     connect approx(singleton(op(emptyset, c)), emptyset, c, f) \wedge in(op(emptyset, c), singleton(op(emptyset, c)))
-    lift for singleton(op(emptyset, c)) conclude \exists g (approx(g, emptyset, c, f) \wedge in(op(emptyset, c), g))
-    connect natural(emptyset) \wedge \exists g (approx(g, emptyset, c, f) \wedge in(op(emptyset, c), g))
-    fold for recursion conclude recursion(c, f, emptyset, c)
+    lift for singleton(op(emptyset, c)) conclude recursion(c, f, emptyset, c)
   }
 }
 
@@ -31,11 +28,10 @@ theorem recursion_exists_induction_step \forall c \forall^F f[1] \forall n \fora
   any c, function f[1], n, x {
     assume natural(n) \wedge recursion(c, f, n, x) {
       split natural(n) \wedge recursion(c, f, n, x)
-      split 2 recursion(c, f, n, x)
       apply invoke suc_of_natural_is_natural for n
       apply invoke natural_is_ordinal for suc(n)
       split ordinal(suc(n))
-      some g such \exists g (approx(g, n, c, f) \wedge in(op(n, x), g)) {
+      some g such recursion(c, f, n, x) {
         split approx(g, n, c, f) \wedge in(op(n, x), g)
         split approx(g, n, c, f)
         deny \exists q (in(op(suc(n), q), g)) {
@@ -76,10 +72,8 @@ theorem recursion_exists_induction_step \forall c \forall^F f[1] \forall n \fora
         }
         connect approx(adj(g, op(suc(n), f(x))), suc(n), c, f)
         connect approx(adj(g, op(suc(n), f(x))), suc(n), c, f) \wedge in(op(suc(n), f(x)), adj(g, op(suc(n), f(x))))
-        lift for adj(g, op(suc(n), f(x))) conclude \exists h (approx(h, suc(n), c, f) \wedge in(op(suc(n), f(x)), h))
+        lift for adj(g, op(suc(n), f(x))) conclude recursion(c, f, suc(n), f(x))
       }
-      connect natural(suc(n)) \wedge \exists h (approx(h, suc(n), c, f) \wedge in(op(suc(n), f(x)), h))
-      fold for recursion conclude recursion(c, f, suc(n), f(x))
     }
   }
 }
@@ -87,8 +81,7 @@ theorem recursion_exists_induction_step \forall c \forall^F f[1] \forall n \fora
 theorem recursion_is_unique_base_step \forall c \forall^F f[1] \forall x (recursion(c, f, emptyset, x) \to equal(x, c)) {
   any c, function f[1], x {
     assume recursion(c, f, emptyset, x) {
-      split 2 recursion(c, f, emptyset, x)
-      some g such \exists g (approx(g, emptyset, c, f) \wedge in(op(emptyset, x), g)) {
+      some g such recursion(c, f, emptyset, x) {
         split approx(g, emptyset, c, f) \wedge in(op(emptyset, x), g)
         split approx(g, emptyset, c, f)
         connect in(op(emptyset, x), g) \wedge in(op(emptyset, c), g)
@@ -110,8 +103,7 @@ theorem recursion_is_unique_induction_step \forall c \forall^F f[1] \forall n \f
           apply invoke suc_of_natural_is_natural for n
           apply invoke natural_is_ordinal for suc(n)
           split ordinal(suc(n))
-          split 2 recursion(c, f, suc(n), y)
-          some h' such \exists h' (approx(h', suc(n), c, f) \wedge in(op(suc(n), y), h')) {
+          some h' such recursion(c, f, suc(n), y) {
             split approx(h', suc(n), c, f) \wedge in(op(suc(n), y), h')
             split approx(h', suc(n), c, f)
             apply in_suc for n
@@ -167,9 +159,7 @@ theorem recursion_is_unique_induction_step \forall c \forall^F f[1] \forall n \f
               connect in(op(n, p), h') \wedge neq(n, suc(n))
               apply invoke removing_op_lem1 for h', n, p, suc(n), y
               connect approx(rem(h', op(suc(n), y)), n, c, f) \wedge in(op(n, p), rem(h', op(suc(n), y)))
-              lift for rem(h', op(suc(n), y)) conclude \exists g (approx(g, n, c, f) \wedge in(op(n, p), g))
-              connect natural(n) \wedge \exists g (approx(g, n, c, f) \wedge in(op(n, p), g))
-              fold for recursion conclude recursion(c, f, n, p)
+              lift for rem(h', op(suc(n), y)) conclude recursion(c, f, n, p)
               apply invoke \forall x' (recursion(c, f, n, x') \to equal(x', x)) for p
               substitute equal(y, f(p)) for p: x
             }
@@ -248,4 +238,19 @@ theorem iterate_characterization \forall c \forall^F f[1] (equal(iterate(c, f, e
     }
     connect equal(iterate(c, f, emptyset), c) \wedge \forall n (natural(n) \to equal(iterate(c, f, suc(n)), f(iterate(c, f, n))))
   }
+}
+
+theorem natural_is_constructed_by_emptyset_and_suc \forall n (natural(n) \to equal(iterate(emptyset, suc, n), n)) {
+  apply iterate_characterization for emptyset, suc
+  split equal(iterate(emptyset, suc, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(iterate(emptyset, suc, suc(n)), suc(iterate(emptyset, suc, n))))
+  any n {
+    assume natural(n) {
+      apply invoke \forall n (natural(n) \to equal(iterate(emptyset, suc, suc(n)), suc(iterate(emptyset, suc, n)))) for n
+      assume equal(iterate(emptyset, suc, n), n) {
+        substitute equal(iterate(emptyset, suc, suc(n)), suc(iterate(emptyset, suc, n))) for iterate(emptyset, suc, n): n
+      }
+    }
+  }
+  connect equal(iterate(emptyset, suc, emptyset), emptyset) \wedge \forall n (natural(n) \to (equal(iterate(emptyset, suc, n), n) \to equal(iterate(emptyset, suc, suc(n)), suc(n))))
+  apply invoke natural_induction for \lambda^P n. equal(iterate(emptyset, suc, n), n)
 }
