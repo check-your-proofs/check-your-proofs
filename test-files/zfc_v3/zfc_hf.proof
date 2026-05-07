@@ -1,237 +1,4 @@
-include "zfc_tcm.proof"
-
-definition predicate hirrefrel(x) as \exists y (irrefrel(y, in) \wedge tcm(x, y))
-
-theorem hirrefrel_is_irrefrel \forall x (hirrefrel(x) \to irrefrel(x, in)) {
-  any x {
-    assume hirrefrel(x) {
-      some y such hirrefrel(x) {
-        split irrefrel(y, in) \wedge tcm(x, y)
-        apply invoke tcm_implies_subset for x, y
-        connect irrefrel(y, in) \wedge subset(x, y)
-        apply invoke subset_of_irrefrel_is_irrefrel for in, y, x
-      }
-    }
-  }
-}
-
-theorem element_of_hirrefrel_is_hirrefrel \forall x \forall y (hirrefrel(x) \wedge in(y, x) \to hirrefrel(y)) {
-  any x, y {
-    assume hirrefrel(x) \wedge in(y, x) {
-      split hirrefrel(x) \wedge in(y, x)
-      some t such hirrefrel(x) {
-        split irrefrel(t, in) \wedge tcm(x, t)
-        connect tcm(x, t) \wedge in(y, x)
-        apply invoke tcm_of_element_is_subset_of_tcm for x, t, y
-        some s such \exists s (subset(s, t) \wedge tcm(y, s)) {
-          split subset(s, t) \wedge tcm(y, s)
-          connect irrefrel(t, in) \wedge subset(s, t)
-          apply invoke subset_of_irrefrel_is_irrefrel for in, t, s
-          connect irrefrel(s, in) \wedge tcm(y, s)
-          lift for s conclude hirrefrel(y)
-        }
-      }
-    }
-  }
-}
-
-theorem set_of_hirrefrel_is_hirrefrel \forall Y \forall Z \forall W \forall V (\forall y (in(y, Y) \to hirrefrel(y)) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V) \to hirrefrel(Y)) {
-  any Y, Z, W, V {
-    assume \forall y (in(y, Y) \to hirrefrel(y)) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V) {
-      split \forall y (in(y, Y) \to hirrefrel(y)) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
-      any y {
-        assume in(y, Y) {
-          apply invoke \forall y (in(y, Y) \to hirrefrel(y)) for y
-          some z such hirrefrel(y) {
-            split irrefrel(z, in) \wedge tcm(y, z)
-            lift for z conclude \exists z (tcm(y, z))
-          }
-        }
-      }
-      connect \forall y (in(y, Y) \to \exists z (tcm(y, z))) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
-      apply invoke tcm_is_cup_of_itself_and_bigcup_of_tcm_of_element for Y, Z, W, V
-      any y {
-        assume in(y, Y) {
-          apply invoke \forall y (in(y, Y) \to hirrefrel(y)) for y
-          apply invoke hirrefrel_is_irrefrel for y
-          apply invoke irrefrel_not_contain_itself for y
-        }
-      }
-      fold for irrefrel conclude irrefrel(Y, in)
-      any w {
-        assume in(w, W) {
-          apply invoke rightward bigcup(Z, W) for w
-          some z such \exists z (in(w, z) \wedge in(z, Z)) {
-            split in(w, z) \wedge in(z, Z)
-            apply invoke rightward replacement(Y, tcm, Z) for z
-            some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
-              split in(y, Y) \wedge tcm(y, z)
-              apply invoke \forall y (in(y, Y) \to hirrefrel(y)) for y
-              some z' such hirrefrel(y) {
-                split irrefrel(z', in) \wedge tcm(y, z')
-                connect tcm(y, z) \wedge tcm(y, z')
-                apply invoke tcm_is_unique for y, z, z'
-                substitute irrefrel(z', in) for z': z
-                apply invoke irrefrel(z, in) for w
-              }
-            }
-          }
-        }
-      }
-      fold for irrefrel conclude irrefrel(W, in)
-      connect irrefrel(Y, in) \wedge irrefrel(W, in) \wedge cup(Y, W, V)
-      apply invoke cup_of_irrefrel_is_irrefrel for in, Y, W, V
-      connect irrefrel(V, in) \wedge tcm(Y, V)
-      lift for V conclude hirrefrel(Y)
-    }
-  }
-}
-
-definition predicate hwellfounded(x) as \exists y (wellfounded(y, in) \wedge tcm(x, y))
-
-theorem hwellfounded_is_wellfounded \forall x (hwellfounded(x) \to wellfounded(x, in)) {
-  any x {
-    assume hwellfounded(x) {
-      some y such hwellfounded(x) {
-        split wellfounded(y, in) \wedge tcm(x, y)
-        apply invoke tcm_implies_subset for x, y
-        connect wellfounded(y, in) \wedge subset(x, y)
-        apply invoke subset_of_wellfounded_is_wellfounded for in, y, x
-      }
-    }
-  }
-}
-
-theorem element_of_hwellfounded_is_hwellfounded \forall x \forall y (hwellfounded(x) \wedge in(y, x) \to hwellfounded(y)) {
-  any x, y {
-    assume hwellfounded(x) \wedge in(y, x) {
-      split hwellfounded(x) \wedge in(y, x)
-      some t such hwellfounded(x) {
-        split wellfounded(t, in) \wedge tcm(x, t)
-        connect tcm(x, t) \wedge in(y, x)
-        apply invoke tcm_of_element_is_subset_of_tcm for x, t, y
-        some s such \exists s (subset(s, t) \wedge tcm(y, s)) {
-          split subset(s, t) \wedge tcm(y, s)
-          connect wellfounded(t, in) \wedge subset(s, t)
-          apply invoke subset_of_wellfounded_is_wellfounded for in, t, s
-          connect wellfounded(s, in) \wedge tcm(y, s)
-          lift for s conclude hwellfounded(y)
-        }
-      }
-    }
-  }
-}
-
-theorem set_of_hwellfounded_is_hwellfounded \forall Y \forall Z \forall W \forall V (\forall y (in(y, Y) \to hwellfounded(y)) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V) \to hwellfounded(Y)) {
-  any Y, Z, W, V {
-    assume \forall y (in(y, Y) \to hwellfounded(y)) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V) {
-      split \forall y (in(y, Y) \to hwellfounded(y)) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
-      any y {
-        assume in(y, Y) {
-          apply invoke \forall y (in(y, Y) \to hwellfounded(y)) for y
-          some z such hwellfounded(y) {
-            split wellfounded(z, in) \wedge tcm(y, z)
-            lift for z conclude \exists z (tcm(y, z))
-          }
-        }
-      }
-      connect \forall y (in(y, Y) \to \exists z (tcm(y, z))) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
-      apply invoke tcm_is_cup_of_itself_and_bigcup_of_tcm_of_element for Y, Z, W, V
-      any A {
-        assume subset(A, V) \wedge neq(A, emptyset) {
-          split subset(A, V) \wedge neq(A, emptyset)
-          apply invoke not_emptyset_has_a_member for A
-          some v such \exists v (in(v, A)) {
-            apply invoke subset(A, V) for v
-            apply invoke rightward cup(Y, W, V) for v
-            divide in(v, Y) \vee in(v, W)
-              case in(v, Y) {
-                apply invoke \forall y (in(y, Y) \to hwellfounded(y)) for v
-              }
-              case in(v, W) {
-                apply invoke rightward bigcup(Z, W) for v
-                some z such \exists z (in(v, z) \wedge in(z, Z)) {
-                  split in(v, z) \wedge in(z, Z)
-                  apply invoke rightward replacement(Y, tcm, Z) for z
-                  some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
-                    split in(y, Y) \wedge tcm(y, z)
-                    apply invoke \forall y (in(y, Y) \to hwellfounded(y)) for y
-                    some z' such hwellfounded(y) {
-                      split wellfounded(z', in) \wedge tcm(y, z')
-                      apply invoke tcm_is_tcm_of_itself for y, z'
-                      connect wellfounded(z', in) \wedge tcm(z', z')
-                      lift for z' conclude hwellfounded(z')
-                      connect tcm(y, z) \wedge tcm(y, z')
-                      apply invoke tcm_is_unique for y, z, z'
-                      substitute hwellfounded(z') for z': z
-                      connect hwellfounded(z) \wedge in(v, z)
-                      apply invoke element_of_hwellfounded_is_hwellfounded for z, v
-                    }
-                  }
-                }
-              }
-            some T such hwellfounded(v) {
-              split wellfounded(T, in) \wedge tcm(v, T)
-              apply invoke tcm_implies_subset for v, T
-              apply invoke tcm_is_trans for v, T
-              apply law_of_excluded_middle for \lambda^P. equal(cap(A, T), emptyset)
-              divide equal(cap(A, T), emptyset) \vee neq(cap(A, T), emptyset)
-                case equal(cap(A, T), emptyset) {
-                  any x {
-                    assume in(x, A) \wedge neq(x, v) {
-                      split in(x, A) \wedge neq(x, v)
-                      deny in(x, v) {
-                        apply invoke subset(v, T) for x
-                        apply invoke rightward tcm(v, T) for x
-                        connect in(x, A) \wedge in(x, T)
-                        apply invoke leftward cap_characterization for A, T, x
-                        substitute in(x, cap(A, T)) for cap(A, T): emptyset
-                        apply emptyset_existence for x
-                        contradict in(x, emptyset)
-                      }
-                    }
-                  }
-                  fold for minimal_core conclude minimal_core(in, A, v)
-                  connect minimal(in, A, v)
-                  lift for v conclude \exists a (minimal(in, A, a))
-                }
-                case neq(cap(A, T), emptyset) {
-                  apply cap_is_subset_right for A, T
-                  connect subset(cap(A, T), T) \wedge neq(cap(A, T), emptyset)
-                  apply invoke wellfounded(T, in) for cap(A, T)
-                  some a such \exists a (minimal(in, cap(A, T), a)) {
-                    split minimal(in, cap(A, T), a)
-                    apply invoke rightward cap_characterization for A, T, a
-                    split in(a, A) \wedge in(a, T)
-                    any x {
-                      assume in(x, A) \wedge neq(x, a) {
-                        split in(x, A) \wedge neq(x, a)
-                        deny in(x, a) {
-                          connect in(x, a) \wedge in(a, T)
-                          apply invoke trans(T) for a, x
-                          connect in(x, A) \wedge in(x, T)
-                          apply invoke leftward cap_characterization for A, T, x
-                          connect in(x, cap(A, T)) \wedge neq(x, a)
-                          apply invoke minimal_core(in, cap(A, T), a) for x
-                          contradict in(x, a)
-                        }
-                      }
-                    }
-                    fold for minimal_core conclude minimal_core(in, A, a)
-                    connect minimal(in, A, a)
-                    lift for a conclude \exists a (minimal(in, A, a))
-                  }
-                }
-            }
-          }
-        }
-      }
-      fold for wellfounded conclude wellfounded(V, in)
-      connect wellfounded(V, in) \wedge tcm(Y, V)
-      lift for V conclude hwellfounded(Y)
-    }
-  }
-}
+include "zfc_regular.proof"
 
 definition predicate hfcore(x) as \exists y (finite(y) \wedge tcm(x, y))
 
@@ -323,12 +90,13 @@ theorem finite_set_of_hfcore_is_hfcore \forall Y (finite(Y) \wedge \forall y (in
   }
 }
 
-definition predicate hf(x) as hirrefrel(x) \wedge hwellfounded(x) \wedge hfcore(x)
+definition predicate hf(x) as regular(x) \wedge hfcore(x)
 
 theorem hf_is_irrefrel_wellfounded_finite \forall x (hf(x) \to irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)) {
   any x {
     assume hf(x) {
       split hf(x)
+      split regular(x)
       apply invoke hirrefrel_is_irrefrel for x
       apply invoke hwellfounded_is_wellfounded for x
       apply invoke hfcore_is_finite for x
@@ -342,10 +110,8 @@ theorem element_of_hf_is_hf \forall x \forall y (hf(x) \wedge in(y, x) \to hf(y)
     assume hf(x) \wedge in(y, x) {
       split hf(x) \wedge in(y, x)
       split hf(x)
-      connect hirrefrel(x) \wedge in(y, x)
-      apply invoke element_of_hirrefrel_is_hirrefrel for x, y
-      connect hwellfounded(x) \wedge in(y, x)
-      apply invoke element_of_hwellfounded_is_hwellfounded for x, y
+      connect regular(x) \wedge in(y, x)
+      apply invoke element_of_regular_is_regular for x, y
       connect hfcore(x) \wedge in(y, x)
       apply invoke element_of_hfcore_is_hfcore for x, y
       connect hf(y)
@@ -380,13 +146,8 @@ theorem hf_satisfies_axiom_of_extensionality \forall x \forall y (hf(x) \wedge h
 }
 
 theorem emptyset_is_hf hf(emptyset) {
+  assert emptyset_is_regular
   assert emptyset_is_tcm_of_emptyset
-  assert emptyset_is_irrefrel
-  connect irrefrel(emptyset, in) \wedge tcm(emptyset, emptyset)
-  lift for emptyset conclude hirrefrel(emptyset)
-  assert emptyset_is_wellfounded
-  connect wellfounded(emptyset, in) \wedge tcm(emptyset, emptyset)
-  lift for emptyset conclude hwellfounded(emptyset)
   assert emptyset_is_finite
   connect finite(emptyset) \wedge tcm(emptyset, emptyset)
   lift for emptyset conclude hfcore(emptyset)
@@ -420,21 +181,13 @@ theorem finite_set_of_hf_is_hf \forall Y (finite(Y) \wedge \forall y (in(y, Y) \
           split 2 hf(y)
         }
       }
-      any y {
-        assume in(y, Y) {
-          apply invoke \forall y (in(y, Y) \to hf(y)) for y
-          split 3 hf(y)
-        }
-      }
       connect finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y))
       apply invoke finite_set_of_hfcore_is_hfcore for Y
       split hfcore(Y) \wedge \exists Z \exists W \exists V (replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V))
       some Z, W, V such \exists Z \exists W \exists V (replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)) {
         split replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
-        connect \forall y (in(y, Y) \to hirrefrel(y)) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
-        apply invoke set_of_hirrefrel_is_hirrefrel for Y, Z, W, V
-        connect \forall y (in(y, Y) \to hwellfounded(y)) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
-        apply invoke set_of_hwellfounded_is_hwellfounded for Y, Z, W, V
+        connect \forall y (in(y, Y) \to regular(y)) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
+        apply invoke set_of_regular_is_regular for Y, Z, W, V
         connect hf(Y)
       }
     }
