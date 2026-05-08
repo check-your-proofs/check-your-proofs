@@ -468,3 +468,144 @@ theorem hf_satisfies_axiom_of_foundation \forall x (hf(x) \to (neq(x, emptyset) 
     }
   }
 }
+
+theorem hf_iff_existence_of_irrefrel_wellfounded_finite_tcm \forall x (hf(x) \leftrightarrow \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y))) {
+  any x {
+    assume hf(x) {
+      split hf(x)
+      apply invoke rightward regular_iff_existence_of_irrefrel_wellfounded_tcm for x
+      some y such \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge tcm(x, y)) {
+        split irrefrel(y, in) \wedge wellfounded(y, in) \wedge tcm(x, y)
+        some y' such hfcore(x) {
+          split finite(y') \wedge tcm(x, y')
+          connect tcm(x, y) \wedge tcm(x, y')
+          apply invoke tcm_is_unique for x, y, y'
+          substitute finite(y') for y': y
+          connect irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y)
+          lift for y conclude \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y))
+        }
+      }
+    }
+    assume \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y)) {
+      some y such \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y)) {
+        split irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y)
+        connect irrefrel(y, in) \wedge tcm(x, y)
+        lift for y conclude hirrefrel(x)
+        connect wellfounded(y, in) \wedge tcm(x, y)
+        lift for y conclude hwellfounded(x)
+        connect regular(x)
+        connect finite(y) \wedge tcm(x, y)
+        lift for y conclude hfcore(x)
+        connect hf(x)
+      }
+    }
+    connect hf(x) \leftrightarrow \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y))
+  }
+}
+
+theorem hf_implies_tcm_is_hf \forall x \forall y (hf(x) \wedge tcm(x, y) \to hf(y)) {
+  any x, y {
+    assume hf(x) \wedge tcm(x, y) {
+      split hf(x) \wedge tcm(x, y)
+      apply invoke rightward hf_iff_existence_of_irrefrel_wellfounded_finite_tcm for x
+      some y' such \exists y' (irrefrel(y', in) \wedge wellfounded(y', in) \wedge finite(y') \wedge tcm(x, y')) {
+        split irrefrel(y', in) \wedge wellfounded(y', in) \wedge finite(y') \wedge tcm(x, y')
+        connect tcm(x, y) \wedge tcm(x, y')
+        apply invoke tcm_is_unique for x, y, y'
+        substitute irrefrel(y', in) for y': y
+        substitute wellfounded(y', in) for y': y
+        substitute finite(y') for y': y
+        apply invoke tcm_is_tcm_of_itself for x, y
+        connect irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(y, y)
+        lift for y conclude \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(y, y))
+        apply invoke leftward hf_iff_existence_of_irrefrel_wellfounded_finite_tcm for y
+      }
+    }
+  }
+}
+
+theorem hf_induction \forall^P \chi[1] (\forall x (hf(x) \wedge \forall y (in(y, x) \to \chi(y)) \to \chi(x)) \to \forall x (hf(x) \to \chi(x))) {
+  any predicate \chi[1] {
+    assume \forall x (hf(x) \wedge \forall y (in(y, x) \to \chi(y)) \to \chi(x)) {
+      deny \neg(\forall x (hf(x) \to \chi(x))) {
+        apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. hf(x) \to \chi(x)
+        some x such \exists x (\neg(hf(x) \to \chi(x))) {
+          apply invoke rightward neg_implication for \lambda^P. hf(x), \lambda^P. \chi(x)
+          split hf(x) \wedge \neg(\chi(x))
+          apply invoke rightward hf_iff_existence_of_irrefrel_wellfounded_finite_tcm for x
+          some t such \exists t (irrefrel(t, in) \wedge wellfounded(t, in) \wedge finite(t) \wedge tcm(x, t)) {
+            split irrefrel(t, in) \wedge wellfounded(t, in) \wedge finite(t) \wedge tcm(x, t)
+            apply sep_is_subset for t, \lambda^P y. \neg(\chi(y))
+            apply law_of_excluded_middle for \lambda^P. in(x, t)
+            divide in(x, t) \vee notin(x, t)
+              case in(x, t) {
+                connect in(x, t) \wedge \neg(\chi(x))
+                apply invoke leftward sep_existence for t, \lambda^P y. \neg(\chi(y)), x
+                lift for x conclude \exists y (in(y, sep(t, \lambda^P y'. \neg(\chi(y')))))
+              }
+              case notin(x, t) {
+                deny \neg(\exists y (in(y, sep(t, \lambda^P y'. \neg(\chi(y')))))) {
+                  apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P y. in(y, sep(t, \lambda^P y'. \neg(\chi(y'))))
+                  any y {
+                    assume in(y, x) {
+                      apply invoke tcm_implies_subset for x, t
+                      apply invoke subset(x, t) for y
+                      apply \forall y (notin(y, sep(t, \lambda^P y'. \neg(\chi(y'))))) for y
+                      deny \neg(\chi(y)) {
+                        connect in(y, t) \wedge \neg(\chi(y))
+                        apply invoke leftward sep_existence for t, \lambda^P y'. \neg(\chi(y')), y
+                        contradict in(y, sep(t, \lambda^P y'. \neg(\chi(y'))))
+                      }
+                    }
+                  }
+                  connect hf(x) \wedge \forall y (in(y, x) \to \chi(y))
+                  apply invoke \forall x (hf(x) \wedge \forall y (in(y, x) \to \chi(y)) \to \chi(x)) for x
+                  contradict \chi(x)
+                }
+              }
+            apply invoke has_a_member_not_emptyset for sep(t, \lambda^P y. \neg(\chi(y)))
+            connect subset(sep(t, \lambda^P y. \neg(\chi(y))), t) \wedge neq(sep(t, \lambda^P y. \neg(\chi(y))), emptyset)
+            apply invoke wellfounded(t, in) for sep(t, \lambda^P y. \neg(\chi(y)))
+            some z such \exists z (minimal(in, sep(t, \lambda^P y. \neg(\chi(y))), z)) {
+              split minimal(in, sep(t, \lambda^P y. \neg(\chi(y))), z)
+              apply invoke rightward sep_existence for t, \lambda^P y. \neg(\chi(y)), z
+              split in(z, t) \wedge \neg(\chi(z))
+              any y {
+                assume in(y, z) {
+                  connect in(z, t) \wedge in(y, z)
+                  apply invoke tcm_is_trans for x, t
+                  apply invoke trans(t) for z, y
+                  deny equal(y, z) {
+                    substitute in(y, z) for y: z
+                    split hf(x)
+                    split regular(x)
+                    apply invoke hirrefrel_is_irrefrel for x
+                    apply invoke irrefrel_not_contain_itself for x
+                    connect irrefrel(t, in) \wedge notin(x, x)
+                    apply invoke adj_of_irrefrel_is_irrefrel for t, x
+                    apply invoke irrefrel(t, in) for z
+                    contradict in(z, z)
+                  }
+                  deny \neg(\chi(y)) {
+                    connect in(y, t) \wedge \neg(\chi(y))
+                    apply invoke leftward sep_existence for t, \lambda^P m. \neg(\chi(m)), y
+                    connect in(y, sep(t, \lambda^P m. \neg(\chi(m)))) \wedge neq(y, z)
+                    apply invoke minimal_core(in, sep(t, \lambda^P m. \neg(\chi(m))), z) for y
+                    contradict in(y, z)
+                  }
+                }
+              }
+              connect hf(x) \wedge tcm(x, t)
+              apply invoke hf_implies_tcm_is_hf for x, t
+              connect hf(t) \wedge in(z, t)
+              apply invoke element_of_hf_is_hf for t, z
+              connect hf(z) \wedge \forall y (in(y, z) \to \chi(y))
+              apply invoke \forall x (hf(x) \wedge \forall y (in(y, x) \to \chi(y)) \to \chi(x)) for z
+              contradict \neg(\chi(z))
+            }
+          }
+        }
+      }
+    }
+  }
+}
