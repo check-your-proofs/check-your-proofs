@@ -82,6 +82,48 @@ theorem piterate_induction_step \forall^P \phi[2] \forall n \forall c \forall x 
   }
 }
 
+theorem piterate_exists_induction_step \forall^P \phi[2] \forall^P \chi[1] \forall n \forall c (total(\phi, \chi) \wedge natural(n) \wedge \exists x (\chi(x) \wedge piterate(\phi, n, c, x)) \to \exists x (\chi(x) \wedge piterate(\phi, suc(n), c, x))) {
+  any predicate \phi[2], predicate \chi[1], n, c {
+    assume total(\phi, \chi) \wedge natural(n) \wedge \exists x (\chi(x) \wedge piterate(\phi, n, c, x)) {
+      split total(\phi, \chi) \wedge natural(n) \wedge \exists x (\chi(x) \wedge piterate(\phi, n, c, x))
+      apply invoke natural_is_ordinal for n
+      split ordinal(n)
+      some x such \exists x (\chi(x) \wedge piterate(\phi, n, c, x)) {
+        split \chi(x) \wedge piterate(\phi, n, c, x)
+        apply invoke total(\phi, \chi) for x
+        some y such \exists y (\chi(y) \wedge \phi(x, y)) {
+          split \chi(y) \wedge \phi(x, y)
+          connect natural(n) \wedge piterate(\phi, n, c, x) \wedge \phi(x, y)
+          apply invoke piterate_induction_step for \phi, n, c, x, y
+          connect \chi(y) \wedge piterate(\phi, suc(n), c, y)
+          lift for y conclude \exists y (\chi(y) \wedge piterate(\phi, suc(n), c, y))
+        }
+      }
+    }
+  }
+}
+
+theorem piterate_exists \forall^P \phi[2] \forall^P \chi[1] \forall c (total(\phi, \chi) \wedge \chi(c) \to \forall n (natural(n) \to \exists x (\chi(x) \wedge piterate(\phi, n, c, x)))) {
+  any predicate \phi[2], predicate \chi[1], c {
+    assume total(\phi, \chi) \wedge \chi(c) {
+      split total(\phi, \chi) \wedge \chi(c)
+      apply piterate_base_step for \phi, c
+      connect \chi(c) \wedge piterate(\phi, emptyset, c, c)
+      lift for c conclude \exists x (\chi(x) \wedge piterate(\phi, emptyset, c, x))
+      any n {
+        assume natural(n) {
+          assume \exists x (\chi(x) \wedge piterate(\phi, n, c, x)) {
+            connect total(\phi, \chi) \wedge natural(n) \wedge \exists x (\chi(x) \wedge piterate(\phi, n, c, x))
+            apply invoke piterate_exists_induction_step for \phi, \chi, n, c
+          }
+        }
+      }
+      connect \exists x (\chi(x) \wedge piterate(\phi, emptyset, c, x)) \wedge \forall n (natural(n) \to (\exists x (\chi(x) \wedge piterate(\phi, n, c, x)) \to \exists x (\chi(x) \wedge piterate(\phi, suc(n), c, x))))
+      apply invoke natural_induction for \lambda^P n. \exists x (\chi(x) \wedge piterate(\phi, n, c, x))
+    }
+  }
+}
+
 theorem piterate_one_step \forall^P \phi[2] \forall x \forall y (\phi(x, y) \to piterate(\phi, suc(emptyset), x, y)) {
   any predicate \phi[2], x, y {
     assume \phi(x, y) {
@@ -176,6 +218,79 @@ theorem piterate_last_step \forall^P \phi[2] \forall n \forall c \forall y (natu
           substitute \phi(p, q) for q: y
           connect piterate(\phi, n, c, p) \wedge \phi(p, y)
           lift for p conclude \exists x (piterate(\phi, n, c, x) \wedge \phi(x, y))
+        }
+      }
+    }
+  }
+}
+
+theorem piterate_is_unique \forall^P \phi[2] \forall n \forall c \forall X \forall X' (natural(n) \wedge functional(\phi) \wedge piterate(\phi, n, c, X) \wedge piterate(\phi, n, c, X') \to equal(X, X'))  {
+  any predicate \phi[2], c, X, X' {
+    assume functional(\phi) \wedge piterate(\phi, emptyset, c, X) \wedge piterate(\phi, emptyset, c, X') {
+      split functional(\phi) \wedge piterate(\phi, emptyset, c, X) \wedge piterate(\phi, emptyset, c, X')
+      apply invoke piterate_is_unique_base_step for \phi, c, X
+      apply invoke piterate_is_unique_base_step for \phi, c, X'
+      substitute equal(X, c) for c: X'
+    }
+  }
+  any n {
+    assume natural(n) {
+      assume \forall^P \phi[2] \forall c \forall X \forall X' (functional(\phi) \wedge piterate(\phi, n, c, X) \wedge piterate(\phi, n, c, X') \to equal(X, X')) {
+        any predicate \phi[2], c, X, X' {
+          assume functional(\phi) \wedge piterate(\phi, suc(n), c, X) \wedge piterate(\phi, suc(n), c, X') {
+            split functional(\phi) \wedge piterate(\phi, suc(n), c, X) \wedge piterate(\phi, suc(n), c, X')
+            connect natural(n) \wedge piterate(\phi, suc(n), c, X)
+            apply invoke piterate_last_step for \phi, n, c, X
+            some Y such \exists Y (piterate(\phi, n, c, Y) \wedge \phi(Y, X)) {
+              split piterate(\phi, n, c, Y) \wedge \phi(Y, X)
+              connect natural(n) \wedge piterate(\phi, suc(n), c, X')
+              apply invoke piterate_last_step for \phi, n, c, X'
+              some Y' such \exists Y' (piterate(\phi, n, c, Y') \wedge \phi(Y', X')) {
+                split piterate(\phi, n, c, Y') \wedge \phi(Y', X')
+                connect functional(\phi) \wedge piterate(\phi, n, c, Y) \wedge piterate(\phi, n, c, Y')
+                apply invoke \forall^P \phi[2] \forall c \forall X \forall X' (functional(\phi) \wedge piterate(\phi, n, c, X) \wedge piterate(\phi, n, c, X') \to equal(X, X')) for \phi, c, Y, Y'
+                substitute \phi(Y', X') for Y': Y
+                connect \phi(Y, X) \wedge \phi(Y, X')
+                apply invoke functional(\phi) for Y, X, X'
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  connect \forall^P \phi[2] \forall c \forall X \forall X' (functional(\phi) \wedge piterate(\phi, emptyset, c, X) \wedge piterate(\phi, emptyset, c, X') \to equal(X, X')) \wedge \forall n (natural(n) \to (\forall^P \phi[2] \forall c \forall X \forall X' (functional(\phi) \wedge piterate(\phi, n, c, X) \wedge piterate(\phi, n, c, X') \to equal(X, X')) \to (\forall^P \phi[2] \forall c \forall X \forall X' (functional(\phi) \wedge piterate(\phi, suc(n), c, X) \wedge piterate(\phi, suc(n), c, X') \to equal(X, X')))))
+  apply invoke natural_induction for \lambda^P n. \forall^P \phi[2] \forall c \forall X \forall X' (functional(\phi) \wedge piterate(\phi, n, c, X) \wedge piterate(\phi, n, c, X') \to equal(X, X'))
+  any predicate \phi[2], n, c, X, X' {
+    assume natural(n) \wedge functional(\phi) \wedge piterate(\phi, n, c, X) \wedge piterate(\phi, n, c, X') {
+      split natural(n) \wedge functional(\phi) \wedge piterate(\phi, n, c, X) \wedge piterate(\phi, n, c, X')
+      apply invoke \forall n (natural(n) \to \forall^P \phi[2] \forall c \forall X \forall X' (functional(\phi) \wedge piterate(\phi, n, c, X) \wedge piterate(\phi, n, c, X') \to equal(X, X'))) for n
+      connect functional(\phi) \wedge piterate(\phi, n, c, X) \wedge piterate(\phi, n, c, X')
+      apply invoke \forall^P \phi[2] \forall c \forall X \forall X' (functional(\phi) \wedge piterate(\phi, n, c, X) \wedge piterate(\phi, n, c, X') \to equal(X, X')) for \phi, c, X, X'
+    }
+  }
+}
+
+theorem piterate_exists_uniquely \forall^P \phi[2] \forall^P \chi[1] \forall c (functional(\phi) \wedge total(\phi, \chi) \wedge \chi(c) \to \forall n (natural(n) \to \exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x))))) {
+  any predicate \phi[2], predicate \chi[1], c {
+    assume functional(\phi) \wedge total(\phi, \chi) \wedge \chi(c) {
+      split functional(\phi) \wedge total(\phi, \chi) \wedge \chi(c)
+      connect total(\phi, \chi) \wedge \chi(c)
+      apply invoke piterate_exists for \phi, \chi, c
+      any n {
+        assume natural(n) {
+          apply invoke \forall n (natural(n) \to \exists x (\chi(x) \wedge piterate(\phi, n, c, x))) for n
+          some x such \exists x (\chi(x) \wedge piterate(\phi, n, c, x)) {
+            split \chi(x) \wedge piterate(\phi, n, c, x)
+            any x' {
+              assume piterate(\phi, n, c, x') {
+                connect natural(n) \wedge functional(\phi) \wedge piterate(\phi, n, c, x) \wedge piterate(\phi, n, c, x')
+                apply invoke piterate_is_unique for \phi, n, c, x, x'
+              }
+            }
+            connect \chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x))
+            lift for x conclude \exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x)))
+          }
         }
       }
     }
@@ -296,25 +411,6 @@ theorem piterate_exists_uniquely_induction_step \forall^P \phi[2] \forall^P \chi
           lift for y conclude \exists y (\chi(y) \wedge piterate(\phi, suc(n), c, y) \wedge \forall y' (piterate(\phi, suc(n), c, y') \to equal(y', y)))
         }
       }
-    }
-  }
-}
-
-theorem piterate_exists_uniquely \forall^P \phi[2] \forall^P \chi[1] \forall c (functional(\phi) \wedge total(\phi, \chi) \wedge \chi(c) \to \forall n (natural(n) \to \exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x))))) {
-  any predicate \phi[2], predicate \chi[1], c {
-    assume functional(\phi) \wedge total(\phi, \chi) \wedge \chi(c) {
-      split functional(\phi) \wedge total(\phi, \chi) \wedge \chi(c)
-      apply invoke piterate_exists_uniquely_base_step for \phi, \chi, c
-      any n {
-        assume natural(n) {
-          assume \exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x))) {
-            connect functional(\phi) \wedge total(\phi, \chi) \wedge natural(n) \wedge \exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x)))
-            apply invoke piterate_exists_uniquely_induction_step for \phi, \chi, n, c
-          }
-        }
-      }
-      connect \exists x (\chi(x) \wedge piterate(\phi, emptyset, c, x) \wedge \forall x' (piterate(\phi, emptyset, c, x') \to equal(x', x))) \wedge \forall n (natural(n) \to (\exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x))) \to \exists x (\chi(x) \wedge piterate(\phi, suc(n), c, x) \wedge \forall x' (piterate(\phi, suc(n), c, x') \to equal(x', x)))))
-      apply invoke natural_induction for \lambda^P n. \exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x)))
     }
   }
 }

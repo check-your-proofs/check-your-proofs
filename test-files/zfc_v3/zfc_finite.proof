@@ -634,6 +634,135 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
   }
 }
 
+theorem finite_times_exists_uniquely \forall X \forall Y (finite(X) \wedge finite(Y) \to \exists! Z (finite(Z) \wedge times(X, Y, Z))) {
+  any X, Y {
+    assume finite(X) \wedge size(Y, emptyset) {
+      split finite(X) \wedge size(Y, emptyset)
+      apply invoke size_emptyset_implies_set_emptyset for Y
+      apply any_set_times_emptyset_is_emptyset for X
+      substitute times(X, emptyset, emptyset) for emptyset[1]: Y
+      assert emptyset_is_finite
+      connect finite(emptyset) \wedge times(X, Y, emptyset)
+      lift for emptyset conclude \exists Z (finite(Z) \wedge times(X, Y, Z))
+    }
+  }
+  any n {
+    assume natural(n) {
+      assume \forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge times(X, Y, Z))) {
+        any X, Y {
+          assume finite(X) \wedge size(Y, suc(n)) {
+            split finite(X) \wedge size(Y, suc(n))
+            apply invoke size_suc_decomposition for Y, n
+            some Y', q such \exists Y' \exists q (size(Y', n) \wedge notin(q, Y') \wedge equal(Y, adj(Y', q))) {
+              split size(Y', n) \wedge notin(q, Y') \wedge equal(Y, adj(Y', q))
+              connect finite(X) \wedge size(Y', n)
+              apply invoke \forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge times(X, Y, Z))) for X, Y'
+              some Z' such \exists Z' (finite(Z') \wedge times(X, Y', Z')) {
+                split finite(Z') \wedge times(X, Y', Z')
+                any x, z, z' {
+                  assume equal(z, op(x, q)) \wedge equal(z', op(x, q)) {
+                    split equal(z, op(x, q)) \wedge equal(z', op(x, q))
+                    substitute equal(z, op(x, q)) for op(x, q): z'
+                  }
+                }
+                fold for functional conclude functional(\lambda^P x, z. equal(z, op(x, q)))
+                connect finite(X) \wedge functional(\lambda^P x, z. equal(z, op(x, q)))
+                apply invoke finite_replacement_exists_uniquely for X, \lambda^P x, z. equal(z, op(x, q))
+                some Z'' such \exists! Z'' (finite(Z'') \wedge replacement(X, \lambda^P x, z. equal(z, op(x, q)), Z'')) {
+                  split finite(Z'') \wedge replacement(X, \lambda^P x, z. equal(z, op(x, q)), Z'')
+                  connect finite(Z') \wedge finite(Z'')
+                  apply invoke finite_cup_exists_uniquely for Z', Z''
+                  some Z such \exists! Z (finite(Z) \wedge cup(Z', Z'', Z)) {
+                    split finite(Z) \wedge cup(Z', Z'', Z)
+                    any z {
+                      assume in(z, Z) {
+                        apply invoke rightward cup(Z', Z'', Z) for z
+                        divide in(z, Z') \vee in(z, Z'')
+                          case in(z, Z') {
+                            apply invoke rightward times(X, Y', Z') for z
+                            some x, y such \exists x \exists y (in(x, X) \wedge in(y, Y') \wedge equal(z, op(x, y))) {
+                              split in(x, X) \wedge in(y, Y') \wedge equal(z, op(x, y))
+                              apply invoke adj_cor1 for Y', q, y
+                              substitute in(y, adj(Y', q)) for adj(Y', q): Y
+                              connect in(x, X) \wedge in(y, Y) \wedge equal(z, op(x, y))
+                              lift for x, y conclude \exists x \exists y (in(x, X) \wedge in(y, Y) \wedge equal(z, op(x, y)))
+                            }
+                          }
+                          case in(z, Z'') {
+                            apply invoke rightward replacement(X, \lambda^P x, z. equal(z, op(x, q)), Z'') for z
+                            some p such \exists p (in(p, X) \wedge equal(z, op(p, q))) {
+                              split in(p, X) \wedge equal(z, op(p, q))
+                              apply adj_cor3 for Y', q
+                              substitute in(q, adj(Y', q)) for adj(Y', q): Y
+                              connect in(p, X) \wedge in(q, Y) \wedge equal(z, op(p, q))
+                              lift for p, q conclude \exists x \exists y (in(x, X) \wedge in(y, Y) \wedge equal(z, op(x, y)))
+                            }
+                          }
+                      }
+                      assume \exists x \exists y (in(x, X) \wedge in(y, Y) \wedge equal(z, op(x, y))) {
+                        some x, y such \exists x \exists y (in(x, X) \wedge in(y, Y) \wedge equal(z, op(x, y))) {
+                          split in(x, X) \wedge in(y, Y) \wedge equal(z, op(x, y))
+                          substitute in(y, Y) for Y: adj(Y', q)
+                          apply invoke rightward adj_existence for Y', q, y
+                          divide in(y, Y') \vee equal(y, q)
+                            case in(y, Y') {
+                              connect in(x, X) \wedge in(y, Y') \wedge equal(z, op(x, y))
+                              lift for x, y conclude \exists x \exists y (in(x, X) \wedge in(y, Y') \wedge equal(z, op(x, y)))
+                              apply invoke leftward times(X, Y', Z') for z
+                              pad in(z, Z') conclude in(z, Z') \vee in(z, Z'')
+                              apply invoke leftward cup(Z', Z'', Z) for z
+                            }
+                            case equal(y, q) {
+                              substitute equal(z, op(x, y)) for y: q
+                              connect in(x, X) \wedge equal(z, op(x, q))
+                              lift for x conclude \exists x (in(x, X) \wedge equal(z, op(x, q)))
+                              apply invoke leftward replacement(X, \lambda^P x, z. equal(z, op(x, q)), Z'') for z
+                              pad in(z, Z'') conclude in(z, Z') \vee in(z, Z'')
+                              apply invoke leftward cup(Z', Z'', Z) for z
+                            }
+                        }
+                      }
+                      connect in(z, Z) \leftrightarrow \exists x \exists y (in(x, X) \wedge in(y, Y) \wedge equal(z, op(x, y)))
+                    }
+                    fold for times conclude times(X, Y, Z)
+                    connect finite(Z) \wedge times(X, Y, Z)
+                    lift for Z conclude \exists Z (finite(Z) \wedge times(X, Y, Z))
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  connect \forall X \forall Y (finite(X) \wedge size(Y, emptyset) \to \exists Z (finite(Z) \wedge times(X, Y, Z))) \wedge \forall n (natural(n) \to ((\forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge times(X, Y, Z)))) \to (\forall X \forall Y (finite(X) \wedge size(Y, suc(n)) \to \exists Z (finite(Z) \wedge times(X, Y, Z))))))
+  apply invoke natural_induction for \lambda^P n. \forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge times(X, Y, Z)))
+  any X, Y {
+    assume finite(X) \wedge finite(Y) {
+      split finite(X) \wedge finite(Y)
+      some n such finite(Y) {
+        split 1 size(Y, n)
+        apply invoke \forall n (natural(n) \to \forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge times(X, Y, Z)))) for n
+        connect finite(X) \wedge size(Y, n)
+        apply invoke \forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge times(X, Y, Z))) for X, Y
+        some Z such \exists Z (finite(Z) \wedge times(X, Y, Z)) {
+          split finite(Z) \wedge times(X, Y, Z)
+          any Z' {
+            assume finite(Z') \wedge times(X, Y, Z') {
+              split 2 finite(Z') \wedge times(X, Y, Z')
+              connect times(X, Y, Z) \wedge times(X, Y, Z')
+              apply invoke times_is_unique for X, Y, Z, Z'
+            }
+          }
+          connect finite(Z) \wedge times(X, Y, Z) \wedge \forall Z' (finite(Z') \wedge times(X, Y, Z') \to equal(Z', Z))
+          characterize for Z conclude \exists! Z (finite(Z) \wedge times(X, Y, Z))
+        }
+      }
+    }
+  }
+}
+
 theorem finite_powerset_exists_uniquely \forall X (finite(X) \to \exists! Y (finite(Y) \wedge powerset(X, Y))) {
   any X {
     assume size(X, emptyset) {

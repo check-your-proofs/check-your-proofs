@@ -195,3 +195,15 @@ theorem suc_of_natural_is_pnatural \forall n (natural(n) \to pnatural(suc(n))) {
     }
   }
 }
+
+theorem natural_trichotomy_in \forall m \forall n (natural(m) \wedge natural(n) \to in(m, n) \vee equal(m, n) \vee in(n, m)) {
+  any m, n {
+    assume natural(m) \wedge natural(n) {
+      split natural(m) \wedge natural(n)
+      apply invoke natural_is_ordinal for m
+      apply invoke natural_is_ordinal for n
+      connect ordinal(m) \wedge ordinal(n)
+      apply invoke ordinals_trichotomy_in for m, n
+    }
+  }
+}

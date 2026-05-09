@@ -215,7 +215,7 @@ theorem subset_of_hf_is_hf \forall x \forall y (hf(x) \wedge subset(y, x) \to hf
   }
 }
 
-theorem hf_satisfies_axiom_of_adjunction \forall x \forall y (hf(x) \wedge hf(y) \to \exists z (hf(z) \wedge \forall w (hf(w) \to (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y))))) {
+theorem adj_of_hf_is_hf \forall x \forall y (hf(x) \wedge hf(y) \to hf(adj(x, y))) {
   any x, y {
     assume hf(x) \wedge hf(y) {
       split hf(x) \wedge hf(y)
@@ -237,6 +237,14 @@ theorem hf_satisfies_axiom_of_adjunction \forall x \forall y (hf(x) \wedge hf(y)
       }
       connect finite(adj(x, y)) \wedge \forall p (in(p, adj(x, y)) \to hf(p))
       apply invoke finite_set_of_hf_is_hf for adj(x, y)
+    }
+  }
+}
+
+theorem hf_satisfies_axiom_of_adjunction \forall x \forall y (hf(x) \wedge hf(y) \to \exists z (hf(z) \wedge \forall w (hf(w) \to (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y))))) {
+  any x, y {
+    assume hf(x) \wedge hf(y) {
+      apply invoke adj_of_hf_is_hf for x, y
       any w {
         assume hf(w) {
           apply adj_existence for x, y, w

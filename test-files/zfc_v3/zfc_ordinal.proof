@@ -1,4 +1,4 @@
-include "zfc_cap.proof"
+include "zfc_setminus.proof"
 
 definition predicate trans(x) as \forall y \forall z (in(z, y) \wedge in(y, x) \to in(z, x))
 
@@ -180,6 +180,95 @@ theorem subset_of_wellfounded_is_wellfounded \forall^P \phi[2] \forall x \forall
         }
       }
       fold for wellfounded conclude wellfounded(y, \phi)
+    }
+  }
+}
+
+theorem subset_of_transrel_is_transrel \forall^P \phi[2] \forall x \forall y (transrel(x, \phi) \wedge subset(y, x) \to transrel(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume transrel(x, \phi) \wedge subset(y, x) {
+      split transrel(x, \phi) \wedge subset(y, x)
+      any p, q, r {
+        assume in(p, y) \wedge in(q, y) \wedge in(r, y) \wedge \phi(p, q) \wedge \phi(q, r) {
+          split in(p, y) \wedge in(q, y) \wedge in(r, y) \wedge \phi(p, q) \wedge \phi(q, r)
+          apply invoke subset(y, x) for p
+          apply invoke subset(y, x) for q
+          apply invoke subset(y, x) for r
+          connect in(p, x) \wedge in(q, x) \wedge in(r, x) \wedge \phi(p, q) \wedge \phi(q, r)
+          apply invoke transrel(x, \phi) for p, q, r
+        }
+      }
+      fold for transrel conclude transrel(y, \phi)
+    }
+  }
+}
+
+theorem subset_of_antisymrel_is_antisymrel \forall^P \phi[2] \forall x \forall y (antisymrel(x, \phi) \wedge subset(y, x) \to antisymrel(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume antisymrel(x, \phi) \wedge subset(y, x) {
+      split antisymrel(x, \phi) \wedge subset(y, x)
+      any p, q {
+        assume in(p, y) \wedge in(q, y) \wedge \phi(p, q) \wedge \phi(q, p) {
+          split in(p, y) \wedge in(q, y) \wedge \phi(p, q) \wedge \phi(q, p)
+          apply invoke subset(y, x) for p
+          apply invoke subset(y, x) for q
+          connect in(p, x) \wedge in(q, x) \wedge \phi(p, q) \wedge \phi(q, p)
+          apply invoke antisymrel(x, \phi) for p, q
+        }
+      }
+      fold for antisymrel conclude antisymrel(y, \phi)
+    }
+  }
+}
+
+
+theorem subset_of_order_is_order \forall^P \phi[2] \forall x \forall y (order(x, \phi) \wedge subset(y, x) \to order(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume order(x, \phi) \wedge subset(y, x) {
+      split order(x, \phi) \wedge subset(y, x)
+      split order(x, \phi)
+      connect transrel(x, \phi) \wedge subset(y, x)
+      apply invoke subset_of_transrel_is_transrel for \phi, x, y
+      connect antisymrel(x, \phi) \wedge subset(y, x)
+      apply invoke subset_of_antisymrel_is_antisymrel for \phi, x, y
+      connect order(y, \phi)
+    }
+  }
+}
+
+
+theorem subset_of_linorder_is_linorder \forall^P \phi[2] \forall x \forall y (linorder(x, \phi) \wedge subset(y, x) \to linorder(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume linorder(x, \phi) \wedge subset(y, x) {
+      split linorder(x, \phi) \wedge subset(y, x)
+      split linorder(x, \phi)
+      connect order(x, \phi) \wedge subset(y, x)
+      apply invoke subset_of_order_is_order for \phi, x, y
+      any p, q {
+        assume in(p, y) \wedge in(q, y) {
+          split in(p, y) \wedge in(q, y)
+          apply invoke subset(y, x) for p
+          apply invoke subset(y, x) for q
+          connect in(p, x) \wedge in(q, x)
+          apply invoke linorder_core(x, \phi) for p, q
+        }
+      }
+      fold for linorder_core conclude linorder_core(y, \phi)
+      connect linorder(y, \phi)
+    }
+  }
+}
+
+theorem subset_of_wellorder_is_wellorder \forall^P \phi[2] \forall x \forall y (wellorder(x, \phi) \wedge subset(y, x) \to wellorder(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume wellorder(x, \phi) \wedge subset(y, x) {
+      split wellorder(x, \phi) \wedge subset(y, x)
+      split wellorder(x, \phi)
+      connect wellfounded(x, \phi) \wedge subset(y, x)
+      apply invoke subset_of_wellfounded_is_wellfounded for \phi, x, y
+      connect linorder(x, \phi) \wedge subset(y, x)
+      apply invoke subset_of_linorder_is_linorder for \phi, x, y
+      connect wellorder(y, \phi)
     }
   }
 }

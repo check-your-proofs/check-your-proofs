@@ -114,3 +114,83 @@ theorem law_of_excluded_middle \forall^P\phi[0](\phi\vee\neg(\phi)) {
     }
   }
 }
+
+theorem contrapositive_is_equivalent \forall^P\phi[0]\forall^P\psi[0]((\phi\to\psi)\to(\neg(\psi)\to\neg(\phi))) {
+  any predicate \phi[0], predicate \psi[0] {
+    assume \phi\to\psi {
+      assume \neg(\psi) {
+        deny \phi {
+          invoke \phi\to\psi
+          contradict \psi
+        }
+      }
+    }
+  }
+}
+
+theorem contrapositive_is_equivalent_iff \forall^P\phi[0]\forall^P\psi[0]((\phi\leftrightarrow\psi)\to(\neg(\phi)\leftrightarrow\neg(\psi))) {
+  any predicate \phi[0], predicate \psi[0] {
+    assume \phi\leftrightarrow\psi {
+      split \phi\leftrightarrow\psi
+      apply invoke contrapositive_is_equivalent for \phi,\psi
+      apply invoke contrapositive_is_equivalent for \psi,\phi
+      connect \neg(\phi)\leftrightarrow\neg(\psi)
+    }
+  }
+}
+
+theorem neg_iff \forall^P \phi[0] \forall^P \psi[0] (\neg(\phi \leftrightarrow \psi) \leftrightarrow (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)) {
+  any predicate \phi[0], predicate \psi[0] {
+    assume \neg(\phi \leftrightarrow \psi) {
+      apply law_of_excluded_middle for \phi
+      divide \phi \vee \neg(\phi)
+        case \phi {
+          deny \psi {
+            assume \phi {
+              assert \psi
+            }
+            assume \psi {
+              assert \phi
+            }
+            connect \phi \leftrightarrow \psi
+            contradict \phi \leftrightarrow \psi
+          }
+          connect \phi \wedge \neg(\psi)
+          pad \phi \wedge \neg(\psi) conclude (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)
+        }
+        case \neg(\phi) {
+          deny \neg(\psi) {
+            assume \neg(\phi) {
+              assert \neg(\psi)
+            }
+            assume \neg(\psi) {
+              assert \neg(\phi)
+            }
+            connect \neg(\phi) \leftrightarrow \neg(\psi)
+            apply invoke contrapositive_is_equivalent_iff for \lambda^P. \neg(\phi), \lambda^P. \neg(\psi)
+            contradict \phi \leftrightarrow \psi
+          }
+          connect \neg(\phi) \wedge \psi
+          pad \neg(\phi) \wedge \psi conclude (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)
+        }
+    }
+    assume (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi) {
+      divide (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)
+        case \phi \wedge \neg(\psi) {
+          split \phi \wedge \neg(\psi)
+          deny \phi \leftrightarrow \psi {
+            invoke rightward \phi \leftrightarrow \psi
+            contradict \psi
+          }
+        }
+        case \neg(\phi) \wedge \psi {
+          split \neg(\phi) \wedge \psi
+          deny \phi \leftrightarrow \psi {
+            invoke leftward \phi \leftrightarrow \psi
+            contradict \phi
+          }
+        }
+    }
+    connect \neg(\phi \leftrightarrow \psi) \leftrightarrow (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)
+  }
+}

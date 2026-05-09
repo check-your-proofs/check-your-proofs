@@ -47,6 +47,42 @@ theorem set_exists_implies_set_exists_uniquely \forall^P \phi[1] (\exists x \for
   }
 }
 
+theorem neg_equal \forall x \forall y (neq(x, y) \leftrightarrow \exists z ((in(z, x) \wedge notin(z, y)) \vee (notin(z, x) \wedge in(z, y)))) {
+  any x, y {
+    assume neq(x, y) {
+      deny \forall z (in(z, x) \leftrightarrow in(z, y)) {
+        apply invoke axiom_of_extensionality for x, y
+        contradict equal(x, y)
+      }
+      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P z. in(z, x) \leftrightarrow in(z, y)
+      some z such \exists z (\neg(in(z, x) \leftrightarrow in(z, y))) {
+        apply invoke rightward neg_iff for \lambda^P. in(z, x), \lambda^P. in(z, y)
+        lift for z conclude \exists z ((in(z, x) \wedge notin(z, y)) \vee (notin(z, x) \wedge in(z, y)))
+      }
+    }
+    assume \exists z ((in(z, x) \wedge notin(z, y)) \vee (notin(z, x) \wedge in(z, y))) {
+      some z such \exists z ((in(z, x) \wedge notin(z, y)) \vee (notin(z, x) \wedge in(z, y))) {
+        apply invoke leftward neg_iff for \lambda^P. in(z, x), \lambda^P. in(z, y)
+        lift for z conclude \exists z (\neg(in(z, x) \leftrightarrow in(z, y)))
+      }
+      apply invoke rightward exist_neg_leftrightarrow_neg_forall for \lambda^P z. in(z, x) \leftrightarrow in(z, y)
+      deny equal(x, y) {
+        any z {
+          assume in(z, x) {
+            substitute in(z, x) for x: y
+          }
+          assume in(z, y) {
+            substitute in(z, y) for y: x
+          }
+          connect in(z, x) \leftrightarrow in(z, y)
+        }
+        contradict \forall z (in(z, x) \leftrightarrow in(z, y))
+      }
+    }
+    connect neq(x, y) \leftrightarrow \exists z ((in(z, x) \wedge notin(z, y)) \vee (notin(z, x) \wedge in(z, y)))
+  }
+}
+
 definition predicate subset(x, y) as \forall z (in(z, x) \to in(z, y)) tex infix "\subset"
 
 theorem subset_reflexivity \forall x (subset(x, x)) {
@@ -88,5 +124,75 @@ theorem subset_antisymmetry \forall x \forall y (subset(x, y) \wedge subset(y, x
       }
       apply invoke axiom_of_extensionality for x, y
     }
+  }
+}
+
+theorem equal_implies_subset \forall x \forall y (equal(x, y) \to subset(x, y)) {
+  any x, y {
+    assume equal(x, y) {
+      apply subset_reflexivity for x
+      substitute subset(x, x) for x[2]: y
+    }
+  }
+}
+
+theorem neg_subset \forall x \forall y (\neg(subset(x, y)) \leftrightarrow \exists z (in(z, x) \wedge notin(z, y))) {
+  any x, y {
+    assume \neg(subset(x, y)) {
+      deny \forall z (in(z, x) \to in(z, y)) {
+        fold for subset conclude subset(x, y)
+        contradict subset(x, y)
+      }
+      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P z. in(z, x) \to in(z, y)
+      some z such \exists z (\neg(in(z, x) \to in(z, y))) {
+        apply invoke rightward neg_implication for \lambda^P. in(z, x), \lambda^P. in(z, y)
+        lift for z conclude \exists z (in(z, x) \wedge notin(z, y))
+      }
+    }
+    assume \exists z (in(z, x) \wedge notin(z, y)) {
+      some z such \exists z (in(z, x) \wedge notin(z, y)) {
+        apply invoke leftward neg_implication for \lambda^P. in(z, x), \lambda^P. in(z, y)
+        lift for z conclude \exists z (\neg(in(z, x) \to in(z, y)))
+      }
+      apply invoke rightward exist_neg_leftrightarrow_neg_forall for \lambda^P z. in(z, x) \to in(z, y)
+      deny subset(x, y) {
+        any z {
+          assume in(z, x) {
+            apply invoke subset(x, y) for z
+          }
+        }
+        contradict \neg(\forall z (in(z, x) \to in(z, y)))
+      }
+    }
+    connect \neg(subset(x, y)) \leftrightarrow \exists z (in(z, x) \wedge notin(z, y))
+  }
+}
+
+definition predicate subsetneq(x, y) as subset(x, y) \wedge neq(x, y) tex infix "\subsetneq"
+
+theorem subset_iff_subsetneq_vee_equal \forall x \forall y (subset(x, y) \leftrightarrow subsetneq(x, y) \vee equal(x, y)) {
+  any x, y {
+    assume subset(x, y) {
+      apply law_of_excluded_middle for \lambda^P. equal(x, y)
+      divide equal(x, y) \vee neq(x, y)
+        case equal(x, y) {
+          pad equal(x, y) conclude subsetneq(x, y) \vee equal(x, y)
+        }
+        case neq(x, y) {
+          connect subsetneq(x, y)
+          pad subsetneq(x, y) conclude subsetneq(x, y) \vee equal(x, y)
+        }
+    }
+    assume subsetneq(x, y) \vee equal(x, y) {
+      divide subsetneq(x, y) \vee equal(x, y)
+        case subsetneq(x, y) {
+          split 1 subsetneq(x, y)
+        }
+        case equal(x, y) {
+          apply subset_reflexivity for x
+          substitute subset(x, x) for x[2]: y
+        }
+    }
+    connect subset(x, y) \leftrightarrow subsetneq(x, y) \vee equal(x, y)
   }
 }

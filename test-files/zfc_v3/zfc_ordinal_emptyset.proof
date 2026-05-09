@@ -1,4 +1,4 @@
-include "zfc_ordinal.proof"
+include "zfc_ordinal_trichotomy.proof"
 
 theorem emptyset_is_trans trans(emptyset) {
   any n, m {
