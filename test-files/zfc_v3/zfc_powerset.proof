@@ -10,3 +10,60 @@ theorem powerset_is_unique \forall X \forall Y \forall Y' (powerset(X, Y) \wedge
     }
   }
 }
+
+theorem powerset_is_functional functional(powerset) {
+  assert powerset_is_unique
+  fold for functional conclude functional(powerset)
+}
+
+theorem trans_implies_subset_of_powerset \forall X \forall Y (trans(X) \wedge powerset(X, Y) \to subset(X, Y)) {
+  any X, Y {
+    assume trans(X) \wedge powerset(X, Y) {
+      split trans(X) \wedge powerset(X, Y)
+      any x {
+        assume in(x, X) {
+          apply invoke rightward trans_iff_element_is_subset for X
+          apply invoke \forall x (in(x, X) \to subset(x, X)) for x
+          apply invoke leftward powerset(X, Y) for x
+        }
+      }
+      fold for subset conclude subset(X, Y)
+    }
+  }
+}
+
+theorem trans_implies_powerset_trans \forall X \forall Y (trans(X) \wedge powerset(X, Y) \to trans(Y)) {
+  any X, Y {
+    assume trans(X) \wedge powerset(X, Y) {
+      split trans(X) \wedge powerset(X, Y)
+      any p, q {
+        assume in(p, Y) \wedge in(q, p) {
+          split in(p, Y) \wedge in(q, p)
+          apply invoke rightward powerset(X, Y) for p
+          apply invoke subset(p, X) for q
+          apply invoke rightward trans_iff_element_is_subset for X, q
+          apply invoke \forall x (in(x, X) \to subset(x, X)) for q
+          apply invoke leftward powerset(X, Y) for q
+        }
+      }
+      fold for trans conclude trans(Y)
+    }
+  }
+}
+
+theorem powerset_emptyset_is_singleton_emptyset powerset(emptyset, singleton(emptyset)) {
+  any x {
+    assume in(x, singleton(emptyset)) {
+      apply invoke rightward singleton_characterization for emptyset, x
+      apply subset_reflexivity for emptyset
+      substitute subset(emptyset, emptyset) for emptyset[1]: x
+    }
+    assume subset(x, emptyset) {
+      apply invoke subset_of_emptyset_is_emptyset for x
+      apply singleton_cor1 for emptyset
+      substitute in(emptyset, singleton(emptyset)) for emptyset[1]: x
+    }
+    connect in(x, singleton(emptyset)) \leftrightarrow subset(x, emptyset)
+  }
+  fold for powerset conclude powerset(emptyset, singleton(emptyset))
+}

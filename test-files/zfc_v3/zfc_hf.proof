@@ -407,7 +407,7 @@ theorem hf_satisfies_axiom_of_replacement \forall^P \psi[2] (\forall x \forall y
   }
 }
 
-theorem hf_satisfies_axiom_of_powerset \forall x (hf(x) \to \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow subset(z, x))))) {
+theorem hf_poweset_exists \forall x (hf(x) \to \exists y (hf(y) \wedge powerset(x, y))) {
   any x {
     assume hf(x) {
       apply invoke hf_is_irrefrel_wellfounded_finite for x
@@ -424,6 +424,20 @@ theorem hf_satisfies_axiom_of_powerset \forall x (hf(x) \to \exists y (hf(y) \we
         }
         connect finite(y) \wedge \forall z (in(z, y) \to hf(z))
         apply invoke finite_set_of_hf_is_hf for y
+        connect hf(y) \wedge powerset(x, y)
+        lift for y conclude \exists y (hf(y) \wedge powerset(x, y))
+      }
+    }
+  }
+}
+
+
+theorem hf_satisfies_axiom_of_powerset \forall x (hf(x) \to \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow subset(z, x))))) {
+  any x {
+    assume hf(x) {
+      apply invoke hf_poweset_exists for x
+      some y such \exists y (hf(y) \wedge powerset(x, y)) {
+        split hf(y) \wedge powerset(x, y)
         any z {
           assume hf(z) {
             apply powerset(x, y) for z

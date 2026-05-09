@@ -763,7 +763,7 @@ theorem finite_times_exists_uniquely \forall X \forall Y (finite(X) \wedge finit
   }
 }
 
-theorem finite_powerset_exists_uniquely \forall X (finite(X) \to \exists! Y (finite(Y) \wedge powerset(X, Y))) {
+theorem finite_powerset_exists \forall X (finite(X) \to \exists Y (finite(Y) \wedge powerset(X, Y))) {
   any X {
     assume size(X, emptyset) {
       apply invoke size_emptyset_implies_set_emptyset for X
@@ -881,18 +881,31 @@ theorem finite_powerset_exists_uniquely \forall X (finite(X) \to \exists! Y (fin
         split 1 size(X, n)
         apply invoke \forall n (natural(n) \to \forall X (size(X, n) \to \exists Y (finite(Y) \wedge powerset(X, Y)))) for n
         apply invoke \forall X (size(X, n) \to \exists Y (finite(Y) \wedge powerset(X, Y))) for X
-        some Y such \exists Y (finite(Y) \wedge powerset(X, Y)) {
-          split finite(Y) \wedge powerset(X, Y)
-          any Y' {
-            assume finite(Y') \wedge powerset(X, Y') {
-              split 2 finite(Y') \wedge powerset(X, Y')
-              connect powerset(X, Y) \wedge powerset(X, Y')
-              apply invoke powerset_is_unique for X, Y, Y'
-            }
+      }
+    }
+  }
+}
+
+theorem powerset_is_total_on_finite total(powerset, finite) {
+  assert finite_powerset_exists
+  fold for total conclude total(powerset, finite)
+}
+
+theorem finite_powerset_exists_uniquely \forall X (finite(X) \to \exists! Y (finite(Y) \wedge powerset(X, Y))) {
+  any X {
+    assume finite(X) {
+      apply invoke finite_powerset_exists for X
+      some Y such \exists Y (finite(Y) \wedge powerset(X, Y)) {
+        split finite(Y) \wedge powerset(X, Y)
+        any Y' {
+          assume finite(Y') \wedge powerset(X, Y') {
+            split finite(Y') \wedge powerset(X, Y')
+            connect powerset(X, Y) \wedge powerset(X, Y')
+            apply invoke powerset_is_unique for X, Y, Y'
           }
-          connect finite(Y) \wedge powerset(X, Y) \wedge \forall Y' (finite(Y') \wedge powerset(X, Y') \to equal(Y', Y))
-          characterize for Y conclude \exists! Y (finite(Y) \wedge powerset(X, Y))
         }
+        connect finite(Y) \wedge powerset(X, Y) \wedge \forall Y' (finite(Y') \wedge powerset(X, Y') \to equal(Y', Y))
+        characterize for Y conclude \exists! Y (finite(Y) \wedge powerset(X, Y))
       }
     }
   }
