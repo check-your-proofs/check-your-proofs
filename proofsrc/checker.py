@@ -564,6 +564,9 @@ class Checker:
             logger.debug(f"{debug_prefix}Drivable fact: {ExprFormatter(context).pretty_expr(node.fact)}")
         fact = get_fact(node.fact, context, node, True)
         items, body = strip_forall_vars(fact)
+        if len(items) != len(node.terms):
+            msg = f"Formula has {len(items)} forall vars, but {len(node.terms)} terms are given"
+            raise CheckError(node, msg)
         body = make_forall_vars(body, [item for item, term in zip(items, node.terms) if term is None])
         mapping: dict[Term, Term] = {}
         for item, term in zip(items, node.terms):
@@ -630,6 +633,9 @@ class Checker:
             msg = f"Expected Exists, got {type(conclusion)}"
             raise CheckError(node, msg)
         items, body = strip_exists_vars(conclusion, Exists)
+        if len(items) != len(node.varterms):
+            msg = f"Formula has {len(items)} exists vars, but {len(node.varterms)} terms are given"
+            raise CheckError(node, msg)
         body = make_exists_vars(body, Exists, [item for item, term in zip(items, node.varterms) if term is None])
         mapping: dict[Term, Term] = {item: term for item, term in zip(items, node.varterms) if term is not None}
         renamed_body, renamed_mapping = alpha_safe_formula(body, mapping, context)
