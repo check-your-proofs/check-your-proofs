@@ -488,6 +488,7 @@ class Parser:
         items: list[Var | None] = []
         while True:
             if self.stream.peek().type == "UNDERSCORE":
+                self.stream.consume("UNDERSCORE")
                 items.append(None)
             else:
                 items.append(self.parse_var())
@@ -867,6 +868,7 @@ class Parser:
         terms: list[Term | None] = []
         while True:
             if self.stream.peek().type == "UNDERSCORE":
+                self.stream.consume("UNDERSCORE")
                 terms.append(None)
             else:
                 terms.append(self.parse_term(context))
@@ -887,6 +889,7 @@ class Parser:
         varterms: list[VarTerm | None] = []
         while True:
             if self.stream.peek().type == "UNDERSCORE":
+                self.stream.consume("UNDERSCORE")
                 varterms.append(None)
             else:
                 varterms.append(self.parse_var_term(context))
