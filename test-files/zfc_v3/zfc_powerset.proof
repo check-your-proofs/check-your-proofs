@@ -41,7 +41,7 @@ theorem trans_implies_powerset_trans \forall X \forall Y (trans(X) \wedge powers
           split in(p, Y) \wedge in(q, p)
           apply invoke rightward powerset(X, Y) for p
           apply invoke subset(p, X) for q
-          apply invoke rightward trans_iff_element_is_subset for X, q
+          apply invoke rightward trans_iff_element_is_subset for X
           apply invoke \forall x (in(x, X) \to subset(x, X)) for q
           apply invoke leftward powerset(X, Y) for q
         }

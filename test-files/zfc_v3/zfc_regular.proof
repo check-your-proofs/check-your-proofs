@@ -386,7 +386,7 @@ theorem regular_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (regul
         apply invoke leftward regular_iff_existence_of_irrefrel_wellfounded_tcm for sep(x, \phi)
         any z {
           assume regular(z) {
-            apply sep_existence for x, \phi
+            apply sep_existence for x, \phi, z
           }
         }
         connect regular(sep(x, \phi)) \wedge \forall z (regular(z) \to (in(z, sep(x, \phi)) \leftrightarrow in(z, x) \wedge \phi(z)))

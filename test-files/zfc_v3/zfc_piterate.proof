@@ -127,7 +127,7 @@ theorem piterate_exists \forall^P \phi[2] \forall^P \chi[1] \forall c (total(\ph
 theorem piterate_one_step \forall^P \phi[2] \forall x \forall y (\phi(x, y) \to piterate(\phi, suc(emptyset), x, y)) {
   any predicate \phi[2], x, y {
     assume \phi(x, y) {
-      apply piterate_base_step for \phi, x, x
+      apply piterate_base_step for \phi, x
       assert emptyset_is_natural
       connect natural(emptyset) \wedge piterate(\phi, emptyset, x, x) \wedge \phi(x, y)
       apply invoke piterate_induction_step for \phi, emptyset, x, x, y
@@ -327,7 +327,7 @@ theorem piterate_first_step \forall^P \phi[2] \forall n \forall c \forall y (nat
               some x such \exists x (\phi(c, x) \wedge piterate(\phi, n, x, z)) {
                 split \phi(c, x) \wedge piterate(\phi, n, x, z)
                 connect natural(n) \wedge piterate(\phi, n, x, z) \wedge \phi(z, y)
-                apply invoke piterate_induction_step for \phi, n, x, z
+                apply invoke piterate_induction_step for \phi, n, x, z, y
                 connect \phi(c, x) \wedge piterate(\phi, suc(n), x, y)
                 lift for x conclude \exists x (\phi(c, x) \wedge piterate(\phi, suc(n), x, y))
               }
