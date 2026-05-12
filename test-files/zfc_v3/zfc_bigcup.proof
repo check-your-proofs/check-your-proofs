@@ -13,3 +13,8 @@ theorem bigcup_is_unique \forall X \forall Y \forall Y' (bigcup(X, Y) \wedge big
     }
   }
 }
+
+theorem bigcup_is_functional functional(bigcup) {
+  assert bigcup_is_unique
+  fold for functional conclude functional(bigcup)
+}

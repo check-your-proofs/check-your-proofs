@@ -285,7 +285,7 @@ theorem hf_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (hf(x) \to 
   }
 }
 
-theorem hf_satisfies_axiom_of_union \forall x (hf(x) \to \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow \exists w (hf(w) \wedge in(z, w) \wedge in(w, x)))))) {
+theorem hf_bigcup_exists \forall x (hf(x) \to \exists y (hf(y) \wedge bigcup(x, y))) {
   any x {
     assume hf(x) {
       apply invoke hf_is_irrefrel_wellfounded_finite for x
@@ -316,6 +316,53 @@ theorem hf_satisfies_axiom_of_union \forall x (hf(x) \to \exists y (hf(y) \wedge
         }
         connect finite(y) \wedge \forall p (in(p, y) \to hf(p))
         apply invoke finite_set_of_hf_is_hf for y
+        connect hf(y) \wedge bigcup(x, y)
+        lift for y conclude \exists y (hf(y) \wedge bigcup(x, y))
+      }
+    }
+  }
+}
+
+theorem bigcup_is_total_on_hf total(bigcup, hf) {
+  assert hf_bigcup_exists
+  fold for total conclude total(bigcup, hf)
+}
+
+theorem hf_bigcup_piterate_exists \forall X (hf(X) \to \forall n (natural(n) \to \exists u (hf(u) \wedge piterate(bigcup, n, X, u)))) {
+  any X {
+    assume hf(X) {
+      assert bigcup_is_total_on_hf
+      assert emptyset_is_hf
+      connect total(bigcup, hf) \wedge hf(X)
+      apply invoke piterate_exists for bigcup, hf, X
+    }
+  }
+}
+
+theorem hf_implies_hbigcup \forall X (hf(X) \to hbigcup(X)) {
+  any X {
+    assume hf(X) {
+      apply invoke hf_bigcup_piterate_exists for X
+      any n {
+        assume natural(n) {
+          apply invoke \forall n (natural(n) \to \exists u (hf(u) \wedge piterate(bigcup, n, X, u))) for n
+          some u such \exists u (hf(u) \wedge piterate(bigcup, n, X, u)) {
+            split hf(u) \wedge piterate(bigcup, n, X, u)
+            lift for u conclude \exists u (piterate(bigcup, n, X, u))
+          }
+        }
+      }
+      fold for hbigcup conclude hbigcup(X)
+    }
+  }
+}
+
+theorem hf_satisfies_axiom_of_union \forall x (hf(x) \to \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow \exists w (hf(w) \wedge in(z, w) \wedge in(w, x)))))) {
+  any x {
+    assume hf(x) {
+      apply invoke hf_bigcup_exists for x
+      some y such \exists y (hf(y) \wedge bigcup(x, y)) {
+        split hf(y) \wedge bigcup(x, y)
         any z {
           assume hf(z) {
             assume in(z, y) {
