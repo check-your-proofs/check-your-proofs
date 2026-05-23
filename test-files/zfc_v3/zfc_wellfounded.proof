@@ -1,0 +1,254 @@
+include "zfc_setminus.proof"
+
+definition predicate irrefrel(X, predicate \psi[2]) as \forall x (in(x, X) \to \neg(\psi(x, x)))
+
+theorem subset_of_irrefrel_is_irrefrel \forall^P \phi[2] \forall x \forall y (irrefrel(x, \phi) \wedge subset(y, x) \to irrefrel(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume irrefrel(x, \phi) \wedge subset(y, x) {
+      split irrefrel(x, \phi) \wedge subset(y, x)
+      any z {
+        assume in(z, y) {
+          apply invoke subset(y, x) for z
+          apply invoke irrefrel(x, \phi) for z
+        }
+      }
+      fold for irrefrel conclude irrefrel(y, \phi)
+    }
+  }
+}
+
+theorem irrefrel_not_contain_itself \forall x (irrefrel(x, in) \to notin(x, x)) {
+  any x {
+    assume irrefrel(x, in) {
+      deny in(x, x) {
+        apply invoke irrefrel(x, in) for x
+        contradict in(x, x)
+      }
+    }
+  }
+}
+
+definition predicate minimal_core(predicate \psi[2], A, a) as \forall x (in(x, A) \wedge neq(x, a) \to \neg(\psi(x, a)))
+
+definition predicate minimal(predicate \psi[2], A, a) as in(a, A) \wedge minimal_core(\psi, A, a)
+
+definition predicate wellfounded(X, predicate \psi[2]) as \forall A (subset(A, X) \wedge neq(A, emptyset) \to \exists a (minimal(\psi, A, a)))
+
+theorem subset_of_wellfounded_is_wellfounded \forall^P \phi[2] \forall x \forall y (wellfounded(x, \phi) \wedge subset(y, x) \to wellfounded(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume wellfounded(x, \phi) \wedge subset(y, x) {
+      split wellfounded(x, \phi) \wedge subset(y, x)
+      any A {
+        assume subset(A, y) \wedge neq(A, emptyset) {
+          split subset(A, y) \wedge neq(A, emptyset)
+          connect subset(A, y) \wedge subset(y, x)
+          apply invoke subset_transivity for A, y, x
+          connect subset(A, x) \wedge neq(A, emptyset)
+          apply invoke wellfounded(x, \phi) for A
+        }
+      }
+      fold for wellfounded conclude wellfounded(y, \phi)
+    }
+  }
+}
+
+definition predicate closed(X, predicate \psi[2]) as \forall x \forall y (in(x, X) \wedge \psi(y, x) \to in(y, X))
+
+theorem wellfounded_induction \forall^P \psi[2] \forall^P \chi[1] \forall X (closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x))) \to \forall x (in(x, X) \to \chi(x))) {
+  any predicate \psi[2], predicate \chi[1], X {
+    assume closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x))) {
+      split closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x)))
+      deny \neg(\forall x (in(x, X) \to \chi(x))) {
+        apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. in(x, X) \to \chi(x)
+        some x such \exists x (\neg(in(x, X) \to \chi(x))) {
+          apply invoke rightward neg_implication for \lambda^P. in(x, X), \lambda^P. \chi(x)
+          split in(x, X) \wedge \neg(\chi(x))
+          apply sep_is_subset for X, \lambda^P y. \neg(\chi(y))
+          apply in_suc for x
+          connect in(x, suc(x)) \wedge \neg(\chi(x))
+          apply invoke leftward sep_existence for X, \lambda^P y. \neg(\chi(y)), x
+          lift for x conclude \exists z (in(z, sep(X, \lambda^P y. \neg(\chi(y)))))
+          apply invoke has_a_member_not_emptyset for sep(X, \lambda^P y. \neg(\chi(y)))
+          connect subset(sep(X, \lambda^P y. \neg(\chi(y))), X) \wedge neq(sep(X, \lambda^P y. \neg(\chi(y))), emptyset)
+          apply invoke wellfounded(X, \psi) for sep(X, \lambda^P y. \neg(\chi(y)))
+          some z such \exists z (minimal(\psi, sep(X, \lambda^P y. \neg(\chi(y))), z)) {
+            split minimal(\psi, sep(X, \lambda^P y. \neg(\chi(y))), z)
+            apply invoke rightward sep_existence for X, \lambda^P y. \neg(\chi(y)), z
+            split in(z, X) \wedge \neg(\chi(z))
+            any y {
+              assume \psi(y, z) {
+                connect in(z, X) \wedge \psi(y, z)
+                apply invoke closed(X, \psi) for z, y
+                deny equal(y, z) {
+                  substitute \psi(y, z) for y: z
+                  apply invoke irrefrel(X, \psi) for z
+                  contradict \psi(z, z)
+                }
+                deny \neg(\chi(y)) {
+                  connect in(y, X) \wedge \neg(\chi(y))
+                  apply invoke leftward sep_existence for X, \lambda^P m. \neg(\chi(m)), y
+                  connect in(y, sep(X, \lambda^P m. \neg(\chi(m)))) \wedge neq(y, z)
+                  apply invoke minimal_core(\psi, sep(X, \lambda^P m. \neg(\chi(m))), z) for y
+                  contradict \psi(y, z)
+                }
+              }
+            }
+            apply invoke \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x))) for z
+            invoke \forall y (\psi(y, z) \to \chi(y)) \to \chi(z)
+            contradict \neg(\chi(z))
+          }
+        }
+      }
+    }
+  }
+}
+
+definition predicate psubset(predicate \chi[1], predicate \phi[1]) as \forall x (\chi(x) \to \phi(x))
+
+definition predicate pirrefrel(predicate \phi[1], predicate \psi[2]) as \forall x (\phi(x) \to \neg(\psi(x, x)))
+
+theorem psubset_of_pirrefrel_is_pirrefrel \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (pirrefrel(\phi, \psi) \wedge psubset(\chi, \phi) \to pirrefrel(\chi, \psi)) {
+  any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
+    assume pirrefrel(\phi, \psi) \wedge psubset(\chi, \phi) {
+      split pirrefrel(\phi, \psi) \wedge psubset(\chi, \phi)
+      any x {
+        assume \chi(x) {
+          apply invoke psubset(\chi, \phi) for x
+          apply invoke pirrefrel(\phi, \psi) for x
+        }
+      }
+      fold for pirrefrel conclude pirrefrel(\chi, \psi)
+    }
+  }
+}
+
+definition predicate pwellfounded(predicate \phi[1], predicate \psi[2]) as \forall A ((\forall x (in(x, A) \to \phi(x))) \wedge neq(A, emptyset) \to \exists a (minimal(\psi, A, a)))
+
+theorem psubset_of_pwellfounded_is_pwellfounded \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (pwellfounded(\phi, \psi) \wedge psubset(\chi, \phi) \to pwellfounded(\chi, \psi)) {
+  any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
+    assume pwellfounded(\phi, \psi) \wedge psubset(\chi, \phi) {
+      split pwellfounded(\phi, \psi) \wedge psubset(\chi, \phi)
+      any A {
+        assume \forall x (in(x, A) \to \chi(x)) \wedge neq(A, emptyset) {
+          split \forall x (in(x, A) \to \chi(x)) \wedge neq(A, emptyset)
+          any x {
+            assume in(x, A) {
+              apply invoke \forall x (in(x, A) \to \chi(x)) for x
+              apply invoke psubset(\chi, \phi) for x
+            }
+          }
+          connect \forall x (in(x, A) \to \phi(x)) \wedge neq(A, emptyset)
+          apply invoke pwellfounded(\phi, \psi) for A
+        }
+      }
+      fold for pwellfounded conclude pwellfounded(\chi, \psi)
+    }
+  }
+}
+
+definition predicate pclosed(predicate \phi[1], predicate \psi[2]) as \forall x \forall y (\phi(x) \wedge \psi(y, x) \to \phi(y))
+
+definition predicate tcset(x, predicate \psi[2], t) as closed(t, \psi) \wedge \forall y (\psi(y, x) \to in(y, t)) \wedge \forall s (closed(s, \psi) \wedge \forall y (\psi(y, x) \to in(y, s)) \to subset(t, s))
+
+theorem tcset_is_unique \forall x \forall^P \psi[2] \forall t \forall t' (tcset(x, \psi, t) \wedge tcset(x, \psi, t') \to equal(t, t')) {
+  any x, predicate \psi[2], t, t' {
+    assume tcset(x, \psi, t) \wedge tcset(x, \psi, t') {
+      split tcset(x, \psi, t) \wedge tcset(x, \psi, t')
+      split tcset(x, \psi, t)
+      split tcset(x, \psi, t')
+      connect closed(t', \psi) \wedge \forall y (\psi(y, x) \to in(y, t'))
+      apply invoke \forall s (closed(s, \psi) \wedge \forall y (\psi(y, x) \to in(y, s)) \to subset(t, s)) for t'
+      connect closed(t, \psi) \wedge \forall y (\psi(y, x) \to in(y, t))
+      apply invoke \forall s (closed(s, \psi) \wedge \forall y (\psi(y, x) \to in(y, s)) \to subset(t', s)) for t
+      connect subset(t, t') \wedge subset(t', t)
+      apply invoke subset_antisymmetry for t, t'
+    }
+  }
+}
+
+definition predicate tcsetlike(predicate \phi[1], predicate \psi[2]) as \forall x (\phi(x) \to \exists t (tcset(x, \psi, t)))
+
+theorem psubset_of_tcsetlike_is_tcsetlike \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (tcsetlike(\phi, \psi) \wedge psubset(\chi, \phi) \to tcsetlike(\chi, \psi)) {
+  any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
+    assume tcsetlike(\phi, \psi) \wedge psubset(\chi, \phi) {
+      split tcsetlike(\phi, \psi) \wedge psubset(\chi, \phi)
+      any x {
+        assume \chi(x) {
+          apply invoke psubset(\chi, \phi) for x
+          apply invoke tcsetlike(\phi, \psi) for x
+        }
+      }
+      fold for tcsetlike conclude tcsetlike(\chi, \psi)
+    }
+  }
+}
+
+theorem pwellfounded_induction \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (tcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\phi(y) \wedge \psi(y, x) \to \chi(y)) \to \chi(x)) \to \forall x (\phi(x) \to \chi(x))) {
+  any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
+    assume tcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\phi(y) \wedge \psi(y, x) \to \chi(y)) \to \chi(x)) {
+      split tcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\phi(y) \wedge \psi(y, x) \to \chi(y)) \to \chi(x))
+      deny \neg(\forall x (\phi(x) \to \chi(x))) {
+        apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. \phi(x) \to \chi(x)
+        some x such \exists x (\neg(\phi(x) \to \chi(x))) {
+          apply invoke rightward neg_implication for \lambda^P. \phi(x), \lambda^P. \chi(x)
+          split \phi(x) \wedge \neg(\chi(x))
+          apply invoke tcsetlike(\phi, \psi) for x
+          some t such \exists t (tcset(x, \psi, t)) {
+            split tcset(x, \psi, t)
+            any y {
+              assume in(y, sep(adj(t, x), \lambda^P y. \phi(y) \wedge \neg(\chi(y)))) {
+                apply invoke rightward sep_existence for adj(t, x), \lambda^P y. \phi(y) \wedge \neg(\chi(y)), y
+                split 2 in(y, adj(t, x)) \wedge \phi(y) \wedge \neg(\chi(y))
+              }
+            }
+            apply adj_cor3 for t, x
+            connect in(x, adj(t, x)) \wedge \phi(x) \wedge \neg(\chi(x))
+            apply invoke leftward sep_existence for adj(t, x), \lambda^P y. \phi(y) \wedge \neg(\chi(y)), x
+            lift for x conclude \exists z (in(z, sep(adj(t, x), \lambda^P y. \phi(y) \wedge \neg(\chi(y)))))
+            apply invoke has_a_member_not_emptyset for sep(adj(t, x), \lambda^P y. \phi(y) \wedge \neg(\chi(y)))
+            connect \forall y (in(y, sep(adj(t, x), \lambda^P y'. \phi(y') \wedge \neg(\chi(y')))) \to \phi(y)) \wedge neq(sep(adj(t, x), \lambda^P y. \phi(y) \wedge \neg(\chi(y))), emptyset)
+            apply invoke pwellfounded(\phi, \psi) for sep(adj(t, x), \lambda^P y. \phi(y) \wedge \neg(\chi(y)))
+            some z such \exists z (minimal(\psi, sep(adj(t, x), \lambda^P y. \phi(y) \wedge \neg(\chi(y))), z)) {
+              split minimal(\psi, sep(adj(t, x), \lambda^P y. \phi(y) \wedge \neg(\chi(y))), z)
+              apply invoke rightward sep_existence for adj(t, x), \lambda^P y. \phi(y) \wedge \neg(\chi(y)), z
+              split in(z, adj(t, x)) \wedge \phi(z) \wedge \neg(\chi(z))
+              any y {
+                assume \phi(y) \wedge \psi(y, z) {
+                  split \phi(y) \wedge \psi(y, z)
+                  connect \phi(z) \wedge \psi(y, z)
+                  apply invoke pclosed(\phi, \psi) for z, y
+                  deny equal(y, z) {
+                    substitute \psi(y, z) for y: z
+                    apply invoke pirrefrel(\phi, \psi) for z
+                    contradict \psi(z, z)
+                  }
+                  deny \neg(\chi(y)) {
+                    apply invoke rightward adj_existence for t, x, z
+                    divide in(z, t) \vee equal(z, x)
+                      case in(z, t) {
+                        connect in(z, t) \wedge \psi(y, z)
+                        apply invoke closed(t, \psi) for z, y
+                      }
+                      case equal(z, x) {
+                        substitute \psi(y, z) for z: x
+                        apply invoke \forall y (\psi(y, x) \to in(y, t)) for y
+                      }
+                    apply invoke adj_cor1 for t, x, y
+                    connect in(y, adj(t, x)) \wedge \phi(y) \wedge \neg(\chi(y))
+                    apply invoke leftward sep_existence for adj(t, x), \lambda^P y. \phi(y) \wedge \neg(\chi(y)), y
+                    connect in(y, sep(adj(t, x), \lambda^P y. \phi(y) \wedge \neg(\chi(y)))) \wedge neq(y, z)
+                    apply invoke minimal_core(\psi, sep(adj(t, x), \lambda^P y. \phi(y) \wedge \neg(\chi(y))), z) for y
+                    contradict \psi(y, z)
+                  }
+                }
+              }
+              connect \phi(z) \wedge \forall y (\phi(y) \wedge \psi(y, z) \to \chi(y))
+              apply invoke \forall x (\phi(x) \wedge \forall y (\phi(y) \wedge \psi(y, x) \to \chi(y)) \to \chi(x)) for z
+              contradict \neg(\chi(z))
+            }
+          }
+        }
+      }
+    }
+  }
+}
