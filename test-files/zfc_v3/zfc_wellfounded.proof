@@ -183,10 +183,10 @@ theorem psubset_of_tcsetlike_is_tcsetlike \forall^P \phi[1] \forall^P \psi[2] \f
   }
 }
 
-theorem pwellfounded_induction \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (tcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\phi(y) \wedge \psi(y, x) \to \chi(y)) \to \chi(x)) \to \forall x (\phi(x) \to \chi(x))) {
+theorem pwellfounded_induction \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (tcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x)) \to \forall x (\phi(x) \to \chi(x))) {
   any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
-    assume tcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\phi(y) \wedge \psi(y, x) \to \chi(y)) \to \chi(x)) {
-      split tcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\phi(y) \wedge \psi(y, x) \to \chi(y)) \to \chi(x))
+    assume tcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x)) {
+      split tcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x))
       deny \neg(\forall x (\phi(x) \to \chi(x))) {
         apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. \phi(x) \to \chi(x)
         some x such \exists x (\neg(\phi(x) \to \chi(x))) {
@@ -213,8 +213,7 @@ theorem pwellfounded_induction \forall^P \phi[1] \forall^P \psi[2] \forall^P \ch
               apply invoke rightward sep_existence for adj(t, x), \lambda^P y. \phi(y) \wedge \neg(\chi(y)), z
               split in(z, adj(t, x)) \wedge \phi(z) \wedge \neg(\chi(z))
               any y {
-                assume \phi(y) \wedge \psi(y, z) {
-                  split \phi(y) \wedge \psi(y, z)
+                assume \psi(y, z) {
                   connect \phi(z) \wedge \psi(y, z)
                   apply invoke pclosed(\phi, \psi) for z, y
                   deny equal(y, z) {
@@ -242,8 +241,8 @@ theorem pwellfounded_induction \forall^P \phi[1] \forall^P \psi[2] \forall^P \ch
                   }
                 }
               }
-              connect \phi(z) \wedge \forall y (\phi(y) \wedge \psi(y, z) \to \chi(y))
-              apply invoke \forall x (\phi(x) \wedge \forall y (\phi(y) \wedge \psi(y, x) \to \chi(y)) \to \chi(x)) for z
+              connect \phi(z) \wedge \forall y (\psi(y, z) \to \chi(y))
+              apply invoke \forall x (\phi(x) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x)) for z
               contradict \neg(\chi(z))
             }
           }
