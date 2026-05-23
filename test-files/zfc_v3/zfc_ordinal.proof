@@ -259,6 +259,27 @@ theorem trans_iff_closed_in \forall x (trans(x) \leftrightarrow closed(x, in)) {
   }
 }
 
+theorem closed_in_iff_tcset_of_itself \forall x (closed(x, in) \leftrightarrow tcset(x, in, x)) {
+  any x {
+    assume closed(x, in) {
+      any y {
+        assume in(y, x) {}
+      }
+      any s {
+        assume closed(s, in) \wedge \forall y (in(y, x) \to in(y, s)) {
+          split 2 closed(s, in) \wedge \forall y (in(y, x) \to in(y, s))
+          fold for subset conclude subset(x, s)
+        }
+      }
+      connect tcset(x, in, x)
+    }
+    assume tcset(x, in, x) {
+      split 1 tcset(x, in, x)
+    }
+    connect closed(x, in) \leftrightarrow tcset(x, in, x)
+  }
+}
+
 theorem wellfounded_induction_in \forall^P \chi[1] \forall X (trans(X) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x))) \to \forall x (in(x, X) \to \chi(x))) {
   any predicate \chi[1], X {
     assume trans(X) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x))) {
