@@ -1,4 +1,4 @@
-include "zfc_ordinal_induction.proof"
+include "zfc_regular.proof"
 
 definition predicate sucordinal(\alpha) as ordinal(\alpha) \wedge \exists \beta (equal(\alpha, suc(\beta)))
 

@@ -1,4 +1,4 @@
-include "zfc_tcmbigcup.proof"
+include "zfc_tcm.proof"
 
 definition predicate hirrefrel(x) as \exists y (irrefrel(y, in) \wedge tcm(x, y))
 

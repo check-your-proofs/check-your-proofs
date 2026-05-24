@@ -1,4 +1,4 @@
-include "zfc_finite.proof"
+include "zfc_operation.proof"
 
 definition predicate tc(predicate \phi[2], x, y) as \exists n (pnatural(n) \wedge piterate(\phi, n, x, y))
 

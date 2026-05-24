@@ -1,4 +1,4 @@
-include "zfc_tcm.proof"
+include "zfc_tc.proof"
 
 definition predicate autoexpand owns(x, y) as in(y, x) tex infix "\owns"
 

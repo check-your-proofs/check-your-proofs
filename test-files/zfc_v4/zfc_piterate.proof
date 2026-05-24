@@ -1,12 +1,8 @@
-include "zfc_function.proof"
+include "zfc_hf.proof"
 
 definition predicate trace(predicate \phi[2], n, g) as fun(g) \wedge dom(g, suc(n)) \wedge \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \phi(p, q)))
 
 definition predicate piterate(predicate \phi[2], n, x, y) as \exists g (trace(\phi, n, g) \wedge in(op(emptyset, x), g) \wedge in(op(n, y), g))
-
-definition predicate functional(predicate \phi[2]) as \forall x \forall y \forall y' (\phi(x, y) \wedge \phi(x, y') \to equal(y, y'))
-
-definition predicate total(predicate \phi[2], predicate \chi[1]) as \forall x (\chi(x) \to \exists y (\chi(y) \wedge \phi(x, y)))
 
 theorem piterate_base_step \forall^P \phi[2] \forall c (piterate(\phi, emptyset, c, c)) {
   any predicate \phi[2], c {

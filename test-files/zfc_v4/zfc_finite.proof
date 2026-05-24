@@ -1,4 +1,4 @@
-include "zfc_powerset.proof"
+include "zfc_function.proof"
 
 definition predicate equipotent(X, Y) as \exists f (bij(f, X, Y))
 
@@ -885,6 +885,8 @@ theorem finite_powerset_exists \forall X (finite(X) \to \exists Y (finite(Y) \we
     }
   }
 }
+
+definition predicate total(predicate \phi[2], predicate \chi[1]) as \forall x (\chi(x) \to \exists y (\chi(y) \wedge \phi(x, y)))
 
 theorem powerset_is_total_on_finite total(powerset, finite) {
   assert finite_powerset_exists

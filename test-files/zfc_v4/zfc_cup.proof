@@ -1,4 +1,4 @@
-include "zfc_operation.proof"
+include "zfc_ordinal_induction.proof"
 
 definition predicate cup(X, Y, Z) as \forall z (in(z, Z) \leftrightarrow in(z, X) \vee in(z, Y))
 

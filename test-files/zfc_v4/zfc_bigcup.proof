@@ -14,6 +14,8 @@ theorem bigcup_is_unique \forall X \forall Y \forall Y' (bigcup(X, Y) \wedge big
   }
 }
 
+definition predicate functional(predicate \phi[2]) as \forall x \forall y \forall y' (\phi(x, y) \wedge \phi(x, y') \to equal(y, y'))
+
 theorem bigcup_is_functional functional(bigcup) {
   assert bigcup_is_unique
   fold for functional conclude functional(bigcup)

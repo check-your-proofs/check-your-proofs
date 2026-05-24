@@ -1,4 +1,4 @@
-include "zfc_tc.proof"
+include "zfc_powerset.proof"
 
 definition predicate tcm(X, Y) as tcset(X, in, Y)
 
