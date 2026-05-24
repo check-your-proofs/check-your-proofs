@@ -1,0 +1,168 @@
+include "zfc_tcm.proof"
+
+definition predicate autoexpand owns(x, y) as in(y, x) tex infix "\owns"
+
+definition predicate tcmowns(X, Y) as \forall y (in(y, Y) \leftrightarrow tc(owns, X, y))
+
+theorem piterate_closed_dest \forall n \forall c \forall y \forall s (natural(n) \wedge closed(s, in) \wedge in(c, s) \wedge piterate(owns, n, c, y) \to in(y, s)) {
+  any c, y, s {
+    assume closed(s, in) \wedge in(c, s) \wedge piterate(owns, emptyset, c, y) {
+      split closed(s, in) \wedge in(c, s) \wedge piterate(owns, emptyset, c, y)
+      apply invoke piterate_is_unique_base_step for owns, c, y
+      substitute in(c, s) for c: y
+    }
+  }
+  any n {
+    assume natural(n) {
+      assume \forall c \forall y \forall s (closed(s, in) \wedge in(c, s) \wedge piterate(owns, n, c, y) \to in(y, s)) {
+        any c, y, s {
+          assume closed(s, in) \wedge in(c, s) \wedge piterate(owns, suc(n), c, y) {
+            split closed(s, in) \wedge in(c, s) \wedge piterate(owns, suc(n), c, y)
+            connect natural(n) \wedge piterate(owns, suc(n), c, y)
+            apply invoke piterate_first_step for owns, n, c, y
+            some x such \exists x (piterate(owns, n, x, y) \wedge in(x, c)) {
+              split piterate(owns, n, x, y) \wedge in(x, c)
+              connect in(x, c) \wedge in(c, s)
+              apply invoke closed(s, in) for c, x
+              connect closed(s, in) \wedge in(x, s) \wedge piterate(owns, n, x, y)
+              apply invoke \forall c \forall y \forall s (closed(s, in) \wedge in(c, s) \wedge piterate(owns, n, c, y) \to in(y, s)) for x, y, s
+            }
+          }
+        }
+      }
+    }
+  }
+  connect \forall c \forall y \forall s (closed(s, in) \wedge in(c, s) \wedge piterate(owns, emptyset, c, y) \to in(y, s)) \wedge \forall n (natural(n) \to (\forall c \forall y \forall s (closed(s, in) \wedge in(c, s) \wedge piterate(owns, n, c, y) \to in(y, s)) \to \forall c \forall y \forall s (closed(s, in) \wedge in(c, s) \wedge piterate(owns, suc(n), c, y) \to in(y, s)) ))
+  apply invoke natural_induction for \lambda^P n. \forall c \forall y \forall s (closed(s, in) \wedge in(c, s) \wedge piterate(owns, n, c, y) \to in(y, s))
+  any n, c, y, s {
+    assume natural(n) \wedge closed(s, in) \wedge in(c, s) \wedge piterate(owns, n, c, y) {
+      split natural(n) \wedge closed(s, in) \wedge in(c, s) \wedge piterate(owns, n, c, y)
+      apply invoke \forall n (natural(n) \to \forall c \forall y \forall s (closed(s, in) \wedge in(c, s) \wedge piterate(owns, n, c, y) \to in(y, s))) for n
+      connect closed(s, in) \wedge in(c, s) \wedge piterate(owns, n, c, y)
+      apply invoke \forall c \forall y \forall s (closed(s, in) \wedge in(c, s) \wedge piterate(owns, n, c, y) \to in(y, s)) for c, y, s
+    }
+  }
+}
+
+theorem tcmowns_implies_tcm \forall X \forall Y (tcmowns(X, Y) \to tcm(X, Y)) {
+  any X, Y {
+    assume tcmowns(X, Y) {
+      any y, z {
+        assume in(y, Y) \wedge in(z, y) {
+          split in(y, Y) \wedge in(z, y)
+          apply invoke rightward tcmowns(X, Y) for y
+          connect tc(owns, X, y) \wedge in(z, y)
+          apply invoke tc_add_last for owns, X, y, z
+          apply invoke leftward tcmowns(X, Y) for z
+        }
+      }
+      fold for closed conclude closed(Y, in)
+      any x {
+        assume in(x, X) {
+          apply invoke tc_one_step for owns, X, x
+          apply invoke leftward tcmowns(X, Y) for x
+        }
+      }
+      any s {
+        assume closed(s, in) \wedge \forall x (in(x, X) \to in(x, s)) {
+          split closed(s, in) \wedge \forall x (in(x, X) \to in(x, s))
+          any y {
+            assume in(y, Y) {
+              apply invoke rightward tcmowns(X, Y) for y
+              some n such tc(owns, X, y) {
+                split pnatural(n) \wedge piterate(owns, n, X, y)
+                apply invoke pnatural_is_suc_of_natural_element for n
+                some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
+                  split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+                  substitute piterate(owns, n, X, y) for n: suc(m)
+                  connect natural(m) \wedge piterate(owns, suc(m), X, y)
+                  apply invoke piterate_first_step for owns, m, X, y
+                  some x such \exists x (in(x, X) \wedge piterate(owns, m, x, y)) {
+                    split in(x, X) \wedge piterate(owns, m, x, y)
+                    apply invoke \forall x (in(x, X) \to in(x, s)) for x
+                    connect natural(m) \wedge closed(s, in) \wedge in(x, s) \wedge piterate(owns, m, x, y)
+                    apply invoke piterate_closed_dest for m, x, y, s
+                  }
+                }
+              }
+            }
+          }
+          fold for subset conclude subset(Y, s)
+        }
+      }
+      connect tcset(X, in, Y)
+      fold for tcm conclude tcm(X, Y)
+    }
+  }
+}
+
+theorem tcm_implies_tcmowns \forall X \forall Y (tcm(X, Y) \to tcmowns(X, Y)) {
+  any X, Y {
+    assume tcm(X, Y) {
+      expand tcm(X, Y) for tcm
+      split tcset(X, in, Y)
+      any y {
+        assume in(y, Y) {
+          apply axiom_of_separation for Y, \lambda^P z. tc(owns, X, z)
+          some s such \exists s \forall z (in(z, s) \leftrightarrow in(z, Y) \wedge tc(owns, X, z)) {
+            any u, v {
+              assume in(u, s) \wedge in(v, u) {
+                split in(u, s) \wedge in(v, u)
+                apply invoke rightward \forall z (in(z, s) \leftrightarrow in(z, Y) \wedge tc(owns, X, z)) for u
+                split in(u, Y) \wedge tc(owns, X, u)
+                connect in(u, Y) \wedge in(v, u)
+                apply invoke closed(Y, in) for u, v
+                connect tc(owns, X, u) \wedge in(v, u)
+                apply invoke tc_add_last for owns, X, u, v
+                connect in(v, Y) \wedge tc(owns, X, v)
+                apply invoke leftward \forall z (in(z, s) \leftrightarrow in(z, Y) \wedge tc(owns, X, z)) for v
+              }
+            }
+            fold for closed conclude closed(s, in)
+            any x {
+              assume in(x, X) {
+                apply invoke \forall x (in(x, X) \to in(x, Y)) for x
+                apply invoke tc_one_step for owns, X, x
+                connect in(x, Y) \wedge tc(owns, X, x)
+                apply invoke leftward \forall z (in(z, s) \leftrightarrow in(z, Y) \wedge tc(owns, X, z)) for x
+              }
+            }
+            connect closed(s, in) \wedge \forall x (in(x, X) \to in(x, s))
+            apply invoke \forall s (closed(s, in) \wedge \forall x (in(x, X) \to in(x, s)) \to subset(Y, s)) for s
+            apply invoke subset(Y, s) for y
+            apply invoke rightward \forall z (in(z, s) \leftrightarrow in(z, Y) \wedge tc(owns, X, z)) for y
+            split 2 in(y, Y) \wedge tc(owns, X, y)
+          }
+        }
+        assume tc(owns, X, y) {
+          some n such tc(owns, X, y) {
+            split pnatural(n) \wedge piterate(owns, n, X, y)
+            apply invoke pnatural_is_suc_of_natural_element for n
+            some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
+              split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+              substitute piterate(owns, n, X, y) for n: suc(m)
+              connect natural(m) \wedge piterate(owns, suc(m), X, y)
+              apply invoke piterate_first_step for owns, m, X, y
+              some x such \exists x (in(x, X) \wedge piterate(owns, m, x, y)) {
+                split in(x, X) \wedge piterate(owns, m, x, y)
+                apply invoke \forall x (in(x, X) \to in(x, Y)) for x
+                connect natural(m) \wedge closed(Y, in) \wedge in(x, Y) \wedge piterate(owns, m, x, y)
+                apply invoke piterate_closed_dest for m, x, y, Y
+              }
+            }
+          }
+        }
+        connect in(y, Y) \leftrightarrow tc(owns, X, y)
+      }
+      fold for tcmowns conclude tcmowns(X, Y)
+    }
+  }
+}
+
+theorem tcm_iff_tcmowns \forall X \forall Y (tcm(X, Y) \leftrightarrow tcmowns(X, Y)) {
+  any X, Y {
+    apply tcm_implies_tcmowns for X, Y
+    apply tcmowns_implies_tcm for X, Y
+    connect tcm(X, Y) \leftrightarrow tcmowns(X, Y)
+  }
+}

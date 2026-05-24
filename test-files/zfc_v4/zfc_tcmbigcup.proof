@@ -1,4 +1,4 @@
-include "zfc_tcm.proof"
+include "zfc_tcmowns.proof"
 
 definition predicate hbigcup(X) as \forall n (natural(n) \to \exists u (piterate(bigcup, n, X, u)))
 
@@ -152,19 +152,19 @@ theorem hbigcup_implies_tc_owns_iff_rtc_bigcup \forall X (hbigcup(X) \to \forall
 
 definition predicate tcmbigcup(X, Y) as \forall y (in(y, Y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u)))
 
-theorem tcm_iff_tcmbigcup \forall X \forall Y (hbigcup(X) \to (tcm(X, Y) \leftrightarrow tcmbigcup(X, Y))) {
+theorem tcmowns_iff_tcmbigcup \forall X \forall Y (hbigcup(X) \to (tcmowns(X, Y) \leftrightarrow tcmbigcup(X, Y))) {
   any X, Y {
     assume hbigcup(X) {
       apply invoke hbigcup_implies_tc_owns_iff_rtc_bigcup for X
-      assume tcm(X, Y) {
+      assume tcmowns(X, Y) {
         any y {
           assume in(y, Y) {
-            apply invoke rightward tcm(X, Y) for y
+            apply invoke rightward tcmowns(X, Y) for y
             apply invoke rightward \forall y (tc(owns, X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))) for y
           }
           assume \exists u (in(y, u) \wedge rtc(bigcup, X, u)) {
             apply invoke leftward \forall y (tc(owns, X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))) for y
-            apply invoke leftward tcm(X, Y) for y
+            apply invoke leftward tcmowns(X, Y) for y
           }
           connect in(y, Y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))
         }
@@ -182,9 +182,9 @@ theorem tcm_iff_tcmbigcup \forall X \forall Y (hbigcup(X) \to (tcm(X, Y) \leftri
           }
           connect in(y, Y) \leftrightarrow tc(owns, X, y)
         }
-        fold for tcm conclude tcm(X, Y)
+        fold for tcmowns conclude tcmowns(X, Y)
       }
-      connect tcm(X, Y) \leftrightarrow tcmbigcup(X, Y)
+      connect tcmowns(X, Y) \leftrightarrow tcmbigcup(X, Y)
     }
   }
 }

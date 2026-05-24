@@ -173,7 +173,8 @@ theorem set_of_hwellfounded_is_hwellfounded \forall Y \forall Z \forall W \foral
             some T such hwellfounded(v) {
               split wellfounded(T, in) \wedge tcm(v, T)
               apply invoke tcm_implies_subset for v, T
-              apply invoke tcm_is_trans for v, T
+              expand tcm(v, T) for tcm
+              split tcset(v, in, T)
               apply law_of_excluded_middle for \lambda^P. equal(cap(A, T), emptyset)
               divide equal(cap(A, T), emptyset) \vee neq(cap(A, T), emptyset)
                 case equal(cap(A, T), emptyset) {
@@ -182,7 +183,6 @@ theorem set_of_hwellfounded_is_hwellfounded \forall Y \forall Z \forall W \foral
                       split in(x, A) \wedge neq(x, v)
                       deny in(x, v) {
                         apply invoke subset(v, T) for x
-                        apply invoke rightward tcm(v, T) for x
                         connect in(x, A) \wedge in(x, T)
                         apply invoke leftward cap_characterization for A, T, x
                         substitute in(x, cap(A, T)) for cap(A, T): emptyset
@@ -208,6 +208,7 @@ theorem set_of_hwellfounded_is_hwellfounded \forall Y \forall Z \forall W \foral
                         split in(x, A) \wedge neq(x, a)
                         deny in(x, a) {
                           connect in(x, a) \wedge in(a, T)
+                          apply invoke leftward trans_iff_closed_in for T
                           apply invoke trans(T) for a, x
                           connect in(x, A) \wedge in(x, T)
                           apply invoke leftward cap_characterization for A, T, x
@@ -358,39 +359,87 @@ theorem regular_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (regul
       apply invoke rightward regular_iff_existence_of_irrefrel_wellfounded_tcm for x
       some p such \exists p (irrefrel(p, in) \wedge wellfounded(p, in) \wedge tcm(x, p)) {
         split irrefrel(p, in) \wedge wellfounded(p, in) \wedge tcm(x, p)
-        apply sep_is_subset for x, \phi
-        apply sep_is_subset for p, \lambda^P z. tc(owns, sep(x, \phi), z)
-        connect irrefrel(p, in) \wedge subset(sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)), p)
-        apply invoke subset_of_irrefrel_is_irrefrel for in, p, sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))
-        connect wellfounded(p, in) \wedge subset(sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)), p)
-        apply invoke subset_of_wellfounded_is_wellfounded for in, p, sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))
-        show tcm(sep(x, \phi), sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))) {
-          any s {
-            assume in(s, sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))) {
-              apply invoke rightward sep_existence for p, \lambda^P z. tc(owns, sep(x, \phi), z), s
-              split 2 in(s, p) \wedge tc(owns, sep(x, \phi), s)
+        expand tcm(x, p) for tcm
+        split tcset(x, in, p)
+        apply axiom_of_separation for x, \phi
+        some y such \exists y \forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z)) {
+          apply axiom_of_separation for p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))
+          some q such \exists q \forall z (in(z, q) \leftrightarrow in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))) {
+            any u, v {
+              assume in(u, q) \wedge in(v, u) {
+                split in(u, q) \wedge in(v, u)
+                apply invoke rightward \forall z (in(z, q) \leftrightarrow in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))) for u
+                split in(u, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(u, s))
+                connect in(u, p) \wedge in(v, u)
+                apply invoke closed(p, in) for u, v
+                any s {
+                  assume closed(s, in) \wedge subset(y, s) {
+                    split closed(s, in) \wedge subset(y, s)
+                    apply invoke \forall s (closed(s, in) \wedge subset(y, s) \to in(u, s)) for s
+                    connect in(u, s) \wedge in(v, u)
+                    apply invoke closed(s, in) for u, v
+                  }
+                }
+                connect in(v, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(v, s))
+                apply invoke leftward \forall z (in(z, q) \leftrightarrow in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))) for v
+              }
             }
-            assume tc(owns, sep(x, \phi), s) {
-              connect tc(owns, sep(x, \phi), s) \wedge subset(sep(x, \phi), x)
-              apply invoke tc_subset for sep(x, \phi), s, x
-              apply invoke leftward tcm(x, p) for s
-              connect in(s, p) \wedge tc(owns, sep(x, \phi), s)
-              apply invoke leftward sep_existence for p, \lambda^P z. tc(owns, sep(x, \phi), z), s
+            fold for closed conclude closed(q, in)
+            any w {
+              assume in(w, y) {
+                apply invoke rightward \forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z)) for w
+                split in(w, x) \wedge \phi(w)
+                apply invoke \forall w (in(w, x) \to in(w, p)) for w
+                any s {
+                  assume closed(s, in) \wedge subset(y, s) {
+                    split 2 closed(s, in) \wedge subset(y, s)
+                    apply invoke subset(y, s) for w
+                  }
+                }
+                connect in(w, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(w, s))
+                apply invoke leftward \forall z (in(z, q) \leftrightarrow in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))) for w
+              }
             }
-            connect in(s, sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))) \leftrightarrow tc(owns, sep(x, \phi), s)
+            any s {
+              assume closed(s, in) \wedge \forall z (in(z, y) \to in(z, s)) {
+                split closed(s, in) \wedge \forall z (in(z, y) \to in(z, s))
+                fold for subset conclude subset(y, s)
+                connect closed(s, in) \wedge subset(y, s)
+                any z {
+                  assume in(z, q) {
+                    apply invoke rightward \forall z (in(z, q) \leftrightarrow in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))) for z
+                    split in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))
+                    apply invoke \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)) for s
+                  }
+                }
+                fold for subset conclude subset(q, s)
+              }
+            }
+            connect tcset(y, in, q)
+            fold for tcm conclude tcm(y, q)
+            any z {
+              assume in(z, q) {
+                apply invoke rightward \forall z (in(z, q) \leftrightarrow in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))) for z
+                split 1 in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))
+              }
+            }
+            fold for subset conclude subset(q, p)
+            connect irrefrel(p, in) \wedge subset(q, p)
+            apply invoke subset_of_irrefrel_is_irrefrel for in, p, q
+            connect wellfounded(p, in) \wedge subset(q, p)
+            apply invoke subset_of_wellfounded_is_wellfounded for in, p, q
+            connect irrefrel(q, in) \wedge wellfounded(q, in) \wedge tcm(y, q)
+            lift for q conclude \exists q (irrefrel(q, in) \wedge wellfounded(q, in) \wedge tcm(y, q))
           }
-          fold for tcm conclude tcm(sep(x, \phi), sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)))
-        }
-        connect irrefrel(sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)), in) \wedge wellfounded(sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)), in) \wedge tcm(sep(x, \phi), sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)))
-        lift for sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)) conclude \exists q (irrefrel(q, in) \wedge wellfounded(q, in) \wedge tcm(sep(x, \phi), q))
-        apply invoke leftward regular_iff_existence_of_irrefrel_wellfounded_tcm for sep(x, \phi)
-        any z {
-          assume regular(z) {
-            apply sep_existence for x, \phi, z
+          apply invoke leftward regular_iff_existence_of_irrefrel_wellfounded_tcm for y
+          any z {
+            assume regular(z) {
+              apply \forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z)) for z
+            }
           }
+          connect regular(y) \wedge \forall z (regular(z) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z)))
+          lift for y conclude \exists y (regular(y) \wedge \forall z (regular(z) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))))
         }
-        connect regular(sep(x, \phi)) \wedge \forall z (regular(z) \to (in(z, sep(x, \phi)) \leftrightarrow in(z, x) \wedge \phi(z)))
-        lift for sep(x, \phi) conclude \exists y (regular(y) \wedge \forall z (regular(z) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))))
       }
     }
   }

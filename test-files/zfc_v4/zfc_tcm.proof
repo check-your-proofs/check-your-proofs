@@ -1,46 +1,12 @@
 include "zfc_tc.proof"
 
-definition predicate autoexpand owns(x, y) as in(y, x) tex infix "\owns"
-
-theorem tc_subset \forall x \forall s \forall y (tc(owns, x, s) \wedge subset(x, y) \to tc(owns, y, s)) {
-  any x, s, y {
-    assume tc(owns, x, s) \wedge subset(x, y) {
-      split tc(owns, x, s) \wedge subset(x, y)
-      some n such tc(owns, x, s) {
-        split pnatural(n) \wedge piterate(owns, n, x, s)
-        pad pnatural(n) conclude natural(n)
-        apply invoke pnatural_is_suc_of_natural_element for n
-        some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
-          split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
-          substitute piterate(owns, n, x, s) for n: suc(m)
-          connect natural(m) \wedge piterate(owns, suc(m), x, s)
-          apply invoke piterate_first_step for owns, m, x, s
-          some t such \exists t (in(t, x) \wedge piterate(owns, m, t, s)) {
-            split in(t, x) \wedge piterate(owns, m, t, s)
-            apply invoke subset(x, y) for t
-            apply invoke piterate_one_step for owns, y, t
-            apply invoke add_one_step_left for m
-            substitute add(suc(emptyset), m, suc(m)) for suc(m): n
-            assert emptyset_is_natural
-            apply invoke suc_of_natural_is_natural for emptyset
-            connect natural(suc(emptyset)) \wedge natural(m) \wedge add(suc(emptyset), m, n) \wedge piterate(owns, suc(emptyset), y, t) \wedge piterate(owns, m, t, s)
-            apply invoke piterate_addition for owns, suc(emptyset), m, n, y, t, s
-            connect pnatural(n) \wedge piterate(owns, n, y, s)
-            lift for n conclude tc(owns, y, s)
-          }
-        }
-      }
-    }
-  }
-}
-
-definition predicate tcm(X, Y) as \forall y (in(y, Y) \leftrightarrow tc(owns, X, y))
+definition predicate tcm(X, Y) as tcset(X, in, Y)
 
 theorem tcm_is_unique \forall X \forall Y \forall Y' (tcm(X, Y) \wedge tcm(X, Y') \to equal(Y, Y')) {
   any X, Y, Y' {
     assume tcm(X, Y) \wedge tcm(X, Y') {
       expand tcm(X, Y) \wedge tcm(X, Y') for tcm
-      apply invoke set_is_unique_for_predicate for \lambda^P y. tc(owns, X, y), Y, Y'
+      apply invoke tcset_is_unique for X, in, Y, Y'
     }
   }
 }
@@ -51,15 +17,11 @@ theorem tcm_is_functional functional(tcm) {
 }
 
 theorem tcm_implies_subset \forall X \forall Y (tcm(X, Y) \to subset(X, Y)) {
-  any X, Y {
-    assume tcm(X, Y) {
-      any x {
-        assume in(x, X) {
-          apply invoke tc_one_step for owns, X, x
-          apply invoke leftward tcm(X, Y) for x
-        }
-      }
-      fold for subset conclude subset(X, Y)
+  any x, t {
+    assume tcm(x, t) {
+      expand tcm(x, t) for tcm
+      split 2 tcset(x, in, t)
+      fold for subset conclude subset(x, t)
     }
   }
 }
@@ -81,76 +43,47 @@ theorem tcm_irrefrel_implies_not_contain_itself \forall X \forall Y (tcm(X, Y) \
 theorem tcm_is_trans \forall X \forall Y (tcm(X, Y) \to trans(Y)) {
   any X, Y {
     assume tcm(X, Y) {
-      any p, q {
-        assume in(p, Y) \wedge in(q, p) {
-          split in(p, Y) \wedge in(q, p)
-          apply invoke rightward tcm(X, Y) for p
-          apply invoke tc_one_step for owns, p, q
-          connect tc(owns, X, p) \wedge tc(owns, p, q)
-          apply invoke tc_is_transitive for owns, X, p, q
-          apply invoke leftward tcm(X, Y) for q
-        }
-      }
-      fold for trans conclude trans(Y)
+      expand tcm(X, Y) for tcm
+      split 1 tcset(X, in, Y)
+      apply invoke leftward trans_iff_closed_in for Y
     }
   }
 }
 
-theorem emptyset_is_tcm_of_emptyset tcm(emptyset, emptyset) {
-  any y {
-    assume in(y, emptyset) {
-      apply emptyset_existence for y
-      contradict in(y, emptyset)
-      explode tc(owns, emptyset, y)
-    }
-    assume tc(owns, emptyset, y) {
-      some n such tc(owns, emptyset, y) {
-        split pnatural(n) \wedge piterate(owns, n, emptyset, y)
-        some g such piterate(owns, n, emptyset, y) {
-          split trace(owns, n, g) \wedge in(op(emptyset, emptyset), g) \wedge in(op(n, y), g)
-          split trace(owns, n, g)
-          split fun(g)
-          apply invoke pnatural_contains_emptyset for n
-          apply invoke \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge in(q, p))) for emptyset
-          some p, q such \exists p \exists q (in(op(emptyset, p), g) \wedge in(op(suc(emptyset), q), g) \wedge in(q, p)) {
-            split in(op(emptyset, p), g) \wedge in(op(suc(emptyset), q), g) \wedge in(q, p)
-            connect in(op(emptyset, emptyset), g) \wedge in(op(emptyset, p), g)
-            apply invoke \forall x \forall y \forall y' (in(op(x, y), g) \wedge in(op(x, y'), g) \to equal(y, y')) for emptyset, emptyset, p
-            substitute in(q, p) for p: emptyset
-            apply emptyset_existence for q
-            contradict in(q, emptyset)
-          }
-        }
+theorem emptyset_is_closed \forall^P \psi[2] (closed(emptyset, \psi)) {
+  any predicate \psi[2] {
+    any x, y {
+      assume in(x, emptyset) \wedge \psi(y, x) {
+        split 1 in(x, emptyset) \wedge \psi(y, x)
+        apply emptyset_existence for x
+        contradict in(x, emptyset)
         explode in(y, emptyset)
       }
     }
-    connect in(y, emptyset) \leftrightarrow tc(owns, emptyset, y)
+    fold for closed conclude closed(emptyset, \psi)
   }
+}
+
+theorem emptyset_is_tcm_of_emptyset tcm(emptyset, emptyset) {
+  apply emptyset_is_closed for in
+  any y {
+    assume in(y, emptyset) {}
+  }
+  any s {
+    assume closed(s, in) \wedge \forall y (in(y, emptyset) \to in(y, s)) {
+      apply emptyset_is_subset_of_any_set for s
+    }
+  }
+  connect tcset(emptyset, in, emptyset)
   fold for tcm conclude tcm(emptyset, emptyset)
 }
 
 theorem tcm_is_tcm_of_itself \forall X \forall Y (tcm(X, Y) \to tcm(Y, Y)) {
   any X, Y {
     assume tcm(X, Y) {
-      any y {
-        assume in(y, Y) {
-          apply invoke rightward tcm(X, Y) for y
-          apply invoke tcm_implies_subset for X, Y
-          connect tc(owns, X, y) \wedge subset(X, Y)
-          apply invoke tc_subset for X, y, Y
-        }
-        assume tc(owns, Y, y) {
-          apply invoke tc_first_step for owns, Y, y
-          some z such \exists z (in(z, Y) \wedge rtc(owns, z, y)) {
-            split in(z, Y) \wedge rtc(owns, z, y)
-            apply invoke rightward tcm(X, Y) for z
-            connect tc(owns, X, z) \wedge rtc(owns, z, y)
-            apply invoke tc_rtc_transitive for owns, X, z, y
-            apply invoke leftward tcm(X, Y) for y
-          }
-        }
-        connect in(y, Y) \leftrightarrow tc(owns, Y, y)
-      }
+      expand tcm(X, Y) for tcm
+      split tcset(X, in, Y)
+      apply invoke rightward closed_in_iff_tcset_of_itself for Y
       fold for tcm conclude tcm(Y, Y)
     }
   }
@@ -160,85 +93,103 @@ theorem tcm_adjunction \forall x \forall y \forall p \forall q \forall r (tcm(x,
   any x, y, p, q, r {
     assume tcm(x, p) \wedge tcm(y, q) \wedge cup(p, q, r) {
       split tcm(x, p) \wedge tcm(y, q) \wedge cup(p, q, r)
-      any s {
-        assume in(s, adj(r, y)) {
-          apply invoke rightward adj_existence for r, y, s
-          divide in(s, r) \vee equal(s, y)
-            case in(s, r) {
-              apply invoke rightward cup(p, q, r) for s
-              divide in(s, p) \vee in(s, q)
-                case in(s, p) {
-                  apply invoke rightward tcm(x, p) for s
-                  apply subset_adj for x, y
-                  connect tc(owns, x, s) \wedge subset(x, adj(x, y))
-                  apply invoke tc_subset for x, s, adj(x, y)
+      expand tcm(x, p) for tcm
+      split tcset(x, in, p)
+      expand tcm(y, q) for tcm
+      split tcset(y, in, q)
+      any z, w {
+        assume in(z, adj(r, y)) \wedge in(w, z) {
+          split in(z, adj(r, y)) \wedge in(w, z)
+          apply invoke rightward adj_existence for r, y, z
+          divide in(z, r) \vee equal(z, y)
+            case in(z, r) {
+              apply invoke rightward cup(p, q, r) for z
+              divide in(z, p) \vee in(z, q)
+                case in(z, p) {
+                  connect in(z, p) \wedge in(w, z)
+                  apply invoke closed(p, in) for z, w
+                  pad in(w, p) conclude in(w, p) \vee in(w, q)
+                  apply invoke leftward cup(p, q, r) for w
                 }
-                case in(s, q) {
-                  apply invoke rightward tcm(y, q) for s
-                  apply adj_cor3 for x, y
-                  apply invoke tc_one_step for owns, adj(x, y), y
-                  connect tc(owns, adj(x, y), y) \wedge tc(owns, y, s)
-                  apply invoke tc_is_transitive for owns, adj(x, y), y, s
+                case in(z, q) {
+                  connect in(z, q) \wedge in(w, z)
+                  apply invoke closed(q, in) for z, w
+                  pad in(w, q) conclude in(w, p) \vee in(w, q)
+                  apply invoke leftward cup(p, q, r) for w
                 }
             }
-            case equal(s, y) {
-              apply adj_cor3 for x, y
-              substitute in(y, adj(x, y)) for y[1]: s
-              apply invoke tc_one_step for owns, adj(x, y), s
+            case equal(z, y) {
+              substitute in(w, z) for z: y
+              apply invoke tcm_implies_subset for y, q
+              apply invoke subset(y, q) for w
+              pad in(w, q) conclude in(w, p) \vee in(w, q)
+              apply invoke leftward cup(p, q, r) for w
+
+            }
+          apply invoke adj_cor1 for r, y, w
+        }
+      }
+      fold for closed conclude closed(adj(r, y), in)
+      any z {
+        assume in(z, adj(x, y)) {
+          apply invoke rightward adj_existence for x, y, z
+          divide in(z, x) \vee equal(z, y)
+            case in(z, x) {
+              apply invoke tcm_implies_subset for x, p
+              apply invoke subset(x, p) for z
+              pad in(z, p) conclude in(z, p) \vee in(z, q)
+              apply invoke leftward cup(p, q, r) for z
+              apply invoke adj_cor1 for r, y, z
+            }
+            case equal(z, y) {
+              apply invoke adj_cor2 for r, y, z
             }
         }
-        assume tc(owns, adj(x, y), s) {
-          some n such tc(owns, adj(x, y), s) {
-            split pnatural(n) \wedge piterate(owns, n, adj(x, y), s)
-            apply invoke pnatural_is_suc_of_natural_element for n
-            some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
-              split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
-              substitute piterate(owns, n, adj(x, y), s) for n: suc(m)
-              connect natural(m) \wedge piterate(owns, suc(m), adj(x, y), s)
-              apply invoke piterate_first_step for owns, m, adj(x, y), s
-              some t such \exists t (in(t, adj(x, y)) \wedge piterate(owns, m, t, s)) {
-                split in(t, adj(x, y)) \wedge piterate(owns, m, t, s)
-                apply invoke rightward adj_existence for x, y, t
-                divide in(t, x) \vee equal(t, y)
-                  case in(t, x) {
-                    apply invoke piterate_one_step for owns, x, t
-                    apply invoke add_one_step_left for m
-                    substitute add(suc(emptyset), m, suc(m)) for suc(m): n
-                    assert emptyset_is_natural
-                    apply invoke suc_of_natural_is_natural for emptyset
-                    connect natural(suc(emptyset)) \wedge natural(m) \wedge add(suc(emptyset), m, n) \wedge piterate(owns, suc(emptyset), x, t) \wedge piterate(owns, m, t, s)
-                    apply invoke piterate_addition for owns, suc(emptyset), m, n, x, t, s
-                    connect pnatural(n) \wedge piterate(owns, n, x, s)
-                    lift for n conclude tc(owns, x, s)
-                    apply invoke leftward tcm(x, p) for s
-                    pad in(s, p) conclude in(s, p) \vee in(s, q)
-                    apply invoke leftward cup(p, q, r) for s
-                    apply invoke adj_cor1 for r, y, s
-                  }
-                  case equal(t, y) {
-                    substitute piterate(owns, m, t, s) for t: y
-                    divide natural(m)
-                      case equal(m, emptyset) {
-                        substitute piterate(owns, m, y, s) for m: emptyset
-                        apply invoke piterate_is_unique_base_step for owns, y, s
-                        apply adj_cor3 for r, y
-                        substitute in(y, adj(r, y)) for y[1]: s
+      }
+      any s {
+        assume closed(s, in) \wedge \forall z (in(z, adj(x, y)) \to in(z, s)) {
+          split closed(s, in) \wedge \forall z (in(z, adj(x, y)) \to in(z, s))
+          any z {
+            assume in(z, adj(r, y)) {
+              apply invoke rightward adj_existence for r, y, z
+              apply adj_cor3 for x, y
+              apply invoke \forall z (in(z, adj(x, y)) \to in(z, s)) for y
+              divide in(z, r) \vee equal(z, y)
+                case in(z, r) {
+                  apply invoke rightward cup(p, q, r) for z
+                  divide in(z, p) \vee in(z, q)
+                    case in(z, p) {
+                      any w {
+                        assume in(w, x) {
+                          apply invoke adj_cor1 for x, y, w
+                          apply invoke \forall z (in(z, adj(x, y)) \to in(z, s)) for w
+                        }
                       }
-                      case pnatural(m) {
-                        connect pnatural(m) \wedge piterate(owns, m, y, s)
-                        lift for m conclude tc(owns, y, s)
-                        apply invoke leftward tcm(y, q) for s
-                        pad in(s, q) conclude in(s, p) \vee in(s, q)
-                        apply invoke leftward cup(p, q, r) for s
-                        apply invoke adj_cor1 for r, y, s
+                      connect closed(s, in) \wedge \forall w (in(w, x) \to in(w, s))
+                      apply invoke \forall s (closed(s, in) \wedge \forall w (in(w, x) \to in(w, s)) \to subset(p, s)) for s
+                      apply invoke subset(p, s) for z
+                    }
+                    case in(z, q) {
+                      any w {
+                        assume in(w, y) {
+                          connect in(w, y) \wedge in(y, s)
+                          apply invoke closed(s, in) for y, w
+                        }
                       }
-                  }
-              }
+                      connect closed(s, in) \wedge \forall w (in(w, y) \to in(w, s))
+                      apply invoke \forall s (closed(s, in) \wedge \forall w (in(w, y) \to in(w, s)) \to subset(q, s)) for s
+                      apply invoke subset(q, s) for z
+                    }
+                }
+                case equal(z, y) {
+                  substitute in(y, s) for y: z
+                }
             }
           }
+          fold for subset conclude subset(adj(r, y), s)
         }
-        connect in(s, adj(r, y)) \leftrightarrow tc(owns, adj(x, y), s)
       }
+      connect tcset(adj(x, y), in, adj(r, y))
       fold for tcm conclude tcm(adj(x, y), adj(r, y))
     }
   }
@@ -248,23 +199,62 @@ theorem tcm_of_element_is_subset_of_tcm \forall x \forall t \forall y (tcm(x, t)
   any x, t, y {
     assume tcm(x, t) \wedge in(y, x) {
       split tcm(x, t) \wedge in(y, x)
-      apply sep_is_subset for t, \lambda^P z. tc(owns, y, z)
-      any z {
-        assume in(z, sep(t, \lambda^P z. tc(owns, y, z))) {
-          apply invoke sep_satisfies_predicate for t, \lambda^P z. tc(owns, y, z), z
+      expand tcm(x, t) for tcm
+      split tcset(x, in, t)
+      apply invoke \forall y (in(y, x) \to in(y, t)) for y
+      apply sep_is_subset for t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u))
+      any z, w {
+        assume in(z, sep(t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u)))) \wedge in(w, z) {
+          split in(z, sep(t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u)))) \wedge in(w, z)
+          apply invoke rightward sep_existence for t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u)), z
+          split in(z, t) \wedge \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u))
+          connect in(w, z) \wedge in(z, t)
+          apply invoke closed(t, in) for z, w
+          any u {
+            assume closed(u, in) \wedge subset(y, u) {
+              split closed(u, in) \wedge subset(y, u)
+              apply invoke \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u)) for u
+              connect in(w, z) \wedge in(z, u)
+              apply invoke closed(u, in) for z, w
+            }
+          }
+          connect in(w, t) \wedge \forall u (closed(u, in) \wedge subset(y, u) \to in(w, u))
+          apply invoke leftward sep_existence for t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u)), w
         }
-        assume tc(owns, y, z) {
-          connect in(y, x) \wedge tc(owns, y, z)
-          apply invoke tc_add_first for owns, x, y, z
-          apply invoke leftward tcm(x, t) for z
-          connect in(z, t) \wedge tc(owns, y, z)
-          apply invoke leftward sep_existence for t, \lambda^P z. tc(owns, y, z), z
-        }
-        connect in(z, sep(t, \lambda^P z. tc(owns, y, z))) \leftrightarrow tc(owns, y, z)
       }
-      fold for tcm conclude tcm(y, sep(t, \lambda^P z. tc(owns, y, z)))
-      connect subset(sep(t, \lambda^P z. tc(owns, y, z)), t) \wedge tcm(y, sep(t, \lambda^P z. tc(owns, y, z)))
-      lift for sep(t, \lambda^P z. tc(owns, y, z)) conclude \exists s (subset(s, t) \wedge tcm(y, s))
+      fold for closed[1] conclude closed(sep(t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u))), in)
+      any z {
+        assume in(z, y) {
+          connect in(z, y) \wedge in(y, t)
+          apply invoke closed(t, in) for y, z
+          any u {
+            assume closed(u, in) \wedge subset(y, u) {
+              split closed(u, in) \wedge subset(y, u)
+              apply invoke subset(y, u) for z
+            }
+          }
+          connect in(z, t) \wedge \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u))
+          apply invoke leftward sep_existence for t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u)), z
+        }
+      }
+      any s {
+        assume closed(s, in) \wedge \forall z (in(z, y) \to in(z, s)) {
+          split closed(s, in) \wedge \forall z (in(z, y) \to in(z, s))
+          fold for subset conclude subset(y, s)
+          connect closed(s, in) \wedge subset(y, s)
+          any z {
+            assume in(z, sep(t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u)))) {
+              apply invoke sep_satisfies_predicate for t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u)), z
+              apply invoke \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u)) for s
+            }
+          }
+          fold for subset[1] conclude subset(sep(t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u))), s)
+        }
+      }
+      connect tcset(y, in, sep(t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u))))
+      fold for tcm conclude tcm(y, sep(t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u))))
+      connect subset(sep(t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u))), t) \wedge tcm(y, sep(t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u))))
+      lift for sep(t, \lambda^P z. \forall u (closed(u, in) \wedge subset(y, u) \to in(z, u))) conclude \exists s (subset(s, t) \wedge tcm(y, s))
     }
   }
 }
@@ -273,70 +263,88 @@ theorem tcm_is_cup_of_itself_and_bigcup_of_tcm_of_element \forall Y \forall Z \f
   any Y, Z, W, V {
     assume \forall y (in(y, Y) \to \exists z (tcm(y, z))) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V) {
       split \forall y (in(y, Y) \to \exists z (tcm(y, z))) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
-      any v {
-        assume in(v, V) {
-          apply invoke rightward cup(Y, W, V) for v
-          divide in(v, Y) \vee in(v, W)
-            case in(v, Y) {
-              apply invoke tc_one_step for owns, Y, v
+      any p, q {
+        assume in(p, V) \wedge in(q, p) {
+          split in(p, V) \wedge in(q, p)
+          apply invoke rightward cup(Y, W, V) for p
+          divide in(p, Y) \vee in(p, W)
+            case in(p, Y) {
+              apply invoke \forall y (in(y, Y) \to \exists z (tcm(y, z))) for p
+              some z such \exists z (tcm(p, z)) {
+                connect in(p, Y) \wedge tcm(p, z)
+                lift for p conclude \exists y (in(y, Y) \wedge tcm(y, z))
+                apply invoke leftward replacement(Y, tcm, Z) for z
+                apply invoke tcm_implies_subset for p, z
+                apply invoke subset(p, z) for q
+                connect in(q, z) \wedge in(z, Z)
+                lift for z conclude \exists z (in(q, z) \wedge in(z, Z))
+                apply invoke leftward bigcup(Z, W) for q
+              }
             }
-            case in(v, W) {
-              apply invoke rightward bigcup(Z, W) for v
-              some z such \exists z (in(v, z) \wedge in(z, Z)) {
-                split in(v, z) \wedge in(z, Z)
+            case in(p, W) {
+              apply invoke rightward bigcup(Z, W) for p
+              some z such \exists z (in(p, z) \wedge in(z, Z)) {
+                split in(p, z) \wedge in(z, Z)
                 apply invoke rightward replacement(Y, tcm, Z) for z
                 some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
                   split in(y, Y) \wedge tcm(y, z)
-                  apply invoke rightward tcm(y, z) for v
-                  apply invoke tc_one_step for owns, Y, y
-                  connect tc(owns, Y, y) \wedge tc(owns, y, v)
-                  apply invoke tc_is_transitive for owns, Y, y, v
+                  expand tcm(y, z) for tcm
+                  split 1 tcset(y, in, z)
+                  connect in(p, z) \wedge in(q, p)
+                  apply invoke closed(z, in) for p, q
+                  connect in(q, z) \wedge in(z, Z)
+                  lift for z conclude \exists z (in(q, z) \wedge in(z, Z))
                 }
               }
+              apply invoke leftward bigcup(Z, W) for q
             }
+          pad in(q, W) conclude in(q, Y) \vee in(q, W)
+          apply invoke leftward cup(Y, W, V) for q
         }
-        assume tc(owns, Y, v) {
-          some n such tc(owns, Y, v) {
-            split pnatural(n) \wedge piterate(owns, n, Y, v)
-            apply invoke pnatural_is_suc_of_natural_element for n
-            some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
-              split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
-              substitute piterate(owns, n, Y, v) for n: suc(m)
-              connect natural(m) \wedge piterate(owns, suc(m), Y, v)
-              apply invoke piterate_first_step for owns, m, Y, v
-              some y such \exists y (in(y, Y) \wedge piterate(owns, m, y, v)) {
-                split in(y, Y) \wedge piterate(owns, m, y, v)
-                divide natural(m)
-                  case equal(m, emptyset) {
-                    substitute piterate(owns, m, y, v) for m: emptyset
-                    apply invoke piterate_is_unique_base_step for owns, y, v
-                    substitute in(y, Y) for y: v
-                    pad in(v, Y) conclude in(v, Y) \vee in(v, W)
-                    apply invoke leftward cup(Y, W, V) for v
-                  }
-                  case pnatural(m) {
-                    connect pnatural(m) \wedge piterate(owns, m, y, v)
-                    lift for m conclude tc(owns, y, v)
-                    apply invoke \forall y (in(y, Y) \to \exists z (tcm(y, z))) for y
-                    some z such \exists z (tcm(y, z)) {
-                      connect in(y, Y) \wedge tcm(y, z)
-                      lift for y conclude \exists y (in(y, Y) \wedge tcm(y, z))
-                      apply invoke leftward replacement(Y, tcm, Z) for z
-                      apply invoke leftward tcm(y, z) for v
-                      connect in(v, z) \wedge in(z, Z)
-                      lift for z conclude \exists z (in(v, z) \wedge in(z, Z))
+      }
+      fold for closed conclude closed(V, in)
+      apply invoke subset_of_cup_left for Y, W, V
+      expand subset(Y, V) for subset
+      any s {
+        assume closed(s, in) \wedge \forall y (in(y, Y) \to in(y, s)) {
+          split closed(s, in) \wedge \forall y (in(y, Y) \to in(y, s))
+          any v {
+            assume in(v, V) {
+              apply invoke rightward cup(Y, W, V) for v
+              divide in(v, Y) \vee in(v, W)
+                case in(v, Y) {
+                  apply invoke \forall y (in(y, Y) \to in(y, s)) for v
+                }
+                case in(v, W) {
+                  apply invoke rightward bigcup(Z, W) for v
+                  some z such \exists z (in(v, z) \wedge in(z, Z)) {
+                    split in(v, z) \wedge in(z, Z)
+                    apply invoke rightward replacement(Y, tcm, Z) for z
+                    some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
+                      split in(y, Y) \wedge tcm(y, z)
+                      expand tcm(y, z) for tcm
+                      split tcset(y, in, z)
+                      show \forall u (in(u, y) \to in(u, s)) {
+                        any u {
+                          assume in(u, y) {
+                            apply invoke \forall y (in(y, Y) \to in(y, s)) for y
+                            connect in(u, y) \wedge in(y, s)
+                            apply invoke closed(s, in) for y, u
+                          }
+                        }
+                      }
+                      connect closed(s, in) \wedge \forall u (in(u, y) \to in(u, s))
+                      apply invoke \forall s (closed(s, in) \wedge \forall u (in(u, y) \to in(u, s)) \to subset(z, s)) for s
+                      apply invoke subset(z, s) for v
                     }
-                    apply invoke leftward bigcup(Z, W) for v
-                    pad in(v, W) conclude in(v, Y) \vee in(v, W)
-                    apply invoke leftward cup(Y, W, V) for v
                   }
-              }
+                }
             }
           }
-
+          fold for subset conclude subset(V, s)
         }
-        connect in(v, V) \leftrightarrow tc(owns, Y, v)
       }
+      connect tcset(Y, in, V)
       fold for tcm conclude tcm(Y, V)
     }
   }
