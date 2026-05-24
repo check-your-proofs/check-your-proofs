@@ -236,6 +236,17 @@ theorem set_of_hwellfounded_is_hwellfounded \forall Y \forall Z \forall W \foral
 
 definition predicate regular(x) as hirrefrel(x) \wedge hwellfounded(x)
 
+theorem regular_is_irrefrel_wellfounded \forall x (regular(x) \to irrefrel(x, in) \wedge wellfounded(x, in)) {
+  any x {
+    assume regular(x) {
+      split regular(x)
+      apply invoke hirrefrel_is_irrefrel for x
+      apply invoke hwellfounded_is_wellfounded for x
+      connect irrefrel(x, in) \wedge wellfounded(x, in)
+    }
+  }
+}
+
 theorem element_of_regular_is_regular \forall x \forall y (regular(x) \wedge in(y, x) \to regular(y)) {
   any x, y {
     assume regular(x) \wedge in(y, x) {
@@ -483,6 +494,164 @@ theorem regular_satisfies_axiom_of_foundation \forall x (regular(x) \to (neq(x, 
           lift for y conclude \exists y (regular(y) \wedge in(y, A) \wedge \forall z (regular(z) \to (in(z, y) \to notin(z, A))))
         }
       }
+    }
+  }
+}
+
+theorem regular_implies_tcm_is_regular \forall x \forall t (regular(x) \wedge tcm(x, t) \to regular(t)) {
+  any x, t {
+    assume regular(x) \wedge tcm(x, t) {
+      split regular(x) \wedge tcm(x, t)
+      apply invoke rightward regular_iff_existence_of_irrefrel_wellfounded_tcm for x
+      some t' such \exists t' (irrefrel(t', in) \wedge wellfounded(t', in) \wedge tcm(x, t')) {
+        split irrefrel(t', in) \wedge wellfounded(t', in) \wedge tcm(x, t')
+        connect tcm(x, t) \wedge tcm(x, t')
+        apply invoke tcm_is_unique for x, t, t'
+        substitute irrefrel(t', in) for t': t
+        substitute wellfounded(t', in) for t': t
+        expand tcm(x, t) for tcm
+        split tcset(x, in, t)
+        apply invoke rightward closed_in_iff_tcset_of_itself for t
+        fold for tcm conclude tcm(t, t)
+        connect irrefrel(t, in) \wedge wellfounded(t, in) \wedge tcm(t, t)
+        lift for t conclude \exists t' (irrefrel(t', in) \wedge wellfounded(t', in) \wedge tcm(t, t'))
+      }
+      apply invoke leftward regular_iff_existence_of_irrefrel_wellfounded_tcm for t
+    }
+  }
+}
+
+theorem regular_is_pirrefrel pirrefrel(regular, in) {
+  any x {
+    assume regular(x) {
+      apply invoke regular_is_irrefrel_wellfounded for x
+      split 1 irrefrel(x, in) \wedge wellfounded(x, in)
+      apply invoke irrefrel_not_contain_itself for x
+    }
+  }
+  fold for pirrefrel conclude pirrefrel(regular, in)
+}
+
+theorem regular_is_pwellfounded pwellfounded(regular, in) {
+  any A {
+    assume \forall x (in(x, A) \to regular(x)) \wedge neq(A, emptyset) {
+      split \forall x (in(x, A) \to regular(x)) \wedge neq(A, emptyset)
+      apply invoke not_emptyset_has_a_member for A
+      some x such \exists x (in(x, A)) {
+        apply invoke \forall x (in(x, A) \to regular(x)) for x
+        apply invoke rightward regular_iff_existence_of_irrefrel_wellfounded_tcm for x
+        some t such \exists t (irrefrel(t, in) \wedge wellfounded(t, in) \wedge tcm(x, t)) {
+          split irrefrel(t, in) \wedge wellfounded(t, in) \wedge tcm(x, t)
+          expand tcm(x, t) for tcm
+          split 1 tcset(x, in, t)
+          apply invoke leftward trans_iff_closed_in for t
+          apply invoke tcm_implies_subset for x, t
+          connect subset(x, t) \wedge trans(t)
+          apply invoke subset_trans_implies_trans_adj for x, t
+          connect trans(t) \wedge wellfounded(t, in)
+          apply invoke adj_of_trans_wellfounded_is_wellfounded for t, x
+          apply cap_is_subset_right for A, adj(t, x)
+          apply adj_cor3 for t, x
+          connect in(x, A) \wedge in(x, adj(t, x))
+          apply invoke leftward cap_characterization for A, adj(t, x), x
+          lift for x conclude \exists x (in(x, cap(A, adj(t, x))))
+          apply invoke has_a_member_not_emptyset for cap(A, adj(t, x))
+          connect subset(cap(A, adj(t, x)), adj(t, x)) \wedge neq(cap(A, adj(t, x)), emptyset)
+          apply invoke wellfounded(adj(t, x), in) for cap(A, adj(t, x))
+          some y such \exists y (minimal(in, cap(A, adj(t, x)), y)) {
+            split minimal(in, cap(A, adj(t, x)), y)
+            apply invoke rightward cap_characterization for A, adj(t, x), y
+            split in(y, A) \wedge in(y, adj(t, x))
+            any z {
+              assume in(z, A) \wedge neq(z, y) {
+                split in(z, A) \wedge neq(z, y)
+                apply law_of_excluded_middle for \lambda^P. in(z, t)
+                divide in(z, t) \vee notin(z, t)
+                  case in(z, t) {
+                    apply invoke adj_cor1 for t, x, z
+                    connect in(z, A) \wedge in(z, adj(t, x))
+                    apply invoke leftward cap_characterization for A, adj(t, x), z
+                    connect in(z, cap(A, adj(t, x))) \wedge neq(z, y)
+                    apply invoke minimal_core(in, cap(A, adj(t, x)), y) for z
+                  }
+                  case notin(z, t) {
+                    deny in(z, y) {
+                      connect in(z, y) \wedge in(y, adj(t, x))
+                      apply invoke trans(adj(t, x)) for y, z
+                      apply invoke rightward adj_existence for t, x, z
+                      divide in(z, t) \vee equal(z, x)
+                        case in(z, t) {
+                          contradict in(z, t)
+                          explode equal(z, x)
+                        }
+                        case equal(z, x) {}
+                      substitute in(z, y) for z: x
+                      deny equal(x, y) {
+                        substitute in(x, y) for y: x
+                        apply invoke regular_is_irrefrel_wellfounded for x
+                        split 1 irrefrel(x, in) \wedge wellfounded(x, in)
+                        apply invoke irrefrel_not_contain_itself for x
+                        contradict in(x, x)
+                      }
+                      apply invoke rightward adj_existence for t, x, y
+                      divide in(y, t) \vee equal(y, x)
+                        case in(y, t) {}
+                        case equal(y, x) {
+                          contradict equal(y, x)
+                          explode in(y, t)
+                        }
+                      connect in(x, y) \wedge in(y, t)
+                      apply invoke trans(t) for y, x
+                      connect in(x, cap(A, adj(t, x))) \wedge neq(x, y)
+                      apply invoke minimal_core(in, cap(A, adj(t, x)), y) for x
+                      contradict in(x, y)
+                    }
+                  }
+              }
+            }
+            fold for minimal_core conclude minimal_core(in, A, y)
+            connect minimal(in, A, y)
+            lift for y conclude \exists y (minimal(in, A, y))
+          }
+        }
+      }
+    }
+  }
+  fold for pwellfounded conclude pwellfounded(regular, in)
+}
+
+theorem regular_is_closed_under_in pclosed(regular, in) {
+  any x, y {
+    assume regular(x) \wedge in(y, x) {
+      apply invoke element_of_regular_is_regular for x, y
+    }
+  }
+  fold for pclosed conclude pclosed(regular, in)
+}
+
+theorem regular_is_tcsetlike tcsetlike(regular, in) {
+  any x {
+    assume regular(x) {
+      apply invoke rightward regular_iff_existence_of_irrefrel_wellfounded_tcm for x
+      some t such \exists t (irrefrel(t, in) \wedge wellfounded(t, in) \wedge tcm(x, t)) {
+        split 3 irrefrel(t, in) \wedge wellfounded(t, in) \wedge tcm(x, t)
+        expand tcm(x, t) for tcm
+        lift for t conclude \exists t (tcset(x, in, t))
+      }
+    }
+  }
+  fold for tcsetlike conclude tcsetlike(regular, in)
+}
+
+theorem regular_induction \forall^P \chi[1] (\forall x (regular(x) \wedge \forall y (in(y, x) \to \chi(y)) \to \chi(x)) \to \forall x (regular(x) \to \chi(x))) {
+  assert regular_is_pirrefrel
+  assert regular_is_pwellfounded
+  assert regular_is_closed_under_in
+  assert regular_is_tcsetlike
+  any predicate \chi[1] {
+    assume \forall x (regular(x) \wedge \forall y (in(y, x) \to \chi(y)) \to \chi(x)) {
+      connect tcsetlike(regular, in) \wedge pclosed(regular, in) \wedge pirrefrel(regular, in) \wedge pwellfounded(regular, in) \wedge \forall x (regular(x) \wedge \forall y (in(y, x) \to \chi(y)) \to \chi(x))
+      apply invoke pwellfounded_induction for regular, in, \chi
     }
   }
 }

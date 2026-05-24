@@ -1,5 +1,30 @@
 include "zfc_ordinal_emptyset.proof"
 
+theorem subset_trans_implies_trans_adj \forall x \forall t (subset(x, t) \wedge trans(t) \to trans(adj(t, x))) {
+  any x, t {
+    assume subset(x, t) \wedge trans(t) {
+      split subset(x, t) \wedge trans(t)
+      any y, z {
+        assume in(y, adj(t, x)) \wedge in(z, y) {
+          split in(y, adj(t, x)) \wedge in(z, y)
+          apply invoke rightward adj_existence for t, x, y
+          divide in(y, t) \vee equal(y, x)
+            case in(y, t) {
+              connect in(y, t) \wedge in(z, y)
+              apply invoke trans(t) for y, z
+            }
+            case equal(y, x) {
+              substitute in(z, y) for y: x
+              apply invoke subset(x, t) for z
+            }
+          apply invoke adj_cor1 for t, x, z
+        }
+      }
+      fold for trans conclude trans(adj(t, x))
+    }
+  }
+}
+
 theorem suc_of_trans_is_trans \forall x (trans(x) \to trans(suc(x))) {
   any x {
     assume trans(x) {
