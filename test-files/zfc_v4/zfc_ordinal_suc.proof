@@ -1,0 +1,283 @@
+include "zfc_ordinal_emptyset.proof"
+
+theorem suc_of_trans_is_trans \forall x (trans(x) \to trans(suc(x))) {
+  any x {
+    assume trans(x) {
+      any y, z {
+        assume in(z, y) \wedge in(y, suc(x)) {
+          split in(z, y) \wedge in(y, suc(x))
+          apply invoke rightward suc_characterization for x, y
+          divide in(y, x) \vee equal(y, x)
+            case in(y, x) {
+              connect in(z, y) \wedge in(y, x)
+              apply invoke trans(x) for y, z
+              pad in(z, x) conclude in(z, x) \vee equal(z, x)
+              apply invoke leftward suc_characterization for x, z
+            }
+            case equal(y, x) {
+              substitute in(z, y) for y: x
+              pad in(z, x) conclude in(z, x) \vee equal(z, x)
+              apply invoke leftward suc_characterization for x, z
+            }
+        }
+      }
+      fold for trans conclude trans(suc(x))
+    }
+  }
+}
+
+theorem adj_of_irrefrel_is_irrefrel \forall x \forall y (irrefrel(x, in) \wedge notin(y, y) \to irrefrel(adj(x, y), in)) {
+  any x, y {
+    assume irrefrel(x, in) \wedge notin(y, y) {
+      split irrefrel(x, in) \wedge notin(y, y)
+      any z {
+        assume in(z, adj(x, y)) {
+          apply invoke rightward adj_existence for x, y, z
+          divide in(z, x) \vee equal(z, y)
+            case in(z, x) {
+              apply invoke irrefrel(x, in) for z
+            }
+            case equal(z, y) {
+              substitute notin(y, y) for y: z
+            }
+        }
+      }
+      fold for irrefrel conclude irrefrel(adj(x, y), in)
+    }
+  }
+}
+
+theorem suc_of_irrefrel_is_irrefrel \forall x (irrefrel(x, in) \to irrefrel(suc(x), in)) {
+  any x {
+    assume irrefrel(x, in) {
+      apply invoke irrefrel_not_contain_itself for x
+      connect irrefrel(x, in) \wedge notin(x, x)
+      apply invoke adj_of_irrefrel_is_irrefrel for x, x
+      fold for suc conclude irrefrel(suc(x), in)
+    }
+  }
+}
+
+theorem adj_of_trans_wellfounded_is_wellfounded \forall x \forall y (trans(x) \wedge wellfounded(x, in) \to wellfounded(adj(x, y), in)) {
+  any x, y {
+    assume trans(x) \wedge wellfounded(x, in) {
+      split trans(x) \wedge wellfounded(x, in)
+      apply law_of_excluded_middle for \lambda^P. in(y, x)
+      divide in(y, x) \vee notin(y, x)
+        case in(y, x) {
+          apply invoke adj_equal for x, y
+          substitute wellfounded(x, in) for x: adj(x, y)
+        }
+        case notin(y, x) {
+          any A {
+            assume subset(A, adj(x, y)) \wedge neq(A, emptyset) {
+              split subset(A, adj(x, y)) \wedge neq(A, emptyset)
+              apply law_of_excluded_middle for \lambda^P. equal(A, singleton(y))
+              divide equal(A, singleton(y)) \vee neq(A, singleton(y))
+                case equal(A, singleton(y)) {
+                  apply element_is_minimal_in_its_singleton for y
+                  substitute minimal(in, singleton(y), y) for singleton(y): A
+                  lift for y conclude \exists y (minimal(in, A, y))
+                }
+                case neq(A, singleton(y)) {
+                  apply invoke subset_adj_implies_subset_rem for A, x, y
+                  connect neq(A, singleton(y)) \wedge neq(A, emptyset)
+                  apply invoke neq_singleton_implies_rem_neq_emptyset for A, y
+                  connect subset(rem(A, y), x) \wedge neq(rem(A, y), emptyset)
+                  apply invoke wellfounded(x, in) for rem(A, y)
+                  some a such \exists a (minimal(in, rem(A, y), a)) {
+                    split minimal(in, rem(A, y), a)
+                    apply invoke rightward rem_existence for A, y, a
+                    split in(a, A) \wedge neq(a, y)
+                    deny \neg(minimal_core(in, A, a)) {
+                      expand \neg(minimal_core(in, A, a)) for minimal_core
+                      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. in(x, A) \wedge neq(x, a) \to notin(x, a)
+                      some b such \exists x (\neg(in(x, A) \wedge neq(x, a) \to notin(x, a))) {
+                        apply invoke rightward neg_implication for \lambda^P. in(b, A) \wedge neq(b, a), \lambda^P. notin(b, a)
+                        split in(b, A) \wedge neq(b, a) \wedge in(b, a)
+                        deny equal(b, y) {
+                          substitute in(b, a) for b: y
+                          apply invoke subset(rem(A, y), x) for a
+                          connect in(y, a) \wedge in(a, x)
+                          apply invoke trans(x) for a, y
+                          contradict in(y, x)
+                        }
+                        connect in(b, A) \wedge neq(b, y)
+                        apply invoke leftward rem_existence for A, y, b
+                        connect in(b, rem(A, y)) \wedge neq(b, a)
+                        apply invoke minimal_core(in, rem(A, y), a) for b
+                        contradict in(b, a)
+                      }
+                    }
+                    connect minimal(in, A, a)
+                    lift for a conclude \exists a (minimal(in, A, a))
+                  }
+              }
+            }
+          }
+          fold for wellfounded conclude wellfounded(adj(x, y), in)
+        }
+    }
+  }
+}
+
+theorem suc_of_trans_wellfounded_is_wellfounded \forall \alpha (trans(\alpha) \wedge wellfounded(\alpha, in) \to wellfounded(suc(\alpha), in)) {
+  any \alpha {
+    assume trans(\alpha) \wedge wellfounded(\alpha, in) {
+      split trans(\alpha) \wedge wellfounded(\alpha, in)
+      apply invoke adj_of_trans_wellfounded_is_wellfounded for \alpha, \alpha
+      fold for suc conclude wellfounded(suc(\alpha), in)
+    }
+  }
+}
+
+theorem suc_of_trans_transrel_is_transrel \forall x (trans(x) \wedge transrel(x, in) \to transrel(suc(x), in)) {
+  any x {
+    assume trans(x) \wedge transrel(x, in) {
+      split trans(x) \wedge transrel(x, in)
+      any y, z, w {
+        assume in(y, suc(x)) \wedge in(z, suc(x)) \wedge in(w, suc(x)) \wedge in(y, z) \wedge in(z, w) {
+          split in(y, suc(x)) \wedge in(z, suc(x)) \wedge in(w, suc(x)) \wedge in(y, z) \wedge in(z, w)
+          apply invoke rightward suc_characterization for x, w
+          divide in(w, x) \vee equal(w, x)
+            case in(w, x) {
+              connect in(z, w) \wedge in(w, x)
+              apply invoke trans(x) for w, z
+              connect in(y, z) \wedge in(z, x)
+              apply invoke trans(x) for z, y
+              connect in(y, x) \wedge in(z, x) \wedge in(w, x) \wedge in(y, z) \wedge in(z, w)
+              apply invoke transrel(x, in) for y, z, w
+            }
+            case equal(w, x) {
+              substitute in(z, w) for w: x
+              connect in(y, z) \wedge in(z, x)
+              apply invoke trans(x) for z, y
+              substitute in(y, x) for x: w
+            }
+        }
+      }
+      fold for transrel conclude transrel(suc(x), in)
+    }
+  }
+}
+
+theorem suc_of_trans_irrefrel_order_is_order \forall x (trans(x) \wedge irrefrel(x, in) \wedge order(x, in) \to order(suc(x), in)) {
+  any x {
+    assume trans(x) \wedge irrefrel(x, in) \wedge order(x, in) {
+      split trans(x) \wedge irrefrel(x, in) \wedge order(x, in)
+      apply invoke suc_of_irrefrel_is_irrefrel for x
+      split order(x, in)
+      connect trans(x) \wedge transrel(x, in)
+      apply invoke suc_of_trans_transrel_is_transrel for x
+      connect irrefrel(suc(x), in) \wedge transrel(suc(x), in)
+      apply invoke irrefrel_and_transrel_implies_order for suc(x), in
+    }
+  }
+}
+
+theorem suc_of_trans_irrefrel_linorder_is_linorder \forall \alpha (trans(\alpha) \wedge irrefrel(\alpha, in) \wedge linorder(\alpha, in) \to linorder(suc(\alpha), in)) {
+  any \alpha {
+    assume trans(\alpha) \wedge irrefrel(\alpha, in) \wedge linorder(\alpha, in) {
+      split trans(\alpha) \wedge irrefrel(\alpha, in) \wedge linorder(\alpha, in)
+      split linorder(\alpha, in)
+      connect trans(\alpha) \wedge irrefrel(\alpha, in) \wedge order(\alpha, in)
+      apply invoke suc_of_trans_irrefrel_order_is_order for \alpha
+      any \beta, \gamma {
+        assume in(\beta, suc(\alpha)) \wedge in(\gamma, suc(\alpha)) {
+          split in(\beta, suc(\alpha)) \wedge in(\gamma, suc(\alpha))
+          apply invoke rightward suc_characterization for \alpha, \beta
+          apply invoke rightward suc_characterization for \alpha, \gamma
+          divide in(\beta, \alpha) \vee equal(\beta, \alpha)
+            case in(\beta, \alpha) {
+              divide in(\gamma, \alpha) \vee equal(\gamma, \alpha)
+                case in(\gamma, \alpha) {
+                  connect in(\beta, \alpha) \wedge in(\gamma, \alpha)
+                  apply invoke linorder_core(\alpha, in) for \beta, \gamma
+                }
+                case equal(\gamma, \alpha) {
+                  substitute in(\beta, \alpha) for \alpha: \gamma
+                  pad in(\beta, \gamma) conclude in(\beta, \gamma) \vee equal(\beta, \gamma) \vee in(\gamma, \beta)
+                }
+            }
+            case equal(\beta, \alpha) {
+              divide in(\gamma, \alpha) \vee equal(\gamma, \alpha)
+                case in(\gamma, \alpha) {
+                  substitute in(\gamma, \alpha) for \alpha: \beta
+                  pad in(\gamma, \beta) conclude in(\beta, \gamma) \vee equal(\beta, \gamma) \vee in(\gamma, \beta)
+                }
+                case equal(\gamma, \alpha) {
+                  substitute equal(\gamma, \alpha) for \alpha: \beta
+                  pad equal(\beta, \gamma) conclude in(\beta, \gamma) \vee equal(\beta, \gamma) \vee in(\gamma, \beta)
+                }
+            }
+        }
+      }
+      fold for linorder_core conclude linorder_core(suc(\alpha), in)
+      connect linorder(suc(\alpha), in)
+    }
+  }
+}
+
+theorem suc_of_ordinal_is_wellorder \forall \alpha (ordinal(\alpha) \to wellorder(suc(\alpha), in)) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      split ordinal(\alpha)
+      split wellorder(\alpha, in)
+      connect trans(\alpha) \wedge wellfounded(\alpha, in)
+      apply invoke suc_of_trans_wellfounded_is_wellfounded for \alpha
+      connect trans(\alpha) \wedge irrefrel(\alpha, in) \wedge linorder(\alpha, in)
+      apply invoke suc_of_trans_irrefrel_linorder_is_linorder for \alpha
+      connect wellorder(suc(\alpha), in)
+    }
+  }
+}
+
+theorem suc_of_ordinal_is_ordinal \forall \alpha (ordinal(\alpha) \to ordinal(suc(\alpha))) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      split ordinal(\alpha)
+      apply invoke suc_of_trans_is_trans for \alpha
+      apply invoke suc_of_irrefrel_is_irrefrel for \alpha
+      apply invoke suc_of_ordinal_is_wellorder for \alpha
+      connect ordinal(suc(\alpha))
+    }
+  }
+}
+
+theorem trans_irrefrel_implies_suc_is_injection \forall x \forall y (trans(x) \wedge irrefrel(x, in) \wedge equal(suc(x), suc(y)) \to equal(x, y)) {
+  any x, y {
+    assume trans(x) \wedge irrefrel(x, in) \wedge equal(suc(x), suc(y)) {
+      split trans(x) \wedge irrefrel(x, in) \wedge equal(suc(x), suc(y))
+      apply in_suc for x
+      substitute in(x, suc(x)) for suc(x): suc(y)
+      apply invoke rightward suc_characterization for y, x
+      apply in_suc for y
+      substitute in(y, suc(y)) for suc(y): suc(x)
+      apply invoke rightward suc_characterization for x, y
+      divide in(x, y) \vee equal(x, y)
+        case in(x, y) {
+          divide in(y, x) \vee equal(y, x)
+            case in(y, x) {
+              connect in(x, y) \wedge in(y, x)
+              apply invoke trans(x) for y, x
+              apply invoke irrefrel_not_contain_itself for x
+              contradict in(x, x)
+              explode equal(x, y)
+            }
+            case equal(y, x) {}
+        }
+        case equal(x, y) {}
+    }
+  }
+}
+
+theorem ordinal_implies_suc_is_injection \forall \alpha \forall \beta (ordinal(\alpha) \wedge equal(suc(\alpha), suc(\beta)) \to equal(\alpha, \beta)) {
+  any \alpha, \beta {
+    assume ordinal(\alpha) \wedge equal(suc(\alpha), suc(\beta)) {
+      split ordinal(\alpha) \wedge equal(suc(\alpha), suc(\beta))
+      split ordinal(\alpha)
+      connect trans(\alpha) \wedge irrefrel(\alpha, in) \wedge equal(suc(\alpha), suc(\beta))
+      apply invoke trans_irrefrel_implies_suc_is_injection for \alpha, \beta
+    }
+  }
+}
