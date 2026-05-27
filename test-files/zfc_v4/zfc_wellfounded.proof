@@ -116,6 +116,68 @@ theorem adj_of_closed_is_closed \forall x \forall t \forall^P \psi[2] (closed(t,
   }
 }
 
+theorem adj_of_closed_wellfounded_is_wellfounded \forall x \forall y \forall^P \psi[2] (closed(x, \psi) \wedge wellfounded(x, \psi) \to wellfounded(adj(x, y), \psi)) {
+  any x, y, predicate \psi[2] {
+    assume closed(x, \psi) \wedge wellfounded(x, \psi) {
+      split closed(x, \psi) \wedge wellfounded(x, \psi)
+      apply law_of_excluded_middle for \lambda^P. in(y, x)
+      divide in(y, x) \vee notin(y, x)
+        case in(y, x) {
+          apply invoke adj_equal for x, y
+          substitute wellfounded(x, \psi) for x: adj(x, y)
+        }
+        case notin(y, x) {
+          any A {
+            assume subset(A, adj(x, y)) \wedge neq(A, emptyset) {
+              split subset(A, adj(x, y)) \wedge neq(A, emptyset)
+              apply law_of_excluded_middle for \lambda^P. equal(A, singleton(y))
+              divide equal(A, singleton(y)) \vee neq(A, singleton(y))
+                case equal(A, singleton(y)) {
+                  apply element_is_minimal_in_its_singleton for y, \psi
+                  substitute minimal(\psi, singleton(y), y) for singleton(y): A
+                  lift for y conclude \exists y (minimal(\psi, A, y))
+                }
+                case neq(A, singleton(y)) {
+                  apply invoke subset_adj_implies_subset_rem for A, x, y
+                  connect neq(A, singleton(y)) \wedge neq(A, emptyset)
+                  apply invoke neq_singleton_implies_rem_neq_emptyset for A, y
+                  connect subset(rem(A, y), x) \wedge neq(rem(A, y), emptyset)
+                  apply invoke wellfounded(x, \psi) for rem(A, y)
+                  some a such \exists a (minimal(\psi, rem(A, y), a)) {
+                    split minimal(\psi, rem(A, y), a)
+                    apply invoke rightward rem_existence for A, y, a
+                    split in(a, A) \wedge neq(a, y)
+                    deny \neg(minimal_core(\psi, A, a)) {
+                      expand \neg(minimal_core(\psi, A, a)) for minimal_core
+                      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. in(x, A) \wedge neq(x, a) \to \neg(\psi(x, a))                      some b such \exists x (\neg(in(x, A) \wedge neq(x, a) \to \neg(\psi(x, a)))) {
+                        apply invoke rightward neg_implication for \lambda^P. in(b, A) \wedge neq(b, a), \lambda^P. \neg(\psi(b, a))
+                        split in(b, A) \wedge neq(b, a) \wedge \psi(b, a)
+                        deny equal(b, y) {
+                          substitute \psi(b, a) for b: y
+                          apply invoke subset(rem(A, y), x) for a
+                          connect \psi(y, a) \wedge in(a, x)
+                          apply invoke closed(x, \psi) for a, y
+                          contradict in(y, x)
+                        }
+                        connect in(b, A) \wedge neq(b, y)
+                        apply invoke leftward rem_existence for A, y, b
+                        connect in(b, rem(A, y)) \wedge neq(b, a)
+                        apply invoke minimal_core(\psi, rem(A, y), a) for b
+                        contradict \psi(b, a)
+                      }
+                    }
+                    connect minimal(\psi, A, a)
+                    lift for a conclude \exists a (minimal(\psi, A, a))
+                  }
+              }
+            }
+          }
+          fold for wellfounded conclude wellfounded(adj(x, y), \psi)
+        }
+    }
+  }
+}
+
 theorem wellfounded_induction \forall^P \psi[2] \forall^P \chi[1] \forall X (closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x))) \to \forall x (in(x, X) \to \chi(x))) {
   any predicate \psi[2], predicate \chi[1], X {
     assume closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x))) {
