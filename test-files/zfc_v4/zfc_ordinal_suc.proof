@@ -51,33 +51,12 @@ theorem suc_of_trans_is_trans \forall x (trans(x) \to trans(suc(x))) {
   }
 }
 
-theorem adj_of_irrefrel_is_irrefrel \forall x \forall y (irrefrel(x, in) \wedge notin(y, y) \to irrefrel(adj(x, y), in)) {
-  any x, y {
-    assume irrefrel(x, in) \wedge notin(y, y) {
-      split irrefrel(x, in) \wedge notin(y, y)
-      any z {
-        assume in(z, adj(x, y)) {
-          apply invoke rightward adj_existence for x, y, z
-          divide in(z, x) \vee equal(z, y)
-            case in(z, x) {
-              apply invoke irrefrel(x, in) for z
-            }
-            case equal(z, y) {
-              substitute notin(y, y) for y: z
-            }
-        }
-      }
-      fold for irrefrel conclude irrefrel(adj(x, y), in)
-    }
-  }
-}
-
 theorem suc_of_irrefrel_is_irrefrel \forall x (irrefrel(x, in) \to irrefrel(suc(x), in)) {
   any x {
     assume irrefrel(x, in) {
       apply invoke irrefrel_not_contain_itself for x
       connect irrefrel(x, in) \wedge notin(x, x)
-      apply invoke adj_of_irrefrel_is_irrefrel for x, x
+      apply invoke adj_of_irrefrel_is_irrefrel for x, x, in
       fold for suc conclude irrefrel(suc(x), in)
     }
   }

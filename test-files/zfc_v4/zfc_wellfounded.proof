@@ -28,6 +28,27 @@ theorem irrefrel_not_contain_itself \forall x (irrefrel(x, in) \to notin(x, x)) 
   }
 }
 
+theorem adj_of_irrefrel_is_irrefrel \forall x \forall y \forall^P \psi[2] (irrefrel(x, \psi) \wedge \neg(\psi(y, y)) \to irrefrel(adj(x, y), \psi)) {
+  any x, y, predicate \psi[2] {
+    assume irrefrel(x, \psi) \wedge \neg(\psi(y, y)) {
+      split irrefrel(x, \psi) \wedge \neg(\psi(y, y))
+      any z {
+        assume in(z, adj(x, y)) {
+          apply invoke rightward adj_existence for x, y, z
+          divide in(z, x) \vee equal(z, y)
+            case in(z, x) {
+              apply invoke irrefrel(x, \psi) for z
+            }
+            case equal(z, y) {
+              substitute \neg(\psi(y, y)) for y: z
+            }
+        }
+      }
+      fold for irrefrel conclude irrefrel(adj(x, y), \psi)
+    }
+  }
+}
+
 definition predicate minimal_core(predicate \psi[2], A, a) as \forall x (in(x, A) \wedge neq(x, a) \to \neg(\psi(x, a)))
 
 definition predicate minimal(predicate \psi[2], A, a) as in(a, A) \wedge minimal_core(\psi, A, a)
