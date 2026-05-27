@@ -74,22 +74,6 @@ theorem irrefrel_and_transrel_implies_order \forall X \forall^P \psi[2] (irrefre
   }
 }
 
-theorem element_is_minimal_in_its_singleton \forall x (minimal(in, singleton(x), x)) {
-  any x {
-    apply singleton_cor1 for x
-    any y {
-      assume in(y, singleton(x)) \wedge neq(y, x) {
-        split in(y, singleton(x)) \wedge neq(y, x)
-        apply invoke rightward singleton_characterization for x, y
-        contradict equal(y, x)
-        explode notin(y, x)
-      }
-    }
-    fold for minimal_core conclude minimal_core(in, singleton(x), x)
-    connect minimal(in, singleton(x), x)
-  }
-}
-
 theorem trans_irrefrel_wellfounded_not_emptyset_contains_emptyset \forall x (trans(x) \wedge irrefrel(x, in) \wedge wellfounded(x, in) \wedge neq(x, emptyset) \to in(emptyset, x)) {
   any x {
     assume trans(x) \wedge irrefrel(x, in) \wedge wellfounded(x, in) \wedge neq(x, emptyset) {

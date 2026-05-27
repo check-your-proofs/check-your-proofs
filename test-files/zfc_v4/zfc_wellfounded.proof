@@ -53,6 +53,22 @@ definition predicate minimal_core(predicate \psi[2], A, a) as \forall x (in(x, A
 
 definition predicate minimal(predicate \psi[2], A, a) as in(a, A) \wedge minimal_core(\psi, A, a)
 
+theorem element_is_minimal_in_its_singleton \forall x \forall^P \psi[2] (minimal(\psi, singleton(x), x)) {
+  any x, predicate \psi[2] {
+    apply singleton_cor1 for x
+    any y {
+      assume in(y, singleton(x)) \wedge neq(y, x) {
+        split in(y, singleton(x)) \wedge neq(y, x)
+        apply invoke rightward singleton_characterization for x, y
+        contradict equal(y, x)
+        explode \neg(\psi(y, x))
+      }
+    }
+    fold for minimal_core conclude minimal_core(\psi, singleton(x), x)
+    connect minimal(\psi, singleton(x), x)
+  }
+}
+
 definition predicate wellfounded(X, predicate \psi[2]) as \forall A (subset(A, X) \wedge neq(A, emptyset) \to \exists a (minimal(\psi, A, a)))
 
 theorem subset_of_wellfounded_is_wellfounded \forall^P \phi[2] \forall x \forall y (wellfounded(x, \phi) \wedge subset(y, x) \to wellfounded(y, \phi)) {
