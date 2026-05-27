@@ -91,6 +91,31 @@ theorem subset_of_wellfounded_is_wellfounded \forall^P \phi[2] \forall x \forall
 
 definition predicate closed(X, predicate \psi[2]) as \forall x \forall y (in(x, X) \wedge \psi(y, x) \to in(y, X))
 
+theorem adj_of_closed_is_closed \forall x \forall t \forall^P \psi[2] (closed(t, \psi) \wedge \forall y (\psi(y, x) \to in(y, t)) \to closed(adj(t, x), \psi)) {
+  any x, t, predicate \psi[2] {
+    assume closed(t, \psi) \wedge \forall y (\psi(y, x) \to in(y, t)) {
+      split closed(t, \psi) \wedge \forall y (\psi(y, x) \to in(y, t))
+      any y, z {
+        assume in(y, adj(t, x)) \wedge \psi(z, y) {
+          split in(y, adj(t, x)) \wedge \psi(z, y)
+          apply invoke rightward adj_existence for t, x, y
+          divide in(y, t) \vee equal(y, x)
+            case in(y, t) {
+              connect in(y, t) \wedge \psi(z, y)
+              apply invoke closed(t, \psi) for y, z
+            }
+            case equal(y, x) {
+              substitute \psi(z, y) for y: x
+              apply invoke \forall y (\psi(y, x) \to in(y, t)) for z
+            }
+          apply invoke adj_cor1 for t, x, z
+        }
+      }
+      fold for closed conclude closed(adj(t, x), \psi)
+    }
+  }
+}
+
 theorem wellfounded_induction \forall^P \psi[2] \forall^P \chi[1] \forall X (closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x))) \to \forall x (in(x, X) \to \chi(x))) {
   any predicate \psi[2], predicate \chi[1], X {
     assume closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x))) {
