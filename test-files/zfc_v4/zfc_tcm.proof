@@ -259,10 +259,12 @@ theorem tcm_of_element_is_subset_of_tcm \forall x \forall t \forall y (tcm(x, t)
   }
 }
 
-theorem tcm_is_cup_of_itself_and_bigcup_of_tcm_of_element \forall Y \forall Z \forall W \forall V (\forall y (in(y, Y) \to \exists z (tcm(y, z))) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V) \to tcm(Y, V)) {
+definition predicate tcmstep(Y, Z, W, V) as \forall y (in(y, Y) \to \exists z (tcm(y, z))) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
+
+theorem tcm_is_cup_of_itself_and_bigcup_of_tcm_of_element \forall Y \forall Z \forall W \forall V (tcmstep(Y, Z, W, V) \to tcm(Y, V)) {
   any Y, Z, W, V {
-    assume \forall y (in(y, Y) \to \exists z (tcm(y, z))) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V) {
-      split \forall y (in(y, Y) \to \exists z (tcm(y, z))) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
+    assume tcmstep(Y, Z, W, V) {
+      split tcmstep(Y, Z, W, V)
       any p, q {
         assume in(p, V) \wedge in(q, p) {
           split in(p, V) \wedge in(q, p)

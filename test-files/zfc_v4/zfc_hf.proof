@@ -35,7 +35,7 @@ theorem element_of_hfcore_is_hfcore \forall x \forall y (hfcore(x) \wedge in(y, 
   }
 }
 
-theorem finite_set_of_hfcore_is_hfcore \forall Y (finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y)) \to hfcore(Y) \wedge \exists Z \exists W \exists V (replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V))) {
+theorem finite_set_of_hfcore_is_hfcore \forall Y (finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y)) \to hfcore(Y) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))) {
   any Y {
     assume finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y)) {
       split finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y))
@@ -76,13 +76,12 @@ theorem finite_set_of_hfcore_is_hfcore \forall Y (finite(Y) \wedge \forall y (in
                 }
               }
             }
-            connect \forall y (in(y, Y) \to \exists z (tcm(y, z))) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
+            connect tcmstep(Y, Z, W, V)
             apply invoke tcm_is_cup_of_itself_and_bigcup_of_tcm_of_element for Y, Z, W, V
             connect finite(V) \wedge tcm(Y, V)
-            connect replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
             lift for V conclude hfcore(Y)
-            lift for Z, W, V conclude \exists Z \exists W \exists V (replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V))
-            connect hfcore(Y) \wedge \exists Z \exists W \exists V (replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V))
+            lift for Z, W, V conclude \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
+            connect hfcore(Y) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
           }
         }
       }
@@ -183,13 +182,10 @@ theorem finite_set_of_hf_is_hf \forall Y (finite(Y) \wedge \forall y (in(y, Y) \
       }
       connect finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y))
       apply invoke finite_set_of_hfcore_is_hfcore for Y
-      split hfcore(Y) \wedge \exists Z \exists W \exists V (replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V))
-      some Z, W, V such \exists Z \exists W \exists V (replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)) {
-        split replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
-        connect \forall y (in(y, Y) \to regular(y)) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
-        apply invoke set_of_regular_is_regular for Y, Z, W, V
-        connect hf(Y)
-      }
+      split hfcore(Y) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
+      connect \forall y (in(y, Y) \to regular(y)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
+      apply invoke set_of_regular_is_regular for Y
+      connect hf(Y)
     }
   }
 }
