@@ -116,6 +116,28 @@ theorem adj_of_closed_is_closed \forall x \forall t \forall^P \psi[2] (closed(t,
   }
 }
 
+theorem cap_of_closed_is_closed \forall X \forall Y \forall^P \psi[2] (closed(X, \psi) \wedge closed(Y, \psi) \to closed(cap(X, Y), \psi)) {
+  any X, Y, predicate \psi[2] {
+    assume closed(X, \psi) \wedge closed(Y, \psi) {
+      split closed(X, \psi) \wedge closed(Y, \psi)
+      any u, v {
+        assume in(u, cap(X, Y)) \wedge \psi(v, u) {
+          split in(u, cap(X, Y)) \wedge \psi(v, u)
+          apply invoke rightward cap_characterization for X, Y, u
+          split in(u, X) \wedge in(u, Y)
+          connect in(u, X) \wedge \psi(v, u)
+          apply invoke closed(X, \psi) for u, v
+          connect in(u, Y) \wedge \psi(v, u)
+          apply invoke closed(Y, \psi) for u, v
+          connect in(v, X) \wedge in(v, Y)
+          apply invoke leftward cap_characterization for X, Y, v
+        }
+      }
+      fold for closed conclude closed(cap(X, Y), \psi)
+    }
+  }
+}
+
 theorem adj_of_closed_wellfounded_is_wellfounded \forall x \forall y \forall^P \psi[2] (closed(x, \psi) \wedge wellfounded(x, \psi) \to wellfounded(adj(x, y), \psi)) {
   any x, y, predicate \psi[2] {
     assume closed(x, \psi) \wedge wellfounded(x, \psi) {

@@ -4,20 +4,11 @@ theorem cap_of_trans_is_trans \forall x \forall y (trans(x) \wedge trans(y) \to 
   any x, y {
     assume trans(x) \wedge trans(y) {
       split trans(x) \wedge trans(y)
-      any p, q {
-        assume in(p, cap(x, y)) \wedge in(q, p) {
-          split in(p, cap(x, y)) \wedge in(q, p)
-          apply invoke rightward cap_characterization for x, y, p
-          split in(p, x) \wedge in(p, y)
-          connect in(p, x) \wedge in(q, p)
-          apply invoke trans(x) for p, q
-          connect in(p, y) \wedge in(q, p)
-          apply invoke trans(y) for p, q
-          connect in(q, x) \wedge in(q, y)
-          apply invoke leftward cap_characterization for x, y, q
-        }
-      }
-      fold for trans conclude trans(cap(x, y))
+      apply invoke rightward trans_iff_closed_in for x
+      apply invoke rightward trans_iff_closed_in for y
+      connect closed(x, in) \wedge closed(y, in)
+      apply invoke cap_of_closed_is_closed for x, y, in
+      apply invoke leftward trans_iff_closed_in for cap(x, y)
     }
   }
 }
