@@ -17,6 +17,7 @@ class AlphaEquiv:
 
     def begin_log(self, depth: int, e1: Formula | Term, e2: Formula | Term, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate]):
         if False:
+            from formatter import ExprFormatter
             print(f"{'  ' * depth}[{e1.__class__.__name__}] e1: {ExprFormatter(self.context).pretty_expr(e1)}")
             print(f"{'  ' * depth}[{e2.__class__.__name__}] e2: {ExprFormatter(self.context).pretty_expr(e2)}")
             print(f"{'  ' * depth}[env] {", ".join([ExprFormatter(self.context).pretty_expr(k) + ": " + ExprFormatter(self.context).pretty_expr(v) for k, v in env.items()])}")
