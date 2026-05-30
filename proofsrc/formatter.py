@@ -53,7 +53,7 @@ class ExprFormatter:
     def pretty_term(self, expr: Term, parent_prec: int = TERM_PRECEDENCE["Lowest"]) -> str:
         if isinstance(expr, Var):
             return expr.name
-        elif isinstance(expr, (RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm)):
+        elif isinstance(expr, (RefEquality, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm)):
             if self.mode == "source":
                 return expr.name
             else:
